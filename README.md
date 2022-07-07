@@ -41,7 +41,7 @@ rhythm = [(120, 60)]*8
 single_qubit_error = 0.02
 two_qubit_error = 0.05
 
-# instrument collections for _get_instruments_ method
+# instrument collections for get_instruments method
 # 'piano': list(range(1,9))
 # 'tuned_perc': list(range(9,17))
 # 'organ': list(range(17,25))
