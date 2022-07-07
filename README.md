@@ -1,4 +1,4 @@
-# expressing-quantum-computation-through-generated-art
+# Expressing Quantum Computation Through Generated Art
 
 A library that can turn Qiskit quantum circuits into music videos!
 
