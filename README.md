@@ -11,6 +11,7 @@ _Arg 2:_ list of tuples corresponding to the timings of each sample. first eleme
 _Arg 3:_ single qubit depolarisation noise  
 _Arg 4:_ two-qubit depolarisation noise  
 _Arg 5:_ list of instrument collections for each pure state. Instrument for note is chosen from collection based on state phase.  
+_Arg 6:_ the note map to convert from state number to note number. Middle C is 60.  
 
 
 For Example:
