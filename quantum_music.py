@@ -39,8 +39,52 @@ from qiskit.providers.aer.noise import thermal_relaxation_error
 
 from qiskit.converters import circuit_to_dag
 
+def chromatic_middle_c(n):
+    return n + 60
 
-def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments):
+def c_major(n):
+    C_MAJ = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24, 26, 28, 29, 31, 33, 35, 36, 38, 40, 41, 43, 45, 47, 48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84, 86, 88, 89, 91, 93, 95, 96, 98, 100, 101, 103, 105, 107, 108, 110, 112, 113, 115, 117, 119, 120, 122, 124, 125, 127]
+
+    CURR_MODE = C_MAJ
+    note = 60+n
+    
+    # Shifting
+    if CURR_MODE and note < CURR_MODE[0]:
+        note = CURR_MODE[0]
+    else:
+        while (CURR_MODE and note not in CURR_MODE):
+            note -= 1
+    return note
+
+def c_major(n):
+    C_MAJ = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24, 26, 28, 29, 31, 33, 35, 36, 38, 40, 41, 43, 45, 47, 48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84, 86, 88, 89, 91, 93, 95, 96, 98, 100, 101, 103, 105, 107, 108, 110, 112, 113, 115, 117, 119, 120, 122, 124, 125, 127]
+
+    CURR_MODE = C_MAJ
+    note = 60+n
+    
+    # Shifting
+    if CURR_MODE and note < CURR_MODE[0]:
+        note = CURR_MODE[0]
+    else:
+        while (CURR_MODE and note not in CURR_MODE):
+            note -= 1
+    return note
+
+def f_minor(n):
+    F_MIN = [5, 7, 8, 10, 12, 13, 15, 17, 19, 20, 22, 24, 25, 27, 29, 31, 32, 34, 36, 37, 39, 41, 43, 44, 46, 48,  49, 51, 53, 55, 56, 58, 60, 61, 63, 65, 67, 68, 70, 72, 74, 75, 77, 79, 80, 82, 84, 86, 87, 89, 91, 92, 94, 96, 97, 99, 101, 103, 104, 106, 108, 109, 111, 113, 115, 116, 118, 120, 121, 123, 125, 127]
+
+    CURR_MODE = F_MIN
+    note = 60+n
+    
+    # Shifting
+    if CURR_MODE and note < CURR_MODE[0]:
+        note = CURR_MODE[0]
+    else:
+        while (CURR_MODE and note not in CURR_MODE):
+            note -= 1
+    return note
+
+def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = chromatic_middle_c):
     NAME = name
     target_folder = NAME
     if os.path.isdir(target_folder) == False:
@@ -182,7 +226,7 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
 
                 vol = (note_prob/max_note_prob)*(chord_prob/max_chord_prob)
                 
-                note = 60 + n
+                note = note_map(n)
                 #note = round_to_scale(n, scale=C_MAJ)
                 #notelist = []
                 #note = notelist[n%len(notelist)]
@@ -249,8 +293,10 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     #directories = os.system(command_string)
 
 
-    def plot_quantum_state(input_probability_vector, angle_vector, save=None):
-        input_length = len(input_probability_vector)
+    def plot_quantum_state(input_probability_vector, angle_vector, main_title=None, fig_title=None, save=None):
+        num_figs = 8
+        input_length = input_probability_vector.shape[1]
+
         num_qubits = len(bin(input_length - 1)) - 2
         labels = []
         for x in range(input_length):
@@ -261,33 +307,59 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
             labels.append(label_tem_2)
 
         cmap = cm.get_cmap('hsv')  # Get desired colormap - you can change this!
-        max_height = 2*np.pi
+        max_height = 2 * np.pi
         min_height = -np.pi
-        rgba = [cmap((k - min_height) / max_height) for k in angle_vector]
-
-        
         X = np.linspace(1, input_length, input_length)
-        fig = plt.figure('State Visualisation', figsize=(15, 6))
-        bar_list = plt.bar(X, input_probability_vector, width=0.5)
+
+        # ax1 = fig.add_subplot(gs[0, 0])
+        # ax2 = fig.add_subplot(gs[0, 1])
+        # ax3 = fig.add_subplot(gs[1, :])
+
+        num_column = int(num_figs / 2)
+        fig, ax = plt.subplots(2, num_column, figsize=(24, 12))
+        gs = fig.add_gridspec(2, num_column)
+        # if str(main_title):
+        #     fig.suptitle(str(main_title),fontsize=24)
+        ax_main = fig.add_subplot(gs[0, 1:3])
+        ax_main.axes.xaxis.set_visible(False)
+        ax_main.axes.yaxis.set_visible(False)
+
+        index = 1
+        for i in range(2):
+            for j in range(num_column):
+                if i == 0 and j == 1:
+                    ax[i, j].axes.yaxis.set_visible(False)
+                    ax[i, j].axes.xaxis.set_visible(False)
+                elif i == 0 and j == 2:
+                    ax[i, j].axes.yaxis.set_visible(False)
+                    ax[i, j].axes.xaxis.set_visible(False)
+                else:
+                    plt.sca(ax[i, j])
+                    rgba = [cmap((k - min_height) / max_height) for k in angle_vector[index, :]]
+                    bar_list = plt.bar(X, input_probability_vector[index, :], width=0.5)
+                    ax[i, j].set_ylim([0, np.max(input_probability_vector)])
+                    # if str(fig_title):
+                    #     ax[i, j].set_title(str(fig_title[index]), fontsize=20)
+                    for x in range(input_length):
+                        bar_list[x].set_color(rgba[x])
+                    if j != 0:
+                        ax[i, j].axes.yaxis.set_visible(False)
+                    ax[i, j].axes.xaxis.set_visible(False)
+                    if j == 0:
+                        plt.yticks(fontsize=20)
+                    index = index + 1
+
+        fig.text(0.5, 0.08, 'Quantum states', ha='center', fontsize=20)
+        fig.text(0.04, 0.5, 'Probability', va='center', rotation='vertical', fontsize=20)
+
+        rgba = [cmap((k - min_height) / max_height) for k in angle_vector[0, :]]
+        bar_list = ax_main.bar(X, input_probability_vector[0, :], width=0.5)
+        ax_main.set_ylim([0, np.max(input_probability_vector)])
         for x in range(input_length):
             bar_list[x].set_color(rgba[x])
-        #cb1 = fig.colorbar(cm.ScalarMappable(cmap=cmap), ticks=[0, 0.25, 0.5, 0.75, 1], aspect=10)
-        #cb1.ax.tick_params(labelsize=20)
-        #cb1.set_label('Phase (degree)', rotation=270, fontsize=20, labelpad=20)
-        #cb1.ax.set_yticklabels([-180, -90, 0, 90, 180])
-
-        if num_qubits > 4:
-            plt.xticks(X, labels, fontsize=20 / (2 ** (num_qubits - 4)) - 2)
-        else:
-            plt.xticks(X, labels, fontsize=20)
-        plt.yticks(fontsize=20)
-        plt.ylim([0, max(input_probability_vector)])
-        plt.xlabel('State', fontsize=20)
-        plt.ylabel('Probability', fontsize=20)
-        plt.tight_layout()
-
+        # ax_main.set_title(str(fig_title[0]), fontsize=20)
         if save:
-            files = glob.glob(f'{target_folder}\\' + '*.png')
+            files = glob.glob(target_folder + '\\*.png')
             filename = target_folder + '\\frame_' + str(len(files)) + '.png'
             plt.savefig(filename)
             plt.close('all')
@@ -307,23 +379,19 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     for file in files:
         os.remove(file)
 
-    init_2 = 0
-    for sound_data in sound_list:
-        largest_iter = 0
-        largest_prob = 0
-        iter = 0
+    num_frames = len(sound_list)
 
-        for vol, state_data, prob_vec, angle_vec in sound_data:
-            if vol > largest_prob:
-                largest_prob = vol
-                largest_iter = iter
-                most_likely_prob_vec = prob_vec
-                most_likely_angle_vec = angle_vec
-            iter += 1
-        plot_quantum_state(most_likely_prob_vec, most_likely_angle_vec, save=True)
-        init_2 += 1
-        if (init_2 == 6):
-            print("most_likely_angle_vec:", most_likely_angle_vec)
+    input_probability_vector = np.zeros((8, len(sound_list[0][0][2])))
+    angle_vector = np.zeros((8, len(sound_list[0][0][2])))
+
+    for i, sound_data in enumerate(sound_list):
+        for j in range(8):
+            if j < len(sound_data):
+                input_probability_vector[j, :] = np.array(sound_list[i][j][2]) * sound_list[i][j][0]
+                angle_vector[j, :] = sound_list[i][j][3]
+
+
+        plot_quantum_state(input_probability_vector, angle_vector, save=True)
         
     # video_clip = mpy.ImageSequenceClip(path + '\\figs\\', fps=1)
 
@@ -365,6 +433,12 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     total_time = 0
     files = glob.glob(target_folder + '\\frame_*')
     iter = 0
+    file_tuples = []
+    for file in files:
+        num = int(os.path.splitext(file)[0].lstrip(target_folder + '\\frame_'))
+        file_tuples.append((num, file))
+    file_tuples = sorted(file_tuples)
+    files = [x[1] for x in file_tuples]
     for file in files:
         time = (rhythm[iter][0] + rhythm[iter][1]) / 480.0
         clips.append(ImageClip(file).set_duration(time))
@@ -400,5 +474,6 @@ def get_instruments(instruments_name):
                     'ensemble': list(range(49,57)),
                     'brass': list(range(57,65)),
                     'reed': list(range(65,73)),
-                    'pipe': list(range(73,81))}
+                    'pipe': list(range(73,81)),
+                    'windband': [74,69,72,67,57,58,71,59]}
     return instrument_dict[instruments_name]
