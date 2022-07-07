@@ -10,11 +10,13 @@ _Arg 1:_ name of the music video
 _Arg 2:_ list of tuples corresponding to the timings of each sample. first element is note length, second element is the rest time.  
 _Arg 3:_ single qubit depolarisation noise  
 _Arg 4:_ two-qubit depolarisation noise  
+_Arg 5:_ list of instrument collections for each pure state. Instrument for note is chosen from collection based on state phase.  
+
 
 For Example:
 ```
 import quantum_music
-from quantum_music import make_music_video
+from quantum_music import make_music_video, get_instruments
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -39,5 +41,8 @@ rhythm = [(120, 60)]*8
 single_qubit_error = 0.02
 two_qubit_error = 0.05
 
+intruments = []
+intruments.append([73]) # a pipe
+intruments.append(get_instruments('tuned_perc'))
 make_music_video(circ, "my_quantum_video", rhythm, single_qubit_error, two_qubit_error)
 ```
