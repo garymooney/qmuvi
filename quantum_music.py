@@ -40,7 +40,7 @@ from qiskit.providers.aer.noise import thermal_relaxation_error
 from qiskit.converters import circuit_to_dag
 
 
-def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error):
+def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments):
     NAME = name
     target_folder = NAME
     if os.path.isdir(target_folder) == False:
@@ -97,6 +97,9 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error):
                 sound_data.append((prob0,note,[abs(complex(x))*abs(complex(x)) for x in vec],[np.angle(x) for x in vec]))
         sounds_list.append(sound_data)
 
+    for i, sound in enumerate(sounds_list):
+        sounds_list[i] = sorted(sound, key = lambda a: a[0], reverse=True)
+    
     import json
     with open(f'{NAME}\\sounds_list.json', 'w') as f:
         json.dump(sounds_list, f)
@@ -120,16 +123,7 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error):
                 note -= 1
         return note
 
-    instrument_dict = {'piano': list(range(1,9)),
-                    'tuned_perc': list(range(9,17)),
-                    'organ': list(range(17,25)),
-                    'guitar': list(range(25,33)),
-                    'bass': list(range(33,41)),
-                    'strings': list(range(41,49)),
-                    'ensemble': list(range(49,57)),
-                    'brass': list(range(57,65)),
-                    'reed': list(range(65,73)),
-                    'pipe': list(range(73,81))}
+    
 
     from mido import Message, MetaMessage, MidiFile, MidiTrack, bpm2tempo
 
@@ -137,7 +131,15 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error):
     numtracks = 8
     tracks = [MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack()]
     #track_instruments = ['piano','bass','brass','ensemble','organ','pipe','reed','strings']
-    track_instruments = ['ensemble']*8
+    track_instruments = []
+    #input_instruments = ['ensemble']*8
+    for intr in range(8):
+        if intr < len(input_instruments):
+            track_instruments.append(input_instruments[intr])
+        else:
+            track_instruments.append(input_instruments[len(input_instruments)-1])
+
+    #track_instruments = ['ensemble']*8
 
     tracks[0].append(MetaMessage('set_tempo', tempo=bpm2tempo(60)))
 
@@ -156,7 +158,9 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error):
     for t_i, sound in enumerate(sounds_list):    
         
         active_notes = []
+        
         sorted_chords = sorted(sound, key = lambda a: a[0], reverse=True)
+        max_chord_prob = sorted_chords[0][0]
         for trackno in range(numtracks):
             track = tracks[trackno]
 
@@ -175,23 +179,25 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error):
                 
                 note_prob, angle = chord[n]
                 
-                #prob = note_prob*chord_prob
-                prob = (note_prob/max_note_prob)*chord_prob
-                #prob = (note_prob/max_note_prob)
+
+                vol = (note_prob/max_note_prob)*(chord_prob/max_chord_prob)
                 
                 note = 60 + n
                 #note = round_to_scale(n, scale=C_MAJ)
                 #notelist = []
                 #note = notelist[n%len(notelist)]
-                volume = round(127*(prob))
+                vol_128 = round(127*(vol))
                 #instrument = round(127*(angle + np.pi)/(2*np.pi))
-                instruments = instrument_dict[track_instruments[trackno]]
-                instrument = instruments[round(7*(angle + np.pi)/(2*np.pi))]
+                instruments = track_instruments[trackno]
+                instrument = instruments[round((len(track_instruments[trackno])-1)*((angle/(2*np.pi)) % 1))]
+
+
+
                 #instrument = 1
 
                 
                 track.append(Message('program_change', program=instrument, time=0))
-                track.append(Message('note_on', note=note, velocity=volume, time=0))
+                track.append(Message('note_on', note=note, velocity=vol_128, time=0))
                 active_notes.append((trackno,note))
         
         
@@ -307,9 +313,9 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error):
         largest_prob = 0
         iter = 0
 
-        for prob, state_data, prob_vec, angle_vec in sound_data:
-            if prob > largest_prob:
-                largest_prob = prob
+        for vol, state_data, prob_vec, angle_vec in sound_data:
+            if vol > largest_prob:
+                largest_prob = vol
                 largest_iter = iter
                 most_likely_prob_vec = prob_vec
                 most_likely_angle_vec = angle_vec
@@ -383,3 +389,16 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error):
     files = glob.glob(target_folder + '\\*.mp4')
     for file in files:
         os.remove(file)
+
+def get_instruments(instruments_name):
+    instrument_dict = {'piano': list(range(1,9)),
+                    'tuned_perc': list(range(9,17)),
+                    'organ': list(range(17,25)),
+                    'guitar': list(range(25,33)),
+                    'bass': list(range(33,41)),
+                    'strings': list(range(41,49)),
+                    'ensemble': list(range(49,57)),
+                    'brass': list(range(57,65)),
+                    'reed': list(range(65,73)),
+                    'pipe': list(range(73,81))}
+    return instrument_dict[instruments_name]

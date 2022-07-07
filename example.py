@@ -1,5 +1,5 @@
 import quantum_music
-from quantum_music import make_music_video
+from quantum_music import make_music_video, get_instruments
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -20,4 +20,4 @@ circ.cx(2,1)
 circ.barrier()
 circ.cx(1,0)
 circ.barrier()
-make_music_video(circ, "hi", [(120, 60)]*8, 0.02, 0.05)
+make_music_video(circ, "hi", [(120, 60)]*8, 0.02, 0.05, [[57], get_instruments('tuned_perc')])
