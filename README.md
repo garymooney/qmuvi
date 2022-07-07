@@ -2,7 +2,7 @@
 
 A library that can turn Qiskit quantum circuits into music videos!
 
-Add a barrier to the circuit for each time step that you would like to be sampled, then call the _make_music_video_ method.
+Add a barrier to the circuit for each time step that you would like to be sampled, then call the _make_music_video_ method. This will create a folder with all of the generated content inside it.
 
 **make_music_video**  
 _Arg 0:_ quantum circuit  
