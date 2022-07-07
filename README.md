@@ -2,14 +2,14 @@
 
 A library that can turn Qiskit quantum circuits into music videos!
 
-Add a barrier to the circuit for each time step that you would like to be samples, then call the make_music_video method.
+Add a barrier to the circuit for each time step that you would like to be sampled, then call the _make_music_video_ method.
 
-Method: make_music_video
-Arg 0: quantum circuit
-Arg 1: name of the music video
-Arg 2: list of tuples corresponding to the timings of each sample. first element is note length, second element is the rest time.
-Arg 3: single qubit depolarisation noise
-Arg 4: two-qubit depolarisation noise
+**make_music_video**  
+_Arg 0:_ quantum circuit  
+_Arg 1:_ name of the music video  
+_Arg 2:_ list of tuples corresponding to the timings of each sample. first element is note length, second element is the rest time.  
+_Arg 3:_ single qubit depolarisation noise  
+_Arg 4:_ two-qubit depolarisation noise  
 
 For Example:
 ```
@@ -35,5 +35,9 @@ circ.cx(2,1)
 circ.barrier()
 circ.cx(1,0)
 circ.barrier()
-make_music_video(circ, "hi", [(120, 60)]*8, 0.02, 0.05)
+rhythm = [(120, 60)]*8
+single_qubit_error = 0.02
+two_qubit_error = 0.05
+
+make_music_video(circ, "my_quantum_video", rhythm, single_qubit_error, two_qubit_error)
 ```
