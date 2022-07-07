@@ -41,8 +41,20 @@ rhythm = [(120, 60)]*8
 single_qubit_error = 0.02
 two_qubit_error = 0.05
 
+# instrument collections for _get_instruments_ method
+# 'piano': list(range(1,9))
+# 'tuned_perc': list(range(9,17))
+# 'organ': list(range(17,25))
+# 'guitar': list(range(25,33))
+# 'bass': list(range(33,41))
+# 'strings': list(range(41,49))
+# 'ensemble': list(range(49,57))
+# 'brass': list(range(57,65))
+# 'pipe': list(range(73,81))
+                    
 intruments = []
 intruments.append([73]) # a pipe
+
 intruments.append(get_instruments('tuned_perc'))
 make_music_video(circ, "my_quantum_video", rhythm, single_qubit_error, two_qubit_error)
 ```
