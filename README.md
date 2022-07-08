@@ -42,7 +42,7 @@ rhythm = [(120, 60)]*8 # sound length and rest time for each sample
 single_qubit_error = 0.02
 two_qubit_error = 0.05
 
-# instrument collections for get_instruments method: these integers correspond 
+# instrument collections for the "get_instruments" method: these integers correspond 
 # to the standard General MIDI instuments (see https://en.wikipedia.org/wiki/General_MIDI)
 # 'piano': list(range(1,9))
 # 'tuned_perc': list(range(9,17))
