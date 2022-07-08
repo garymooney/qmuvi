@@ -76,4 +76,4 @@ Run the python script and it should output all the content into a folder with th
 # Setup
 Install VLC player and add its install path to the PATH system variable so that headless VLC player can be used to convert MIDI to MP3. For the moment, before the conversion will work, VLC needs to be configured to use a sound font (.sf2 file). There is one currently in the repo, this might be removed later.  
   
-This project uses Python 3 and uses a few python packages, notably qiskit==0.37.0, moviepy==1.0.3, mido==1.2.10, and matplotlib==3.5.2 (there might be others). Earlier package versions may also work.
+This project uses Python 3 and a few python packages, notably qiskit==0.37.0, moviepy==1.0.3, mido==1.2.10, and matplotlib==3.5.2 (there might be others). Earlier versions will probably work too.
