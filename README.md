@@ -23,7 +23,7 @@ from qiskit import QuantumCircuit
 
 circ = QuantumCircuit(4)
 circ.h(0)
-circ.barrier()
+circ.barrier() # signals to the quantum music transpiler to sample the state at this time step
 circ.cx(0, 1)
 circ.barrier()
 circ.cx(1, 2)
@@ -38,7 +38,7 @@ circ.cx(2,1)
 circ.barrier()
 circ.cx(1,0)
 circ.barrier()
-rhythm = [(120, 60)]*8
+rhythm = [(120, 60)]*8 # sound length and rest time for each sample
 single_qubit_error = 0.02
 two_qubit_error = 0.05
 
@@ -57,8 +57,8 @@ two_qubit_error = 0.05
                     
 intruments = []
 intruments.append([73]) # a pipe
-
 intruments.append(get_instruments('tuned_perc'))
+
 make_music_video(circ, "my_quantum_video", rhythm, single_qubit_error, two_qubit_error, intruments, note_map=chromatic_middle_c)
 ```
 
