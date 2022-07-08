@@ -39,15 +39,15 @@ _**instrument_collection_name:**_ the name of a predefined collection (string)
 'windband': [74,69,72,67,57,58,71,59]  
 
 ### chromatic_middle_c(state_number)
-Used for the note map. Returns a note number calculated as the input state number + 60 such that state number zero is middle C.
+Used for the note map. Returns a note number calculated as the input state number + 60 such that state number zero is middle C.  
 _**state_number:**_ the state number (int)  
 
 ### c_major(state_number)
-Used for the note map. Returns a note number calculated as the input state number + 60 then rounded down to a note in the C major scale.
+Used for the note map. Returns a note number calculated as the input state number + 60 then rounded down to a note in the C major scale.  
 _**state_number:**_ the state number (int)  
 
 ### f_minor(state_number)
-Used for the note map. Returns a note number calculated as the input state number + 60 then rounded down to a note in the F minor scale.
+Used for the note map. Returns a note number calculated as the input state number + 60 then rounded down to a note in the F minor scale.  
 _**state_number:**_ the state number (int)  
 
 # Example:
