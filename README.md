@@ -1,8 +1,16 @@
 # Expressing Quantum Computation Through Generated Art
 
-A library that can turn Qiskit quantum circuits into music videos!
+A python module that can transform Qiskit quantum circuits into music videos!
 
-Add a barrier to the circuit for each time step that you would like to be sampled, then call the _make_music_video_ method. This will create a folder with all of the generated content inside it.
+Add a barrier to a quantum circuit for each time step to sample the quantum state for, then call the _make_music_video_ method. This will create a folder with all of the generated content inside it.
+
+# Mapping quantum to music
+  
+![image](https://user-images.githubusercontent.com/6459545/177944433-b3ea5a8e-d750-47c6-a1e2-58357f3db3ce.png)
+![image](https://user-images.githubusercontent.com/6459545/177954949-027b54be-5ddf-4c13-884d-2e59c2555991.png)
+
+A noisy quantum density matrix simulator is used to sample mixed states (a probabilistic mixture of pure states) at various time steps. Each pure state is a state vector representing a superposition of computational basis states. A state with no noise is a pure state and so will only have a single non-zero element in the mixture. As noise is introduced, more terms with non-zero probability will appear. The superposition of states in a pure state will determine the notes that are played. The mapping from integer representation of the state to note number can be customised by passing in a method that takes an int and returns an int (60 is middle C), this allows the possibility to map states to notes of musical scales. A list of instrument collections (see example below) can be specified to assign, in order of decreasing probability, instrument collections to the pure states of the mixture (the instrument collection list can be manually specified in the method call). A maximum of 8 instrument collections can be specified (if there are less than 8, the remaining pure states will use the last instrument collection in the list). The instrument for each note is chosen from the collection by the state's phase angle in the superposition. The angles are discretised to match the size of the collection, where an angle of zero corresponds to the first instrument. The velocity (which is proportional to volume) of each note is calculated by multiplying the propability of the pure state in the mixture and the probability of the computational basis state of the pure state's superposition, normalised such that there is always a note with velocity equal to 1.  
+
 
 **make_music_video**  
 _Arg 0:_ quantum circuit  
@@ -62,9 +70,10 @@ intruments.append(get_instruments('tuned_perc'))
 make_music_video(circ, "my_quantum_video", rhythm, single_qubit_error, two_qubit_error, intruments, note_map=chromatic_middle_c)
 ```
 
-Simply run the python script and it should output all the content into a folder with the name "my_quantum_video". Note that there is an error that sometimes occurs when the name has numbers in it.
+Run the python script and it should output all the content into a folder with the specified name (e.g. "my_quantum_video").  
+**Warning:** Using numbers in the name sometimes causes an error.
 
 # Setup
 Install VLC player and add its install path to the PATH system variable so that headless VLC player can be used to convert MIDI to MP3. For the moment, before the conversion will work, VLC needs to be configured to use a sound font (.sf2 file). There is one currently in the repo, this might be removed later.  
   
-The library also has a few python lib dependencies. Notably Qiskit, MoviePy and Mido. There may be others that I've forgotten about.
+This project uses Python 3 and uses a few python packages, notably qiskit==0.37.0, moviepy==1.0.3, mido==1.2.10, and matplotlib==3.5.2 (there might be others). Earlier package versions may also work.
