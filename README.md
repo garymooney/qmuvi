@@ -43,7 +43,7 @@ single_qubit_error = 0.02
 two_qubit_error = 0.05
 
 # instrument collections for get_instruments method: these integers correspond 
-# to the standard General MIDI instuments (https://en.wikipedia.org/wiki/General_MIDI)
+# to the standard General MIDI instuments (see https://en.wikipedia.org/wiki/General_MIDI)
 # 'piano': list(range(1,9))
 # 'tuned_perc': list(range(9,17))
 # 'organ': list(range(17,25))
@@ -59,7 +59,7 @@ intruments = []
 intruments.append([73]) # a pipe
 
 intruments.append(get_instruments('tuned_perc'))
-make_music_video(circ, "my_quantum_video", rhythm, single_qubit_error, two_qubit_error, note_map=chromatic_middle_c)
+make_music_video(circ, "my_quantum_video", rhythm, single_qubit_error, two_qubit_error, intruments, note_map=chromatic_middle_c)
 ```
 
 Simply run the python script and it should output all the content into a folder with the name "my_quantum_video". Note that there is an error that sometimes occurs when the name has numbers in it.
