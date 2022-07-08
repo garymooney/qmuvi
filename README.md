@@ -42,7 +42,8 @@ rhythm = [(120, 60)]*8
 single_qubit_error = 0.02
 two_qubit_error = 0.05
 
-# instrument collections for get_instruments method
+# instrument collections for get_instruments method: these integers correspond 
+# to the standard General MIDI instuments (https://en.wikipedia.org/wiki/General_MIDI)
 # 'piano': list(range(1,9))
 # 'tuned_perc': list(range(9,17))
 # 'organ': list(range(17,25))
@@ -52,6 +53,7 @@ two_qubit_error = 0.05
 # 'ensemble': list(range(49,57))
 # 'brass': list(range(57,65))
 # 'pipe': list(range(73,81))
+# 'windband': [74,69,72,67,57,58,71,59]
                     
 intruments = []
 intruments.append([73]) # a pipe
