@@ -11,18 +11,46 @@ Add a barrier to a quantum circuit for each time step to sample the quantum stat
 
 A noisy quantum density matrix simulator is used to sample mixed states (a probabilistic mixture of pure states) at various time steps. Each pure state is a state vector representing a superposition of computational basis states. A state with no noise is a pure state and so will only have a single non-zero element in the mixture. As noise is introduced, more terms with non-zero probability will appear. The superposition of states in a pure state will determine the notes that are played. The mapping from integer representation of the state to note number can be customised by passing in a method that takes an int and returns an int (60 is middle C), this allows the possibility to map states to notes of musical scales. A list of instrument collections (see example below) can be specified to assign, in order of decreasing probability, instrument collections to the pure states of the mixture (the instrument collection list can be manually specified in the method call). A maximum of 8 instrument collections can be specified (if there are less than 8, the remaining pure states will use the last instrument collection in the list). The instrument for each note is chosen from the collection by the state's phase angle in the superposition. The angles are discretised to match the size of the collection, where an angle of zero corresponds to the first instrument. The velocity (which is proportional to volume) of each note is calculated by multiplying the propability of the pure state in the mixture and the probability of the computational basis state of the pure state's superposition, normalised such that there is always a note with velocity equal to 1.  
 
+# Methods
+### make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, instrument_collections, note_map)
+Generates a music video from a qiskit quantum algorithm with barriers  
+_**qc:**_ quantum circuit (qiskit QuantumCircuit)  
+_**name:**_ name of the music video (string)  
+_**rhythm:**_ the timings for each sample (list of tuples (int, int). First element is note length, second element is rest time. Units of ticks 480 = 1 sec).  
+_**single_qubit_error:**_ single qubit depolarisation noise (float)  
+_**two_qubit_error:**_ two-qubit depolarisation noise (float)  
+_**instrument_collections:**_ list of instrument collections for each pure state. Instrument for note is chosen from collection based on state phase (list of list of ints)  
+_**note_map:**_ the note map to convert from state number to note number. Middle C is 60 (map from int to int)  
 
-**make_music_video**  
-_Arg 0:_ quantum circuit  
-_Arg 1:_ name of the music video  
-_Arg 2:_ list of tuples corresponding to the timings of each sample. first element is note length, second element is the rest time.  
-_Arg 3:_ single qubit depolarisation noise  
-_Arg 4:_ two-qubit depolarisation noise  
-_Arg 5:_ list of instrument collections for each pure state. Instrument for note is chosen from collection based on state phase.  
-_Arg 6:_ the note map to convert from state number to note number. Middle C is 60.  
+### get_instruments(instrument_collection_name)
+Gets a list of integers corresponding to instruments according to the standard General MIDI (see https://en.wikipedia.org/wiki/General_MIDI)  
+_**instrument_collection_name:**_ the name of a predefined collection (string)  
+  
+**Current predefined collections:**  
+'piano': list(range(1,9))  
+'tuned_perc': list(range(9,17))  
+'organ': list(range(17,25))  
+'guitar': list(range(25,33))  
+'bass': list(range(33,41))  
+'strings': list(range(41,49))  
+'ensemble': list(range(49,57))  
+'brass': list(range(57,65))  
+'pipe': list(range(73,81))  
+'windband': [74,69,72,67,57,58,71,59]  
 
+### chromatic_middle_c(state_number)
+Used for the note map. Returns a note number calculated as the input state number + 60 such that state number zero is middle C.
+_**state_number:**_ the state number (int)  
 
-For Example:
+### c_major(state_number)
+Used for the note map. Returns a note number calculated as the input state number + 60 then rounded down to a note in the C major scale.
+_**state_number:**_ the state number (int)  
+
+### f_minor(state_number)
+Used for the note map. Returns a note number calculated as the input state number + 60 then rounded down to a note in the F minor scale.
+_**state_number:**_ the state number (int)  
+
+# Example:
 ```
 import quantum_music
 from quantum_music import make_music_video, get_instruments, chromatic_middle_c
@@ -50,18 +78,6 @@ rhythm = [(120, 60)]*8 # sound length and rest time for each sample
 single_qubit_error = 0.02
 two_qubit_error = 0.05
 
-# instrument collections for the "get_instruments" method: these integers correspond 
-# to the standard General MIDI instuments (see https://en.wikipedia.org/wiki/General_MIDI)
-# 'piano': list(range(1,9))
-# 'tuned_perc': list(range(9,17))
-# 'organ': list(range(17,25))
-# 'guitar': list(range(25,33))
-# 'bass': list(range(33,41))
-# 'strings': list(range(41,49))
-# 'ensemble': list(range(49,57))
-# 'brass': list(range(57,65))
-# 'pipe': list(range(73,81))
-# 'windband': [74,69,72,67,57,58,71,59]
                     
 intruments = []
 intruments.append([73]) # a pipe
