@@ -59,3 +59,10 @@ intruments.append([73]) # a pipe
 intruments.append(get_instruments('tuned_perc'))
 make_music_video(circ, "my_quantum_video", rhythm, single_qubit_error, two_qubit_error, note_map=chromatic_middle_c)
 ```
+
+Simply run the python script and it should output all the content into a folder with the name "my_quantum_video". Note that there is an error that sometimes occurs when the name has numbers in it.
+
+# Setup
+Install VLC player and add its install path to the PATH system variable so that headless VLC player can be used to convert MIDI to MP3. For the moment, before the conversion will work, VLC needs to be configured to use a sound font (.sf2 file). There is one currently in the repo, this might be removed later.  
+  
+The library also has a few python lib dependencies. Notably Qiskit, MoviePy and Mido. There may be others that I've forgotten about.
