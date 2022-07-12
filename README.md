@@ -1,8 +1,8 @@
 # Expressing Quantum Computation Through Generated Art
 
-Quantum computing is notorious for being unintuitive and difficult to imagine. This python module attempts to create some kind of connection between a human observer and the complex workings of quantum algorithms by transforming them into music videos.
+Quantum computing is notorious for being unintuitive and difficult to imagine. This python module attempts to create some kind of connection between a human observer and the complex workings of quantum computation by transforming quantum algorithms into music videos. 
 
-It's a python library that can be included into your qiskit project and used to convert your quantum circuit into a music video file (in .avi format).
+A python library that can be included into your qiskit project and used to convert your quantum circuit into a music video file (in .avi format).
 
 Add a barrier to a quantum circuit for each time step to sample the quantum state for, then call the _make_music_video_ method. This will create a folder with all of the generated content inside it.
 
