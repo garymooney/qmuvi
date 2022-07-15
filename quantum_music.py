@@ -1,21 +1,17 @@
 
-import matplotlib
+
 import qiskit
 from qiskit import IBMQ
 from qiskit.providers.aer import AerSimulator
 qiskit.__qiskit_version__
 import numpy as np
 import time
-from moviepy.editor import *
 
-from jinja2 import FileSystemLoader
-import matplotlib.pylab as plt
+
 import numpy as np
-from matplotlib.pylab import cm, mpl
 import os
 import glob
-import moviepy.editor as mpy
-from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
+
 import sys
 import math
 
@@ -154,7 +150,7 @@ def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input
         sounds_list[i] = sorted(sound, key = lambda a: a[0], reverse=True)
     
     import json
-    with open(f'{NAME}\\sounds_list.json', 'w') as f:
+    with open(f'{NAME}/sounds_list.json', 'w') as f:
         json.dump(sounds_list, f)
 
     E_MIX = [4, 6, 8, 9, 11, 13, 14, 16, 18, 20, 21, 23, 25, 26, 28, 30, 32, 33, 35, 37, 38, 40, 42, 44, 45, 47, 49, 50, 52, 54, 56, 57, 59, 61, 62, 64, 66, 68, 69, 71, 73, 74, 76, 78, 80, 81, 83, 85, 86, 88, 90, 92, 93, 95, 97, 98, 100, 102, 104, 105, 107, 109, 110, 112, 114, 116, 117, 119, 121, 122, 124, 126]
@@ -204,7 +200,7 @@ def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input
     #             [80,0],[40,0],[120,0],[120,0],[120,0],[120,0],[120,0],
     #             [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],]
 
-    with open(f'{NAME}\\rhythm.json', 'w') as f:
+    with open(f'{NAME}/rhythm.json', 'w') as f:
         json.dump(time_list, f)
 
     print("len(sounds_list):", len(sounds_list))
@@ -270,7 +266,7 @@ def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input
     for track in tracks:
         mid.tracks.append(track)
         
-    midi_filename = f'{NAME}\\{NAME}'
+    midi_filename = f'{NAME}/{NAME}'
     mid.save(midi_filename + ".mid")
 
     return mid
@@ -312,6 +308,13 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
             Computational basis state phase determines which instrument from the collection is used. List[List[int intrument_index]]
         note_map: Converts state number to a note number where 60 is middle C. Map[int -> int]
     """
+    import matplotlib
+    import matplotlib.pylab as plt
+    from matplotlib.pylab import cm, mpl
+    import moviepy.editor as mpy
+    from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
+    from moviepy.editor import ImageClip, concatenate, clips_array
+    
     NAME = name
     target_folder = NAME
     if os.path.isdir(target_folder) == False:
@@ -340,7 +343,7 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
 
     circ = transpile(circ, simulator)
     
-    qc.draw(filename=f'./{NAME}\\circuit.png',output="mpl")
+    qc.draw(filename=f'./{NAME}/circuit.png',output="mpl")
     result = simulator.run(circ).result()
     # = result.get_counts(circ)
     #plot_histogram(counts, title='Bell-State counts')
@@ -372,7 +375,7 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
         sounds_list[i] = sorted(sound, key = lambda a: a[0], reverse=True)
     
     import json
-    with open(f'{NAME}\\sounds_list.json', 'w') as f:
+    with open(f'{NAME}/sounds_list.json', 'w') as f:
         json.dump(sounds_list, f)
 
     E_MIX = [4, 6, 8, 9, 11, 13, 14, 16, 18, 20, 21, 23, 25, 26, 28, 30, 32, 33, 35, 37, 38, 40, 42, 44, 45, 47, 49, 50, 52, 54, 56, 57, 59, 61, 62, 64, 66, 68, 69, 71, 73, 74, 76, 78, 80, 81, 83, 85, 86, 88, 90, 92, 93, 95, 97, 98, 100, 102, 104, 105, 107, 109, 110, 112, 114, 116, 117, 119, 121, 122, 124, 126]
@@ -422,7 +425,7 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     #             [80,0],[40,0],[120,0],[120,0],[120,0],[120,0],[120,0],
     #             [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],]
 
-    with open(f'{NAME}\\rhythm.json', 'w') as f:
+    with open(f'{NAME}/rhythm.json', 'w') as f:
         json.dump(time_list, f)
 
     print("len(sounds_list):", len(sounds_list))
@@ -488,7 +491,7 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     for track in tracks:
         mid.tracks.append(track)
         
-    midi_filename = f'{NAME}\\{NAME}'
+    midi_filename = f'{NAME}/{NAME}'
     mid.save(midi_filename + ".mid")
     string = 'vlc.exe ' + midi_filename + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --sout-keep --sout "#transcode{acodec=mp3,ab=128}:std{access=file,mux=dummy,dst=./' + midi_filename + '.mp3}"'
     command_string = f"{string}"
@@ -586,8 +589,8 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
             bar_list[x].set_color(rgba[x])
         # ax_main.set_title(str(fig_title[0]), fontsize=20)
         if save:
-            files = glob.glob(target_folder + '\\*.png')
-            filename = target_folder + '\\frame_' + str(len(files)) + '.png'
+            files = glob.glob(target_folder + '/*.png')
+            filename = target_folder + '/frame_' + str(len(files)) + '.png'
             plt.savefig(filename)
             plt.close('all')
         return 0
@@ -595,14 +598,14 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
 
     import json
 
-    with open(target_folder + '\\sounds_list.json') as json_file:
+    with open(target_folder + '/sounds_list.json') as json_file:
         sound_list = json.load(json_file)
 
-    with open(target_folder + '\\rhythm.json') as json_file:
+    with open(target_folder + '/rhythm.json') as json_file:
         rhythm = json.load(json_file)
     print("rhythm: ", rhythm)
 
-    files = glob.glob(target_folder + '\\frame_*')
+    files = glob.glob(target_folder + '/frame_*')
     for file in files:
         os.remove(file)
 
@@ -620,7 +623,7 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
 
         plot_quantum_state(input_probability_vector, angle_vector, save=True)
         
-    # video_clip = mpy.ImageSequenceClip(path + '\\figs\\', fps=1)
+    # video_clip = mpy.ImageSequenceClip(path + '/figs/', fps=1)
 
 
     # clip.write_videofile('moive.mp4',fps=1,audio=False,codec='mpeg4')
@@ -637,8 +640,8 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
 
     
 
-    files = glob.glob(target_folder + '\\*.mp3')
-    #audioclip = AudioFileClip(path + "\\test-music.mp3")
+    files = glob.glob(target_folder + '/*.mp3')
+    #audioclip = AudioFileClip(path + "/test-music.mp3")
     audio_clip = mpy.AudioFileClip(files[0], fps=44100)
     arr = audio_clip.to_soundarray()
 
@@ -646,23 +649,24 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
 
     # Load myHolidays.mp4 and select the subclip 00:00:50 - 00:00:60
     # clip = VideoFileClip("cat-0.mp4").subclip(50,60)
-    # clip1 = ImageClip(path+"\\figs\\0.png")
+    # clip1 = ImageClip(path+"/figs/0.png")
     # clip1 = clip1.set_duration(1)
     #
     # # Reduce the audio volume (volume x 0.8)
     # # clip = clip.volumex(0.8)
     #
-    # clip2 = ImageClip(path+"\\figs\\1.png")
+    # clip2 = ImageClip(path+"/figs/1.png")
     # clip2 = clip2.set_duration(3)
 
     clips = []
 
     total_time = 0
-    files = glob.glob(target_folder + '\\frame_*')
+    files = glob.glob(target_folder + '/frame_*')
     iter = 0
     file_tuples = []
     for file in files:
-        num = int(os.path.splitext(file)[0].lstrip(target_folder + '\\frame_'))
+        file = file.replace("\\", "/")
+        num = int(os.path.splitext(file)[0].lstrip(target_folder + '/frame_'))
         file_tuples.append((num, file))
     file_tuples = sorted(file_tuples)
     files = [x[1] for x in file_tuples]
@@ -676,18 +680,18 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
 
     audio_clip_new = AudioArrayClip(arr[0:int(44100 * total_time)], fps=44100)
 
-    #audio_clip_new.write_audiofile(path + '\\audio.mp3')
+    #audio_clip_new.write_audiofile(path + '/audio.mp3')
 
-    circuit_video = ImageClip(target_folder + '\\circuit.png').set_duration(video.duration)
+    circuit_video = ImageClip(target_folder + '/circuit.png').set_duration(video.duration)
 
     clip_arr = clips_array([[circuit_video.resize(0.8)], [video]])
 
     # video_final = video.set_audio(audio_clip_new)
     video_final = clip_arr.set_audio(audio_clip_new)
 
-    video_final.write_videofile(target_folder + '\\' + target_folder + '.avi', fps=24, codec='mpeg4')
+    video_final.write_videofile(target_folder + '/' + target_folder + '.avi', fps=24, codec='mpeg4')
 
-    files = glob.glob(target_folder + '\\*.mp4')
+    files = glob.glob(target_folder + '/*.mp4')
     for file in files:
         os.remove(file)
 
