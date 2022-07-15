@@ -111,7 +111,7 @@ Run the python script and it should output all the content into a folder with th
 **Warning:** Using numbers in the name sometimes causes an error.
 
 # Setup
-Just download the repo and use the example .py files as a starting point. This project uses Python 3.  
+Download the repo and use the example .py files as a starting point. This project uses Python 3.  
   
 ## For quantum circuits to midi:
 Python packages: qiskit==0.37.0, and mido==1.2.10 (and some other common packages like numpy). Earlier versions will probably work too.
