@@ -111,6 +111,12 @@ Run the python script and it should output all the content into a folder with th
 **Warning:** Using numbers in the name sometimes causes an error.
 
 # Setup
+Just download the repo and use the example .py files as a starting point. This project uses Python 3.  
+  
+## For quantum circuits to midi:
+Python packages: qiskit==0.37.0, and mido==1.2.10 (and some other common packages like numpy). Earlier versions will probably work too.
+
+## For quantum circuits to music video:
 Install VLC player and add its install path to the PATH system variable so that headless VLC player can be used to convert MIDI to MP3. For the moment, before the conversion will work, VLC needs to be configured to use a sound font (.sf2 file). There is one currently in the repo. VLC should tell you how to configure the sound font by asking it to play a midi file. If it plays the midi file successfully then it should be configured correctly.  
   
-This project uses Python 3 and a few python packages, notably qiskit==0.37.0, moviepy==1.0.3, mido==1.2.10, and matplotlib==3.5.2 (there might be others). Earlier versions will probably work too.
+Python packages: qiskit==0.37.0, moviepy==1.0.3, mido==1.2.10, and matplotlib==3.5.2 (and some other common packages like numpy). Earlier versions will probably work too.
