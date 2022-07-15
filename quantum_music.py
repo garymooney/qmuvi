@@ -84,7 +84,234 @@ def f_minor(n):
             note -= 1
     return note
 
+def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = chromatic_middle_c):
+    """ Simulates the quantum circuit (with provided errors) and samples the state at every inserted barrier time step and converts the state info to a midi file. 
+    Args:
+        qc: The qiskit QuantumCircuit.
+        name: The name of the midi file to output to a folder in the working directory with the same name. The folder is created if it does not exist.
+        rhythm: The sound length and post-rest times in units of ticks (480 ticks is 1 second) List[Tuple[int soundLength, int soundRest]]
+        single_qubit_error: Amount of depolarisation error to add to each single-qubit gate.
+        two_qubit_error: Amount of depolarisation error to add to each CNOT gate.
+        input_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections). 
+            Computational basis state phase determines which instrument from the collection is used. List[List[int intrument_index]]
+        note_map: Converts state number to a note number where 60 is middle C. Map[int -> int]
+    """
+
+    NAME = name
+    target_folder = NAME
+    if os.path.isdir(target_folder) == False:
+        os.mkdir("./" + NAME)
+
+    noise_model = NoiseModel()
+    single_qubit_dep_error = depolarizing_error(single_qubit_error, 1)
+    noise_model.add_all_qubit_quantum_error(single_qubit_dep_error, ['u1', 'u2', 'u3'])
+    two_qubit_dep_error = depolarizing_error(two_qubit_error, 2)
+    noise_model.add_all_qubit_quantum_error(two_qubit_dep_error, ['cx'])
+    simulator = AerSimulator(noise_model = noise_model)
+
+    dag = circuit_to_dag(qc)
+    new_qc = QuantumCircuit(len(dag.qubits))
+
+    barrier_iter = 0
+    for node in dag.topological_op_nodes():
+        
+        if node.name == "barrier":
+            new_qc.save_density_matrix(label=f'rho{barrier_iter}')
+            barrier_iter += 1
+        if node.name != "measure":
+            new_qc.append(node.op, node.qargs, node.cargs)
+    barrier_count = barrier_iter
+    circ = new_qc
+
+    circ = transpile(circ, simulator)
+    
+    result = simulator.run(circ).result()
+
+    rhos = []
+    for i in range(barrier_count):
+        rhos.append(result.data(0)[f'rho{i}'])
+
+    sounds_list = []
+
+    for rho in rhos:
+        sound_data = []
+        eps = 1E-8
+        w,v = np.linalg.eig(rho)
+        for i,p in enumerate(w):
+            if p.real > eps:
+                prob0 = p.real
+                note = {}
+                vec = v[:,i]
+                for j,a in enumerate(vec):
+                    if np.abs(a)**2 > eps:
+                        prob1 = np.abs(a)**2
+                        angle = np.angle(a)
+                        note[j] = (prob1,angle)
+                sound_data.append((prob0,note,[abs(complex(x))*abs(complex(x)) for x in vec],[np.angle(x) for x in vec]))
+        sounds_list.append(sound_data)
+
+    for i, sound in enumerate(sounds_list):
+        sounds_list[i] = sorted(sound, key = lambda a: a[0], reverse=True)
+    
+    import json
+    with open(f'{NAME}\\sounds_list.json', 'w') as f:
+        json.dump(sounds_list, f)
+
+    E_MIX = [4, 6, 8, 9, 11, 13, 14, 16, 18, 20, 21, 23, 25, 26, 28, 30, 32, 33, 35, 37, 38, 40, 42, 44, 45, 47, 49, 50, 52, 54, 56, 57, 59, 61, 62, 64, 66, 68, 69, 71, 73, 74, 76, 78, 80, 81, 83, 85, 86, 88, 90, 92, 93, 95, 97, 98, 100, 102, 104, 105, 107, 109, 110, 112, 114, 116, 117, 119, 121, 122, 124, 126]
+
+    F_MIN = [5, 7, 8, 10, 12, 13, 15, 17, 19, 20, 22, 24, 25, 27, 29, 31, 32, 34, 36, 37, 39, 41, 43, 44, 46, 48,  49, 51, 53, 55, 56, 58, 60, 61, 63, 65, 67, 68, 70, 72, 74, 75, 77, 79, 80, 82, 84, 86, 87, 89, 91, 92, 94, 96, 97, 99, 101, 103, 104, 106, 108, 109, 111, 113, 115, 116, 118, 120, 121, 123, 125, 127]
+
+    C_MAJ = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24, 26, 28, 29, 31, 33, 35, 36, 38, 40, 41, 43, 45, 47, 48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84, 86, 88, 89, 91, 93, 95, 96, 98, 100, 101, 103, 105, 107, 108, 110, 112, 113, 115, 117, 119, 120, 122, 124, 125, 127]
+
+
+    def round_to_scale(n, scale = C_MAJ):
+        CURR_MODE = scale
+        note = 60+n
+        
+        # Shifting
+        if CURR_MODE and note < CURR_MODE[0]:
+            note = CURR_MODE[0]
+        else:
+            while (CURR_MODE and note not in CURR_MODE):
+                note -= 1
+        return note
+
+    
+
+    from mido import Message, MetaMessage, MidiFile, MidiTrack, bpm2tempo
+
+    mid = MidiFile()
+    numtracks = 8
+    tracks = [MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack()]
+    #track_instruments = ['piano','bass','brass','ensemble','organ','pipe','reed','strings']
+    track_instruments = []
+    #input_instruments = ['ensemble']*8
+    for intr in range(8):
+        if intr < len(input_instruments):
+            track_instruments.append(input_instruments[intr])
+        else:
+            track_instruments.append(input_instruments[len(input_instruments)-1])
+
+    #track_instruments = ['ensemble']*8
+
+    tracks[0].append(MetaMessage('set_tempo', tempo=bpm2tempo(60)))
+
+    #time_list = [[120,0]]*25
+    time_list = rhythm
+    print("time_list:", time_list)
+    #time_list = [[80,0],[40,0],[120,0],[120,0],[120,0],[240,0],
+    #             [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],
+    #             [80,0],[40,0],[120,0],[120,0],[120,0],[120,0],[120,0],
+    #             [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],]
+
+    with open(f'{NAME}\\rhythm.json', 'w') as f:
+        json.dump(time_list, f)
+
+    print("len(sounds_list):", len(sounds_list))
+    for t_i, sound in enumerate(sounds_list):    
+        
+        active_notes = []
+        
+        sorted_chords = sorted(sound, key = lambda a: a[0], reverse=True)
+        max_chord_prob = sorted_chords[0][0]
+        for trackno in range(numtracks):
+            track = tracks[trackno]
+
+            if trackno >= len(sorted_chords):
+                track.append(Message('note_on', note=0, velocity=0, time=0))
+                active_notes.append((trackno,note))
+                continue
+                
+            chord_prob, chord, _, _ = sorted_chords[trackno]
+            
+            max_note_prob = max([chord[n][0] for n in chord])
+            
+            noteiter = 0
+            for n in chord:
+                noteiter += 1
+                
+                note_prob, angle = chord[n]
+                
+
+                vol = (note_prob/max_note_prob)*(chord_prob/max_chord_prob)
+                
+                note = note_map(n)
+                #note = round_to_scale(n, scale=C_MAJ)
+                #notelist = []
+                #note = notelist[n%len(notelist)]
+                vol_128 = round(127*(vol))
+                #instrument = round(127*(angle + np.pi)/(2*np.pi))
+                instruments = track_instruments[trackno]
+                instrument = instruments[round((len(track_instruments[trackno])-1)*((angle/(2*np.pi)) % 1))]
+
+
+
+                #instrument = 1
+
+                
+                track.append(Message('program_change', program=instrument, time=0))
+                track.append(Message('note_on', note=note, velocity=vol_128, time=0))
+                active_notes.append((trackno,note))
+        
+        
+        for track in tracks:   
+            track.append(Message('note_on', note=0, velocity=0, time=time_list[t_i][0]))
+            track.append(Message('note_off', note=0, velocity=0, time=0))
+        
+        for trackno, note in active_notes:
+            track = tracks[trackno]
+            track.append(Message('note_off', note=note, velocity=0, time=0))
+            
+        for track in tracks:
+            track.append(Message('note_on', note=0, velocity=0, time=time_list[t_i][1]))
+            track.append(Message('note_off', note=0, velocity=0, time=0))
+                            
+                            
+    for track in tracks:
+        mid.tracks.append(track)
+        
+    midi_filename = f'{NAME}\\{NAME}'
+    mid.save(midi_filename + ".mid")
+
+    return mid
+
+def convert_midi_to_mp3(midi_filename_no_ext, wait_time = 3):
+    """ Uses headless VLC to convert a midi file to mp3 in the working directory.
+    Args:
+        midi_filename_no_ext: the name of the midi file in the working dir.
+        wait_time: The amount of time to wait after the VLC process has started. Used to make sure the process is finished before continuing execution.
+    """
+
+    string = 'vlc.exe ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --sout-keep --sout "#transcode{acodec=mp3,ab=128}:std{access=file,mux=dummy,dst=./' + midi_filename_no_ext + '.mp3}"'
+    command_string = f"{string}"
+
+    def run_vlc():
+        import os
+        #print(string)
+        directories = os.system(command_string)
+
+    import threading
+    t = threading.Thread(target=run_vlc,name="vlc",args=())
+    t.daemon = True
+    t.start()
+
+    import time
+    print("Converting " + midi_filename_no_ext + ".mid midi to " + midi_filename_no_ext + ".mp3...")
+    time.sleep(wait_time)
+
+
 def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = chromatic_middle_c):
+    """ Simulates the quantum circuit (with provided errors) and samples the state at every inserted barrier time step and converts the state info to a music video file (.avi). 
+    Args:
+        qc: The qiskit QuantumCircuit.
+        name: The name of the midi file to output to a folder in the working directory with the same name. The folder is created if it does not exist.
+        rhythm: The sound length and post-rest times in units of ticks (480 ticks is 1 second) List[Tuple[int soundLength, int soundRest]]
+        single_qubit_error: Amount of depolarisation error to add to each single-qubit gate.
+        two_qubit_error: Amount of depolarisation error to add to each CNOT gate.
+        input_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections). 
+            Computational basis state phase determines which instrument from the collection is used. List[List[int intrument_index]]
+        note_map: Converts state number to a note number where 60 is middle C. Map[int -> int]
+    """
     NAME = name
     target_folder = NAME
     if os.path.isdir(target_folder) == False:

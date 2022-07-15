@@ -1,5 +1,5 @@
 import quantum_music
-from quantum_music import make_music_video, get_instruments, chromatic_middle_c
+from quantum_music import make_music_midi, make_music_video, get_instruments, chromatic_middle_c
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -20,4 +20,5 @@ circ.cx(2,1)
 circ.barrier()
 circ.cx(1,0)
 circ.barrier()
+make_music_midi(circ, "example_midi_only", [(120, 60)]*8, 0.02, 0.05, [[57], get_instruments('tuned_perc')], note_map=chromatic_middle_c)
 make_music_video(circ, "example", [(120, 60)]*8, 0.02, 0.05, [[57], get_instruments('tuned_perc')], note_map=chromatic_middle_c)
