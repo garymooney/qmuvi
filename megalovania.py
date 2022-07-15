@@ -137,5 +137,5 @@ circ.barrier()
 time_list = [(60,0),(60,0),(60,60),(60,120),(60,60),(60,60),(120,0),(60,0),(60,0),(60,0)]*4
 chromatic_G1 = lambda n: n + 31
 
-make_music_midi(circ, "megalovania_midi_only", time_list, 0.01, 0.02, [[57], get_instruments('piano')], note_map=chromatic_G1)
-#make_music_video(circ, "megalovania", time_list, 0.01, 0.02, [[57], get_instruments('piano')], note_map=chromatic_G1)
+make_music_midi(circ, "megalovania_midi_only", time_list, 0.01, 0.02, [[81]], note_map=chromatic_G1)
+#make_music_video(circ, "megalovania", time_list, 0.01, 0.02, [[81], get_instruments('piano')], note_map=chromatic_G1)
