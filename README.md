@@ -17,7 +17,17 @@ A noisy quantum density matrix simulator is used to sample mixed states (a proba
 ### make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, instrument_collections, note_map)
 Generates a music video from a qiskit quantum algorithm with barriers  
 _**qc:**_ quantum circuit (qiskit QuantumCircuit)  
-_**name:**_ name of the music video (string)  
+_**name:**_ name of the music video file and the folder that the data will be saved to (string)  
+_**rhythm:**_ the timings for each sample (list of tuples (int, int). First element is note length, second element is rest time. Units of ticks 480 = 1 sec).  
+_**single_qubit_error:**_ single qubit depolarisation noise (float)  
+_**two_qubit_error:**_ two-qubit depolarisation noise (float)  
+_**instrument_collections:**_ list of instrument collections for each pure state. Instrument for note is chosen from collection based on state phase (list of list of ints)  
+_**note_map:**_ the note map to convert from state number to note number. Middle C is 60 (map from int to int)  
+
+### make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, instrument_collections, note_map)
+Generates music from a qiskit quantum algorithm with barriers and outputs it as a midi file  
+_**qc:**_ quantum circuit (qiskit QuantumCircuit)  
+_**name:**_ name of the music file and the folder that the data will be saved to (string)  
 _**rhythm:**_ the timings for each sample (list of tuples (int, int). First element is note length, second element is rest time. Units of ticks 480 = 1 sec).  
 _**single_qubit_error:**_ single qubit depolarisation noise (float)  
 _**two_qubit_error:**_ two-qubit depolarisation noise (float)  
@@ -55,7 +65,7 @@ _**state_number:**_ the state number (int)
 # Example:
 ```
 import quantum_music
-from quantum_music import make_music_video, get_instruments, chromatic_middle_c
+from quantum_music import make_music_midi, make_music_video, get_instruments, chromatic_middle_c
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -85,6 +95,10 @@ intruments = []
 intruments.append([73]) # a pipe
 intruments.append(get_instruments('tuned_perc'))
 
+# Converts the circuit to music and outputs it as a midi file
+make_music_midi(circ, "my_quantum_midi", rhythm, single_qubit_error, two_qubit_error, intruments, note_map=chromatic_middle_c)
+
+# Converts the circuit to music and video and outputs the result as a .avi file
 make_music_video(circ, "my_quantum_video", rhythm, single_qubit_error, two_qubit_error, intruments, note_map=chromatic_middle_c)
 ```
 
