@@ -146,5 +146,5 @@ while i < repeats:
 time_list = [(60,0),(60,0),(60,60),(60,120),(60,60),(60,60),(120,0),(60,0),(60,0),(60,0)]*4*repeats
 chromatic_G1 = lambda n: n + 31
 
-make_music_midi(circ, "megalovania_loop_midi_only", time_list, 0.01, 0.02, [[81],[80]], note_map=chromatic_G1)
+make_music_video(circ, "megalovania_loop", time_list, 0.01, 0.02, [[81],[80]], note_map=chromatic_G1, circuit_layers_per_line=80)
 #make_music_video(circ, "megalovania_loop", time_list, 0.01, 0.02, [[81],[80]], note_map=chromatic_G1)
