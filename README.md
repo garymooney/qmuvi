@@ -1,10 +1,10 @@
 # Quantum Music Videos
+<img src="https://user-images.githubusercontent.com/6459545/179480013-c3bf340d-32ec-4738-85c7-e16513dbfeb1.png" width="700">
+
 
 Quantum computing is notorious for being unintuitive and difficult to imagine. This python module attempts to create some kind of connection between a human observer and the complex workings of quantum computation by transforming quantum algorithms into music videos. 
 
-This is a python library that can be included into your qiskit project and used to convert your quantum circuits into music video files (in .avi format).
-
-Add a barrier to a quantum circuit for each time step to sample the quantum state for, then call the _make_music_video_ method. This will create a folder with all of the generated content inside it. You could also use _make_music_midi_ to only output the midi file, avoiding the need to install VLC player, and the moviepy and matplotlib packages.
+This is a python library that can be included into your qiskit project and used to convert your quantum circuits into music video files (in .avi format). Add a barrier to a quantum circuit for each time step to sample the quantum state for, then call the _make_music_video_ or _make_music_midi_ methods. This will create a folder with all of the generated content inside it.
 
 # Qiskit Melbourne 2022 Hackathon
 <img src="https://user-images.githubusercontent.com/6459545/179168389-ee36690b-0cc8-4192-becd-1e699b179ce3.png" width="700">
