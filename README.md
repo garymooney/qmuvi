@@ -23,7 +23,7 @@ A noisy quantum density matrix simulator is used to sample mixed states (a proba
 Each pure state is a state vector representing a superposition of computational basis states. A state with no noise is a pure state and so will only have a single non-zero term in the probabilistic mixture. As incoherent noise is introduced, more terms with non-zero probability will appear. The superposition of states in a pure state will determine the notes that are played. The mapping from integer representation of the state to note number can be customised by passing in a method that takes an int and returns an int (60 is middle C), this allows the possibility to map states to notes of musical scales. A list of instrument collections (see example below) can be specified to assign, in order of decreasing probability, instrument collections to the pure states of the mixture (the instrument collection list can be manually specified in the method call). A maximum of 8 instrument collections can be specified (if there are less than 8, the remaining pure states will use the last instrument collection in the list). The instrument for each note is chosen from the collection by the state's phase angle in the superposition. The angles are discretised to match the size of the collection, where an angle of zero corresponds to the first instrument. The velocity (which is proportional to volume) of each note is calculated by multiplying the propability of the pure state in the mixture and the probability of the computational basis state of the pure state's superposition, normalised such that there is always a note with velocity equal to 1.  
 
 # Methods
-### make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, instrument_collections, note_map)
+### make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, instrument_collections, note_map, invert_colours)
 Generates a music video from a qiskit quantum algorithm with barriers  
 _**qc:**_ quantum circuit (qiskit QuantumCircuit)  
 _**name:**_ name of the music video file and the folder that the data will be saved to (string)  
@@ -31,7 +31,8 @@ _**rhythm:**_ the timings for each sample (list of tuples (int, int). First elem
 _**single_qubit_error:**_ single qubit depolarisation noise (float)  
 _**two_qubit_error:**_ two-qubit depolarisation noise (float)  
 _**instrument_collections:**_ list of instrument collections for each pure state. Instrument for note is chosen from collection based on state phase (list of list of ints)  
-_**note_map:**_ the note map to convert from state number to note number. Middle C is 60 (map from int to int)  
+_**note_map:**_ the note map to convert from state number to note number. Middle C is 60 (default: chromatic_middle_c) (map from int to int)  
+_**invert_colours:**_ whether to invert the colours of the video so that the background is black (default: False) (bool)
 
 ### make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, instrument_collections, note_map)
 Generates music from a qiskit quantum algorithm with barriers and outputs it as a midi file  
@@ -41,7 +42,7 @@ _**rhythm:**_ the timings for each sample (list of tuples (int, int). First elem
 _**single_qubit_error:**_ single qubit depolarisation noise (float)  
 _**two_qubit_error:**_ two-qubit depolarisation noise (float)  
 _**instrument_collections:**_ list of instrument collections for each pure state. Instrument for note is chosen from collection based on state phase (list of list of ints)  
-_**note_map:**_ the note map to convert from state number to note number. Middle C is 60 (map from int to int)  
+_**note_map:**_ the note map to convert from state number to note number. Middle C is 60 (default: chromatic_middle_c) (map from int to int)
 
 ### get_instruments(instrument_collection_name)
 Gets a list of integers corresponding to instruments according to the standard General MIDI (see https://en.wikipedia.org/wiki/General_MIDI)  
