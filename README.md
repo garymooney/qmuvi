@@ -13,7 +13,7 @@ This is our team’s project for the competition. We won first place by the judg
 
 # Mapping quantum to music
 <img src="https://user-images.githubusercontent.com/6459545/179481509-843ede43-20a9-4392-916e-3e6b4757bbe7.png" width="220">
-A noisy quantum density matrix simulator is used to sample mixed states (a probabilistic mixture of pure states) at various time steps.  
+A quantum density matrix simulator is used to sample mixed states (a probabilistic mixture of pure states) at various time steps.  
 <br />
 <br />
 
