@@ -322,6 +322,30 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     
     convert_midi_to_mp3(f'{NAME}/{NAME}', wait_time = 3)
 
+
+    dag = circuit_to_dag(qc)
+
+    barrier_iter = 0
+    for node in dag.topological_op_nodes():
+        if node.name == "barrier":
+            barrier_iter += 1
+    barrier_count = barrier_iter
+
+    circuit_list = []
+    current_circuit = QuantumCircuit(len(dag.qubits))
+    for node in dag.topological_op_nodes():
+        if node.name == "barrier":
+            circuit_list.append(current_circuit)
+            current_circuit = QuantumCircuit(len(dag.qubits))
+        if node.name != "measure" and node.name != "barrier":
+            current_circuit.append(node.op, node.qargs, node.cargs)
+    circuit_list.append(current_circuit)
+
+    for i, partial_circ in enumerate(circuit_list):
+        partial_circ.draw(filename=f'./{NAME}/partial_circ_{i}.png',output="mpl", fold=-1)
+
+    qc.draw(filename=f'./{NAME}/circuit.png',output="mpl", fold=circuit_layers_per_line)
+
     def plot_quantum_state(input_probability_vector, angle_vector, main_title=None, fig_title=None, save=None):
         num_figs = 8
         input_length = input_probability_vector.shape[1]
@@ -446,15 +470,67 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     video = concatenate(clips, method="compose")
     audio_clip_new = AudioArrayClip(arr[0:int(44100 * total_time)], fps=44100)
 
-    qc.draw(filename=f'./{NAME}/circuit.png',output="mpl", fold=circuit_layers_per_line)
+    from moviepy.video.fx import invert_colors, crop
 
     circuit_video = ImageClip(target_folder + '/circuit.png').set_duration(video.duration)
-    from moviepy.video.fx import invert_colors
     bg_color = [0xFF, 0xFF, 0xFF]
+    bg_color_inverse = [0x00, 0x00, 0x00]
     if invert_colours == True:
         circuit_video = invert_colors.invert_colors(circuit_video)
         video = invert_colors.invert_colors(video)
         bg_color = [0x00, 0x00, 0x00]
+        bg_color_inverse = [0xFF, 0xFF, 0xFF]
+
+    partial_circ_image_clips = []
+    positions_x = []
+    accumulated_width = 0
+    for i, partial_circ in enumerate(circuit_list):
+        
+        new_image_clip = ImageClip(target_folder + f'/partial_circ_{i}.png').set_duration(video.duration)
+        if new_image_clip.size[0] > 156:
+            new_image_clip = crop.crop(new_image_clip, x1=133, x2=new_image_clip.size[0]-23)
+        
+        accumulated_width += new_image_clip.size[0]
+        positions_x.append(accumulated_width)
+        
+        partial_circ_image_clips.append(new_image_clip)
+    
+    circ_clip_arr = clips_array([[x for x in partial_circ_image_clips]], bg_color=[0xFF, 0xFF, 0xFF])
+    circ_clip_arr.fps = 24
+    
+    clip_orig_x = circ_clip_arr.size[0]
+    circ_clip_arr = circ_clip_arr.margin(left=clip_orig_x, right=clip_orig_x, color=[0xFF, 0xFF, 0xFF])
+    #circ_clip_arr = crop.crop(circ_clip_arr, x1 = -clip_orig_x, x2 = 2 * clip_orig_x)
+    
+    #circ_clip_arr.save_frame("contatenated_circ.png", t = 0.1)
+    h = circ_clip_arr.h
+    w = clip_orig_x
+
+    video_duration = video.duration
+
+    def f(gf,t):
+        x_start = w/2
+        time_fraction = t / video_duration
+        accumulated_time = 0
+        prev_accumulated_time = 0
+        for iter in range(len(rhythm)):
+            accumulated_time += (rhythm[iter][0] + rhythm[iter][1]) / 480.0
+            if t < accumulated_time:
+                break
+            prev_accumulated_time = accumulated_time
+        target_iter = iter
+        prev_iter = iter - 1
+        prev_time = prev_accumulated_time
+        target_time = accumulated_time
+        target_pos = positions_x[iter+1]
+        prev_pos = positions_x[iter]
+        x = int(x_start + (prev_pos + (target_pos - prev_pos)*(t - prev_time)/(target_time - prev_time)))
+        y = 0
+        return gf(t)[y:y+h, x:x+w]
+
+    
+    circ_clip_arr = circ_clip_arr.fl(f, apply_to = "mask")
+
 
     circuit_size = circuit_video.size
     video_size = video.size
@@ -463,11 +539,31 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     y_scale = video_size[1] / circuit_size[1]
     circuit_rescale = min(x_scale, y_scale)
     
-    clip_arr = clips_array([[circuit_video.resize(circuit_rescale)], [video]], bg_color=bg_color)
+    if invert_colours == True:
+        circ_clip_arr = invert_colors.invert_colors(circ_clip_arr)
 
+    #clip_arr = clips_array([[circuit_video.resize(circuit_rescale)], [video]], bg_color=bg_color)
+    clip_arr = clips_array([[circ_clip_arr], [video]], bg_color=bg_color)
+    
     # video_final = video.set_audio(audio_clip_new)
     video_final = clip_arr.set_audio(audio_clip_new)
+    video_final = crop.crop(video_final, x1=video_final.size[0]/2-video.size[0]/2, x2=video_final.size[0]/2+video.size[0]/2)
+    
+    def draw_rectangle(frame):
+        """Draw a rectangle in the frame"""
+        # change (top, bottom, left, right) to your coordinates
+        top = 1
+        bottom = int(circ_clip_arr.size[1] - 1)
+        left = int(video_final.size[0] / 2 - 5)
+        right = int(video_final.size[0] / 2 + 5)
+        frame[top, left: right] = bg_color_inverse
+        frame[bottom, left: right] = bg_color_inverse
+        frame[top: bottom, left] = bg_color_inverse
+        frame[top: bottom, right] = bg_color_inverse
+        return frame
 
+    video_final = video_final.fl_image(draw_rectangle)
+    
     video_final.write_videofile(target_folder + '/' + target_folder + '.avi', fps=24, codec='mpeg4')
 
     files = glob.glob(target_folder + '/*.mp4')
