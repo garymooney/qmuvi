@@ -105,6 +105,7 @@ def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input
     two_qubit_dep_error = depolarizing_error(two_qubit_error, 2)
     noise_model.add_all_qubit_quantum_error(two_qubit_dep_error, ['cx'])
     simulator = AerSimulator(noise_model = noise_model)
+    simulator_zeronoise = AerSimulator()
 
     dag = circuit_to_dag(qc)
     new_qc = QuantumCircuit(len(dag.qubits))
@@ -123,10 +124,17 @@ def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input
     circ = transpile(circ, simulator)
     
     result = simulator.run(circ).result()
+    result_zeronoise = simulator_zeronoise.run(circ).result()
 
     rhos = []
     for i in range(barrier_count):
         rhos.append(result.data(0)[f'rho{i}'])
+        
+    rhos_zeronoise = []
+    for i in range(barrier_count):
+        rhos_zeronoise.append(result_zeronoise.data(0)[f'rho{i}'])
+    
+    fidelity_list = [qi.state_fidelity(rho,rhos_zeronoise[i]) for i,rho in enumerate(rhos)]
 
     sounds_list = []
 
@@ -153,6 +161,9 @@ def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input
     import json
     with open(f'{NAME}/sounds_list.json', 'w') as f:
         json.dump(sounds_list, f)
+     
+    with open(f'{NAME}/fidelity_list.json', 'w') as f:
+        json.dump(fidelity_list, f)
 
     E_MIX = [4, 6, 8, 9, 11, 13, 14, 16, 18, 20, 21, 23, 25, 26, 28, 30, 32, 33, 35, 37, 38, 40, 42, 44, 45, 47, 49, 50, 52, 54, 56, 57, 59, 61, 62, 64, 66, 68, 69, 71, 73, 74, 76, 78, 80, 81, 83, 85, 86, 88, 90, 92, 93, 95, 97, 98, 100, 102, 104, 105, 107, 109, 110, 112, 114, 116, 117, 119, 121, 122, 124, 126]
 
@@ -289,7 +300,7 @@ def convert_midi_to_mp3_vlc(midi_filename_no_ext, wait_time = 3):
         wait_time: The amount of time to wait after the VLC process has started. Used to make sure the process is finished before continuing execution.
     """
 
-    string = 'vlc.exe ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --sout-keep --sout "#transcode{acodec=mp3,ab=128}:std{access=file,mux=dummy,dst=./' + midi_filename_no_ext + '.mp3}"'
+    string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --sout-keep --sout "#transcode{acodec=mp3,ab=128}:std{access=file,mux=dummy,dst=./' + midi_filename_no_ext + '.mp3}"'
     command_string = f"{string}"
 
     def run_vlc():
@@ -636,13 +647,14 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     clip_arr = clips_array([[circ_clip_arr], [video]], bg_color=bg_color)
     
     files = glob.glob(target_folder + '/*.mp3')
+    video_final = clip_arr
     if len(files) > 0:
         audio_clip = mpy.AudioFileClip(files[0], fps=44100)
         arr = audio_clip.to_soundarray()
         audio_clip_new = AudioArrayClip(arr[0:int(44100 * total_time)], fps=44100)
         video_final = clip_arr.set_audio(audio_clip_new)
 
-    video_final = crop.crop(video_final, x1=int(video_final.size[0]/2-circ_clip_target_width/2), x2=int(video_final.size[0]/2+circ_clip_target_width/2))
+    video_final = crop.crop(video_final, x1=int(clip_arr.size[0]/2-circ_clip_target_width/2), x2=int(clip_arr.size[0]/2+circ_clip_target_width/2))
     
     vertical_scale = 1080 / video_final.size[1]
     if video_final.size[1] / 1080 > video_final.size[0] / 1920:
@@ -731,11 +743,11 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     #    return clip.fl(fl)
 #
     #video_final = supersample(video_final, d=0.008, nframes=3)
-    video_final.write_videofile(target_folder + '/' + target_folder + '.avi', fps=fps, codec='png')
+    video_final.write_videofile(target_folder + '/' + target_folder + '.mp4', fps=fps, codec='mpeg4')
 
     files = glob.glob(target_folder + '/*.mp4')
-    for file in files:
-        os.remove(file)
+#     for file in files:
+#         os.remove(file)
 
 def get_instruments(instruments_name):
     '''
