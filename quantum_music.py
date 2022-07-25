@@ -738,6 +738,26 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         os.remove(file)
 
 def get_instruments(instruments_name):
+    '''
+    Instrument collections:
+        'piano': list(range(1,9)),
+        'tuned_perc': list(range(9,17)),
+        'organ': list(range(17,25)),
+        'guitar': list(range(25,33)),
+        'bass': list(range(33,41)),
+        'strings': list(range(41,49)),
+        'ensemble': list(range(49,57)),
+        'brass': list(range(57,65)),
+        'reed': list(range(65,73)),
+        'pipe': list(range(73,81)),
+        'synth_lead': list(range(81,89)),
+        'synth_pad': list(range(89,97)),
+        'synth_effects': list(range(97,105)),
+        'ethnic': list(range(105,113)),
+        'percussive': list(range(113,121)),
+        'sound_effects': list(range(121,128)),
+        'windband': [74,69,72,67,57,58,71,59]
+    '''
     instrument_dict = {'piano': list(range(1,9)),
                     'tuned_perc': list(range(9,17)),
                     'organ': list(range(17,25)),
@@ -748,6 +768,12 @@ def get_instruments(instruments_name):
                     'brass': list(range(57,65)),
                     'reed': list(range(65,73)),
                     'pipe': list(range(73,81)),
+                    'synth_lead': list(range(81,89)),
+                    'synth_pad': list(range(89,97)),
+                    'synth_effects': list(range(97,105)),
+                    'ethnic': list(range(105,113)),
+                    'percussive': list(range(113,121)),
+                    'sound_effects': list(range(121,128)),
                     'windband': [74,69,72,67,57,58,71,59]}
     return instrument_dict[instruments_name]
 
