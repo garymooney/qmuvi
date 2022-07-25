@@ -105,6 +105,7 @@ def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input
     two_qubit_dep_error = depolarizing_error(two_qubit_error, 2)
     noise_model.add_all_qubit_quantum_error(two_qubit_dep_error, ['cx'])
     simulator = AerSimulator(noise_model = noise_model)
+    simulator_zeronoise = AerSimulator()
 
     dag = circuit_to_dag(qc)
     new_qc = QuantumCircuit(len(dag.qubits))
@@ -123,10 +124,17 @@ def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input
     circ = transpile(circ, simulator)
     
     result = simulator.run(circ).result()
+    result_zeronoise = simulator_zeronoise.run(circ).result()
 
     rhos = []
     for i in range(barrier_count):
         rhos.append(result.data(0)[f'rho{i}'])
+        
+    rhos_zeronoise = []
+    for i in range(barrier_count):
+        rhos_zeronoise.append(result_zeronoise.data(0)[f'rho{i}'])
+    
+    fidelity_list = [qi.state_fidelity(rho,rhos_zeronoise[i]) for i,rho in enumerate(rhos)]
 
     sounds_list = []
 
@@ -153,6 +161,9 @@ def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input
     import json
     with open(f'{NAME}/sounds_list.json', 'w') as f:
         json.dump(sounds_list, f)
+     
+    with open(f'{NAME}/fidelity_list.json', 'w') as f:
+        json.dump(fidelity_list, f)
 
     E_MIX = [4, 6, 8, 9, 11, 13, 14, 16, 18, 20, 21, 23, 25, 26, 28, 30, 32, 33, 35, 37, 38, 40, 42, 44, 45, 47, 49, 50, 52, 54, 56, 57, 59, 61, 62, 64, 66, 68, 69, 71, 73, 74, 76, 78, 80, 81, 83, 85, 86, 88, 90, 92, 93, 95, 97, 98, 100, 102, 104, 105, 107, 109, 110, 112, 114, 116, 117, 119, 121, 122, 124, 126]
 
