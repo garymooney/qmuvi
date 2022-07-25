@@ -21,4 +21,4 @@ circ.barrier()
 circ.cx(1,0)
 circ.barrier()
 
-make_music_video(circ, "example_music_video", [(160, 80)]*8, 0.02, 0.05, [[57], get_instruments('tuned_perc')], note_map=chromatic_middle_c)
+make_music_video(circ, "example_music_video", [(16, 8)]*8, 0.02, 0.05, [[57], get_instruments('tuned_perc')], note_map=chromatic_middle_c)

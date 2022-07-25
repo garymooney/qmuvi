@@ -71,8 +71,6 @@ circ.cx(4,3)
 circ.cx(4,2)
 circ.cx(4,1)
 circ.barrier()
-
-
 circ.x(0)
 circ.cx(4,3)
 circ.cx(4,0)
@@ -143,5 +141,5 @@ time_list = [(60,0),(60,0),(60,60),(60,120),(60,60),(60,60),(120,0),(60,0),(60,0
 #time_list = [(6,0),(6,0),(6,6),(6,12),(6,6),(6,6),(12,0),(6,0),(6,0),(6,0)]*2
 chromatic_G1 = lambda n: n + 31
 
-#make_music_video(circ, "megalovania", time_list, 0.01, 0.02, [[81]], note_map=chromatic_G1, invert_colours=True)
-make_music_midi(circ, "megalovania_midi", time_list, 0.01, 0.02, [[81], [80, 82, 83, 84]], note_map=chromatic_G1)
+make_music_video(circ, "megalovania", time_list, 0.01, 0.02, [[81]], note_map=chromatic_G1, invert_colours=True, fps=60)
+#make_music_midi(circ, "megalovania_midi", time_list, 0.01, 0.02, [[81], [80, 82, 83, 84]], note_map=chromatic_G1)

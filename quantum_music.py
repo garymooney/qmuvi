@@ -282,7 +282,7 @@ def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input
 
     return mid
 
-def convert_midi_to_mp3(midi_filename_no_ext, wait_time = 3):
+def convert_midi_to_mp3_vlc(midi_filename_no_ext, wait_time = 3):
     """ Uses headless VLC to convert a midi file to mp3 in the working directory.
     Args:
         midi_filename_no_ext: the name of the midi file in the working dir.
@@ -319,21 +319,27 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
             Computational basis state phase determines which instrument from the collection is used. List[List[int intrument_index]]
         note_map: Converts state number to a note number where 60 is middle C. Map[int -> int]
     """
+    
+    make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map=note_map)
+    convert_midi_to_mp3_vlc(f'{name}/{name}', wait_time = 3)
+    make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = note_map, invert_colours = invert_colours, fps = fps)
+
+def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = chromatic_middle_c, invert_colours = False, fps=60):
+    
     import matplotlib
     import matplotlib.pylab as plt
     from matplotlib.pylab import cm, mpl
     import moviepy.editor as mpy
     from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
     from moviepy.editor import ImageClip, concatenate, clips_array
+    from moviepy.video.fx import invert_colors, crop, fadeout
+    from moviepy.editor import CompositeVideoClip
+    import copy
     
-    mid = make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map=note_map)
     NAME = name
     target_folder = NAME
     circuit_layers_per_line = 50
     
-    convert_midi_to_mp3(f'{NAME}/{NAME}', wait_time = 3)
-
-
     dag = circuit_to_dag(qc)
 
     barrier_iter = 0
@@ -357,7 +363,7 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
 
     barrier_circuit = QuantumCircuit(len(dag.qubits))
     barrier_circuit.barrier()
-    barrier_circuit.draw(filename=f'./{NAME}/partial_circ_berrier.png',output="mpl", fold=-1)
+    barrier_circuit.draw(filename=f'./{NAME}/partial_circ_barrier.png',output="mpl", fold=-1)
 
     for i, partial_circ in enumerate(circuit_list):
         partial_circ.draw(filename=f'./{NAME}/partial_circ_{i}.png',output="mpl", fold=-1)
@@ -463,10 +469,6 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
 
         plot_quantum_state(input_probability_vector, angle_vector, save=True)
 
-    files = glob.glob(target_folder + '/*.mp3')
-    audio_clip = mpy.AudioFileClip(files[0], fps=44100)
-    arr = audio_clip.to_soundarray()
-
     clips = []
 
     total_time = 0
@@ -486,15 +488,10 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
         iter += 1
 
     video = concatenate(clips, method="compose")
-    audio_clip_new = AudioArrayClip(arr[0:int(44100 * total_time)], fps=44100)
 
-    from moviepy.video.fx import invert_colors, crop
-
-    circuit_video = ImageClip(target_folder + '/circuit.png').set_duration(video.duration)
     bg_color = [0xFF, 0xFF, 0xFF]
     bg_color_inverse = [0x00, 0x00, 0x00]
     if invert_colours == True:
-        circuit_video = invert_colors.invert_colors(circuit_video)
         video = invert_colors.invert_colors(video)
         bg_color = [0x00, 0x00, 0x00]
         bg_color_inverse = [0xFF, 0xFF, 0xFF]
@@ -503,16 +500,45 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     positions_x = []
     accumulated_width = 0
     barrier_image_width = 0
-    image_barrier_clip = ImageClip(target_folder + f'/partial_circ_berrier.png').set_duration(video.duration)
+    image_barrier_clip = ImageClip(target_folder + f'/partial_circ_barrier.png').set_duration(video.duration)
     if image_barrier_clip.size[0] > 156:
         image_barrier_clip = crop.crop(image_barrier_clip, x1=133, x2=image_barrier_clip.size[0]-23)
     barrier_image_width = image_barrier_clip.size[0]
 
+    # create image clip same size as barrier.
     image_empty_clip = ImageClip(target_folder + f'/partial_circ_empty.png').set_duration(video.duration)
     if image_empty_clip.size[0] > 156:
         image_empty_clip = crop.crop(image_empty_clip, x1=133, x2=image_empty_clip.size[0]-23)
     image_empty_clip_array = clips_array([[image_empty_clip, image_empty_clip, image_empty_clip]], bg_color=[0xFF, 0xFF, 0xFF])
     image_empty_clip_array = crop.crop(image_empty_clip_array, x1=0, x2=barrier_image_width)
+    
+
+    image_empty_clip = ImageClip(target_folder + f'/partial_circ_barrier.png').set_duration(video.duration)
+    if image_empty_clip.size[0] > 156:
+        image_empty_clip = crop.crop(image_empty_clip, x1=133, x2=image_empty_clip.size[0]-23)
+    
+    barrier_only_clip = crop.crop(image_empty_clip, x1=35, x2=72)
+    barrier_only_clip = barrier_only_clip.margin(left=35, right=72, color=[0xFF, 0xFF, 0xFF])
+
+    barrier_only_clip_mask = barrier_only_clip.to_mask()
+    barrier_only_clip_mask = barrier_only_clip_mask.fl_image( lambda pic: filter_colour_round_with_threshold(pic, threshold=0.9, colour_dark=0.0, colour_light=1.0))
+    barrier_only_clip_mask = invert_colors.invert_colors(barrier_only_clip_mask)
+    #barrier_only_clip.save_frame("./barrier_only_clip.png", t=0)
+
+
+    #barrier_only_clip = barrier_only_clip.fl_image( lambda pic: filter_color_multiply(pic, [0, 0, 255]))
+    barrier_only_clip = barrier_only_clip.fl_image( lambda pic: filter_color_blend(pic, [255, 255, 255], 0.3))
+    barrier_only_clip = barrier_only_clip.add_mask() # might be able to remove this line
+    barrier_only_clip = barrier_only_clip.set_mask(barrier_only_clip_mask)
+    vertical_shrink = 0.05
+    clip_height = barrier_only_clip.size[1]
+    barrier_start_y = 43
+    barrier_end_y = 25
+    height = clip_height - barrier_start_y - barrier_end_y
+    barrier_only_clip = crop.crop(barrier_only_clip, y1 = int((vertical_shrink/2.0) * height) + barrier_start_y, y2 = int((1.0 - vertical_shrink/2.0) * height) + barrier_start_y)
+    barrier_only_clip = barrier_only_clip.resize(newsize=(int(0.5 * barrier_only_clip.size[0]), int(barrier_only_clip.size[1])))
+    
+    #image_empty_clip_array = CompositeVideoClip([image_empty_clip_array, barrier_only_clip.set_position(("center", int((vertical_shrink/2.0) * height) + barrier_start_y))], use_bgclip=True)
 
     for i, partial_circ in enumerate(circuit_list):
         
@@ -540,18 +566,26 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     
     circ_clip_arr.fps = fps
 
+    
     composited_with_barrier_clips = []
     composited_with_barrier_clips.append(circ_clip_arr)
+    note_accumulated_info = [] # accumulated time, note length, note rest
     accumulated_time = 0
     for iter in range(len(rhythm)):
-        new_barrier_clip = image_barrier_clip.set_start(accumulated_time).set_end(video.duration).set_position((positions_x[iter]-barrier_image_width, 0))
+        #new_barrier_clip = image_barrier_clip.set_start(accumulated_time).set_end(min(video.duration, accumulated_time + 1 / 4.0)).set_position((positions_x[iter]-barrier_image_width, 0))
+        note_length = rhythm[iter][0] / 480.0
+        new_barrier_clip = image_barrier_clip.set_start(0).set_end(min(accumulated_time, video.duration)).set_position((positions_x[iter]-barrier_image_width, 0))
+        note_accumulated_info.append((accumulated_time, rhythm[iter][0] / 480.0, rhythm[iter][1] / 480.0))
         accumulated_time += (rhythm[iter][0] + rhythm[iter][1]) / 480.0
+        #new_barrier_clip.add_mask()
+        #new_barrier_clip = new_barrier_clip.crossfadeout(note_length)
         composited_with_barrier_clips.append(new_barrier_clip)
 
     video_duration = video.duration
     video_size = video.size
 
-    from moviepy.editor import CompositeVideoClip
+
+
     circ_clip_arr = CompositeVideoClip(composited_with_barrier_clips)
     
     vertical_scale = 1080 / float(video.size[1] + circ_clip_arr.size[1])
@@ -592,8 +626,6 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
         return gf(t)[y:y+h, x:x+w]
 
     circ_clip_arr = circ_clip_arr.fl(f, apply_to = "mask")
-
-    circuit_size = circuit_video.size
     
     
     if invert_colours == True:
@@ -603,12 +635,15 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     #clip_arr = clips_array([[circuit_video.resize(circuit_rescale)], [video]], bg_color=bg_color)
     clip_arr = clips_array([[circ_clip_arr], [video]], bg_color=bg_color)
     
-    # video_final = video.set_audio(audio_clip_new)
-    video_final = clip_arr.set_audio(audio_clip_new)
+    files = glob.glob(target_folder + '/*.mp3')
+    if len(files) > 0:
+        audio_clip = mpy.AudioFileClip(files[0], fps=44100)
+        arr = audio_clip.to_soundarray()
+        audio_clip_new = AudioArrayClip(arr[0:int(44100 * total_time)], fps=44100)
+        video_final = clip_arr.set_audio(audio_clip_new)
+
     video_final = crop.crop(video_final, x1=int(video_final.size[0]/2-circ_clip_target_width/2), x2=int(video_final.size[0]/2+circ_clip_target_width/2))
     
-    
-
     vertical_scale = 1080 / video_final.size[1]
     if video_final.size[1] / 1080 > video_final.size[0] / 1920:
         video_final = video_final.resize(height=1080)
@@ -618,20 +653,72 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
         video_final = video_final.resize(width=1920)
         video_final = video_final.margin(top=(1080 - video_final.size[1])/2, bottom=(1080 - video_final.size[1])/2, color=bg_color)
     
-    def draw_rectangle(frame):
+    highlight_time = 1.0 / 8.0
+    highlight_fade_time = 1.0 / 16.0
+
+    def draw_needle(get_frame, t):
         """Draw a rectangle in the frame"""
         # change (top, bottom, left, right) to your coordinates
         top = 1
-        bottom = int(vertical_scale*circ_clip_arr.size[1] - 1)
-        left = int(video_final.size[0] / 2 - 5)
-        right = int(video_final.size[0] / 2 + 5)
-        frame[top, left: right] = bg_color_inverse
-        frame[bottom, left: right] = bg_color_inverse
-        frame[top: bottom, left] = bg_color_inverse
-        frame[top: bottom, right] = bg_color_inverse
+        bottom = int(vertical_scale*circ_clip_arr.size[1] - 1 + vertical_scale*(barrier_start_y - barrier_end_y))
+        left = int(video_final.size[0] / 2 - 9)
+        right = int(video_final.size[0] / 2 + 9)
+
+        current_note_info = note_accumulated_info[len(note_accumulated_info)-1]
+        for i, note_info in enumerate(note_accumulated_info):
+            if note_info[0] > t:
+                current_note_info = note_accumulated_info[i-1]
+                break
+        
+        frame = get_frame(t)
+
+        time_since_note_played = t - current_note_info[0]
+        note_remaining_play_time = max(0.0, current_note_info[1] - time_since_note_played)
+        time_to_start_fade = 0.0 #highlight_time - highlight_fade_time
+        time_to_stop_fade = highlight_time
+        highlight_fade_time = current_note_info[1]
+        
+        idle_colour = [127, 127, 127] #blend_colour(bg_color_inverse, [127, 127, 127], 0.8)
+        lerp_time = (time_since_note_played - time_to_start_fade) / highlight_fade_time
+
+        if invert_colours == True:
+            lerp_colour = [int(x) for x in ease_out([255, 0, 0], idle_colour, lerp_time)]
+            frame[top: top+3, left: right] = lerp_colour
+            frame[bottom-3: bottom, left: right] = lerp_colour
+            frame[top+3: bottom, left: left+3] = lerp_colour
+            frame[top+3: bottom, right-3: right] = lerp_colour
+        else:
+            lerp_colour = [int(x) for x in ease_out([0, 255, 255], idle_colour, lerp_time)]
+            frame[top: top+3, left: right] = lerp_colour
+            frame[bottom-3: bottom, left: right] = lerp_colour
+            frame[top+3: bottom, left: left+3] = lerp_colour
+            frame[top+3: bottom, right-3: right] = lerp_colour
+            
+        #if time_since_note_played < highlight_time:
+        #    if invert_colours == True:
+        #        lerp_colour = [int(x) for x in ease_in([255, 0, 0], idle_colour, lerp_time)]
+        #        frame[top: top+3, left: right] = lerp_colour
+        #        frame[bottom-3: bottom, left: right] = lerp_colour
+        #        frame[top+3: bottom, left: left+3] = lerp_colour
+        #        frame[top+3: bottom, right-3: right] = lerp_colour
+        #    else:
+        #        lerp_colour = [int(x) for x in ease_in([0, 255, 255], idle_colour, lerp_time)]
+        #        frame[top: top+3, left: right] = lerp_colour
+        #        frame[bottom-3: bottom, left: right] = lerp_colour
+        #        frame[top+3: bottom, left: left+3] = lerp_colour
+        #        frame[top+3: bottom, right-3: right] = lerp_colour
+        #else:
+        #    frame[top: top+3, left: right] = idle_colour
+        #    frame[bottom-3: bottom, left: right] = idle_colour
+        #    frame[top+3: bottom, left: left+3] = idle_colour
+        #    frame[top+3: bottom, right-3: right] = idle_colour
         return frame
 
-    video_final = video_final.fl_image(draw_rectangle)
+    video_final = video_final.fl(draw_needle)
+
+    video_final.save_frame(target_folder + '/' +"save_frame_0.png", t=0.0)
+    video_final.save_frame(target_folder + '/' +"save_frame_1.png", t=1.0)
+    video_final.save_frame(target_folder + '/' +"save_frame_fading.png", t=1.0 - highlight_fade_time / 2.0)
 
     #def supersample(clip, d, nframes):
     #    """ Replaces each frame at time t by the mean of `nframes` equally spaced frames
@@ -663,3 +750,66 @@ def get_instruments(instruments_name):
                     'pipe': list(range(73,81)),
                     'windband': [74,69,72,67,57,58,71,59]}
     return instrument_dict[instruments_name]
+
+def filter_color_blend(pic, colour, alpha):
+    """ assumes pic is 2d array of uint8. Returns weighted average of image pizel colours and given colour.
+    """
+    for i in range(len(pic)):
+        for j in range(len(pic[i])):
+            pic[i][j] = blend_colour(pic[i][j], colour, alpha)
+    
+    return pic
+
+def blend_colour(colour1, colour2, alpha):
+    return [((1 - alpha) * colour1[i] + (alpha) * colour2[i]) for i in range(min(len(colour2), len(colour1)))]
+
+def filter_color_multiply(pic, colour):
+    """ assumes pic is 2d array of uint8. Returns weighted average of image pizel colours and given colour.
+    """
+    for i in range(len(pic)):
+        for j in range(len(pic[i])):
+            pic[i][j] = [int(pic[i][j][k] * (colour[k]/255.0)) for k in range(min(len(colour), len(pic[i][j])))]
+    
+    return pic
+
+def filter_colour_round_with_threshold(pic, threshold = 0.5, colour_dark = [0, 0, 0], colour_light = [255, 255, 255]):
+        """ assumes pic is 2d array of uint8. Rounds each colour to black or white based on average RGB and threshold.
+        """
+        colour_array_dims = 0
+        try:
+            colour_array_dims = len(pic[0][0])
+        except:
+            colour_array_dims = 0
+
+        if (colour_array_dims > 0): # pic is an RGB image (0-255)
+            for i in range(len(pic)):
+                for j in range(len(pic[i])):
+                    average_rgb = np.mean([pic[i][j][k] for k in range(min(3, colour_array_dims))])
+                    if average_rgb > threshold:
+                        pic[i][j] = colour_light
+                    else:
+                        pic[i][j] = colour_dark
+        else: # pic is a mask (0-1)
+            for i in range(len(pic)):
+                for j in range(len(pic[i])):
+                    if pic[i][j] > threshold:
+                        pic[i][j] = colour_light
+                    else:
+                        pic[i][j] = colour_dark
+        return pic
+
+def lerp(lerp_from, lerp_to, t):
+    t = max(min(t, 1.0), 0.0)
+    return [((1-t) * a) + (t * b) for a, b in zip(lerp_from, lerp_to)]
+
+def ease_in(ease_from, ease_to, t):
+    ''' slow at the beginning, fast at the end.'''
+    t = max(min(t, 1.0), 0.0)
+    scaled_t = 1 - math.cos(t * math.pi / 2.0)
+    return [((1-scaled_t) * a) + (scaled_t * b) for a, b in zip(ease_from, ease_to)]
+
+def ease_out(ease_from, ease_to, t):
+    ''' slow at the beginning, fast at the end.'''
+    t = max(min(t, 1.0), 0.0)
+    scaled_t = math.sin(t * math.pi / 2.0)
+    return [((1-scaled_t) * a) + (scaled_t * b) for a, b in zip(ease_from, ease_to)]
