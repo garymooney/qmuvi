@@ -300,7 +300,7 @@ def convert_midi_to_mp3_vlc(midi_filename_no_ext, wait_time = 3):
         wait_time: The amount of time to wait after the VLC process has started. Used to make sure the process is finished before continuing execution.
     """
 
-    string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --sout-keep --sout "#transcode{acodec=mp3,ab=128}:std{access=file,mux=dummy,dst=./' + midi_filename_no_ext + '.mp3}"'
+    string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --sout-keep --sout "#transcode{acodec=mp3,ab=256}:std{access=file,mux=dummy,dst=./' + midi_filename_no_ext + '.mp3}"'
     command_string = f"{string}"
 
     def run_vlc():
@@ -315,6 +315,30 @@ def convert_midi_to_mp3_vlc(midi_filename_no_ext, wait_time = 3):
 
     import time
     print("Converting " + midi_filename_no_ext + ".mid midi to " + midi_filename_no_ext + ".mp3...")
+    time.sleep(wait_time)
+
+def convert_midi_to_wav_vlc(midi_filename_no_ext, wait_time = 3):
+    """ Uses headless VLC to convert a midi file to wav in the working directory.
+    Args:
+        midi_filename_no_ext: the name of the midi file in the working dir.
+        wait_time: The amount of time to wait after the VLC process has started. Used to make sure the process is finished before continuing execution.
+    """
+
+    string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --sout-keep --sout "#transcode{acodec=s16l,channels=2}:std{access=file,mux=wav,dst=./' + midi_filename_no_ext + '.wav}"'
+    command_string = f"{string}"
+
+    def run_vlc():
+        import os
+        #print(string)
+        directories = os.system(command_string)
+
+    import threading
+    t = threading.Thread(target=run_vlc,name="vlc",args=())
+    t.daemon = True
+    t.start()
+
+    import time
+    print("Converting " + midi_filename_no_ext + ".mid midi to " + midi_filename_no_ext + ".wav...")
     time.sleep(wait_time)
 
 
@@ -332,7 +356,7 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     """
     
     make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map=note_map)
-    convert_midi_to_mp3_vlc(f'{name}/{name}', wait_time = 3)
+    convert_midi_to_wav_vlc(f'{name}/{name}', wait_time = 3)
     make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = note_map, invert_colours = invert_colours, fps = fps)
 
 def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = chromatic_middle_c, invert_colours = False, fps=60):
@@ -460,6 +484,10 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
 
     with open(target_folder + '/rhythm.json') as json_file:
         rhythm = json.load(json_file)
+
+    with open(target_folder + '/fidelity_list.json') as json_file:
+        fidelity_list = json.load(json_file)
+
     print("rhythm: ", rhythm)
 
     files = glob.glob(target_folder + '/frame_*')
@@ -582,6 +610,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     composited_with_barrier_clips.append(circ_clip_arr)
     note_accumulated_info = [] # accumulated time, note length, note rest
     accumulated_time = 0
+    
     for iter in range(len(rhythm)):
         #new_barrier_clip = image_barrier_clip.set_start(accumulated_time).set_end(min(video.duration, accumulated_time + 1 / 4.0)).set_position((positions_x[iter]-barrier_image_width, 0))
         note_length = rhythm[iter][0] / 480.0
@@ -646,11 +675,13 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     #clip_arr = clips_array([[circuit_video.resize(circuit_rescale)], [video]], bg_color=bg_color)
     clip_arr = clips_array([[circ_clip_arr], [video]], bg_color=bg_color)
     
-    files = glob.glob(target_folder + '/*.mp3')
+    files = glob.glob(target_folder + '/*.wav')
     video_final = clip_arr
     if len(files) > 0:
-        audio_clip = mpy.AudioFileClip(files[0], fps=44100)
-        arr = audio_clip.to_soundarray()
+        audio_clip = mpy.AudioFileClip(files[0], nbytes=4, fps=44100)
+        print("audio_clip:", audio_clip)
+        arr = audio_clip.to_soundarray(nbytes=4)
+        print("arr:", arr)
         audio_clip_new = AudioArrayClip(arr[0:int(44100 * total_time)], fps=44100)
         video_final = clip_arr.set_audio(audio_clip_new)
 
@@ -668,6 +699,10 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     highlight_time = 1.0 / 8.0
     highlight_fade_time = 1.0 / 16.0
 
+    cmap_jet = cm.get_cmap('jet')
+    cmap_coolwarm = cm.get_cmap('coolwarm')
+    cmap_rainbow = cm.get_cmap('rainbow')
+
     def draw_needle(get_frame, t):
         """Draw a rectangle in the frame"""
         # change (top, bottom, left, right) to your coordinates
@@ -677,10 +712,13 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         right = int(video_final.size[0] / 2 + 9)
 
         current_note_info = note_accumulated_info[len(note_accumulated_info)-1]
+        fidelity = fidelity_list[len(note_accumulated_info)-1]
         for i, note_info in enumerate(note_accumulated_info):
             if note_info[0] > t:
                 current_note_info = note_accumulated_info[i-1]
+                fidelity = fidelity_list[i-1]
                 break
+            
         
         frame = get_frame(t)
 
@@ -692,45 +730,26 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         
         idle_colour = [127, 127, 127] #blend_colour(bg_color_inverse, [127, 127, 127], 0.8)
         lerp_time = (time_since_note_played - time_to_start_fade) / highlight_fade_time
+        scale = (2.0 * (1 - fidelity) - 1.0) # -1 to 1
+        scale = np.tanh(scale) / np.tanh(1)
+        #scale = np.arcsinh(scale) / np.arcsinh(1)
+        scale = (scale + 1.0) / 2.0
 
-        if invert_colours == True:
-            lerp_colour = [int(x) for x in ease_out([255, 0, 0], idle_colour, lerp_time)]
-            frame[top: top+3, left: right] = lerp_colour
-            frame[bottom-3: bottom, left: right] = lerp_colour
-            frame[top+3: bottom, left: left+3] = lerp_colour
-            frame[top+3: bottom, right-3: right] = lerp_colour
-        else:
-            lerp_colour = [int(x) for x in ease_out([0, 255, 255], idle_colour, lerp_time)]
-            frame[top: top+3, left: right] = lerp_colour
-            frame[bottom-3: bottom, left: right] = lerp_colour
-            frame[top+3: bottom, left: left+3] = lerp_colour
-            frame[top+3: bottom, right-3: right] = lerp_colour
-            
-        #if time_since_note_played < highlight_time:
-        #    if invert_colours == True:
-        #        lerp_colour = [int(x) for x in ease_in([255, 0, 0], idle_colour, lerp_time)]
-        #        frame[top: top+3, left: right] = lerp_colour
-        #        frame[bottom-3: bottom, left: right] = lerp_colour
-        #        frame[top+3: bottom, left: left+3] = lerp_colour
-        #        frame[top+3: bottom, right-3: right] = lerp_colour
-        #    else:
-        #        lerp_colour = [int(x) for x in ease_in([0, 255, 255], idle_colour, lerp_time)]
-        #        frame[top: top+3, left: right] = lerp_colour
-        #        frame[bottom-3: bottom, left: right] = lerp_colour
-        #        frame[top+3: bottom, left: left+3] = lerp_colour
-        #        frame[top+3: bottom, right-3: right] = lerp_colour
-        #else:
-        #    frame[top: top+3, left: right] = idle_colour
-        #    frame[bottom-3: bottom, left: right] = idle_colour
-        #    frame[top+3: bottom, left: left+3] = idle_colour
-        #    frame[top+3: bottom, right-3: right] = idle_colour
+        highlight_colour = [int(255 * cmap_jet(scale)[i]) for i in range(3)]
+
+        lerp_colour = [int(x) for x in ease_out(highlight_colour, idle_colour, lerp_time)]
+        frame[top: top+3, left: right] = lerp_colour
+        frame[bottom-3: bottom, left: right] = lerp_colour
+        frame[top+3: bottom, left: left+3] = lerp_colour
+        frame[top+3: bottom, right-3: right] = lerp_colour
+        
         return frame
 
     video_final = video_final.fl(draw_needle)
 
-    video_final.save_frame(target_folder + '/' +"save_frame_0.png", t=0.0)
-    video_final.save_frame(target_folder + '/' +"save_frame_1.png", t=1.0)
-    video_final.save_frame(target_folder + '/' +"save_frame_fading.png", t=1.0 - highlight_fade_time / 2.0)
+    #video_final.save_frame(target_folder + '/' +"save_frame_0.png", t=0.0)
+    #video_final.save_frame(target_folder + '/' +"save_frame_1.png", t=1.0)
+    #video_final.save_frame(target_folder + '/' +"save_frame_fading.png", t=1.0 - highlight_fade_time / 2.0)
 
     #def supersample(clip, d, nframes):
     #    """ Replaces each frame at time t by the mean of `nframes` equally spaced frames
@@ -743,7 +762,8 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     #    return clip.fl(fl)
 #
     #video_final = supersample(video_final, d=0.008, nframes=3)
-    video_final.write_videofile(target_folder + '/' + target_folder + '.mp4', fps=fps, codec='mpeg4')
+    # preset options (speed vs filesize): ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo
+    video_final.write_videofile(target_folder + '/' + target_folder + '.mp4', preset='ultrafast', fps=fps, codec='mpeg4', audio_fps=44100, audio_bitrate="512K", audio_nbytes=4, ffmpeg_params=["-b:v", "12000K", "-b:a", "512K"])
 
     files = glob.glob(target_folder + '/*.mp4')
 #     for file in files:
