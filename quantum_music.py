@@ -300,7 +300,7 @@ def convert_midi_to_mp3_vlc(midi_filename_no_ext, wait_time = 3):
         wait_time: The amount of time to wait after the VLC process has started. Used to make sure the process is finished before continuing execution.
     """
 
-    string = 'vlc.exe ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --sout-keep --sout "#transcode{acodec=mp3,ab=128}:std{access=file,mux=dummy,dst=./' + midi_filename_no_ext + '.mp3}"'
+    string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --sout-keep --sout "#transcode{acodec=mp3,ab=128}:std{access=file,mux=dummy,dst=./' + midi_filename_no_ext + '.mp3}"'
     command_string = f"{string}"
 
     def run_vlc():
@@ -647,13 +647,14 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     clip_arr = clips_array([[circ_clip_arr], [video]], bg_color=bg_color)
     
     files = glob.glob(target_folder + '/*.mp3')
+    video_final = clip_arr
     if len(files) > 0:
         audio_clip = mpy.AudioFileClip(files[0], fps=44100)
         arr = audio_clip.to_soundarray()
         audio_clip_new = AudioArrayClip(arr[0:int(44100 * total_time)], fps=44100)
         video_final = clip_arr.set_audio(audio_clip_new)
 
-    video_final = crop.crop(video_final, x1=int(video_final.size[0]/2-circ_clip_target_width/2), x2=int(video_final.size[0]/2+circ_clip_target_width/2))
+    video_final = crop.crop(video_final, x1=int(clip_arr.size[0]/2-circ_clip_target_width/2), x2=int(clip_arr.size[0]/2+circ_clip_target_width/2))
     
     vertical_scale = 1080 / video_final.size[1]
     if video_final.size[1] / 1080 > video_final.size[0] / 1920:
@@ -742,11 +743,11 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     #    return clip.fl(fl)
 #
     #video_final = supersample(video_final, d=0.008, nframes=3)
-    video_final.write_videofile(target_folder + '/' + target_folder + '.avi', fps=fps, codec='png')
+    video_final.write_videofile(target_folder + '/' + target_folder + '.mp4', fps=fps, codec='mpeg4')
 
     files = glob.glob(target_folder + '/*.mp4')
-    for file in files:
-        os.remove(file)
+#     for file in files:
+#         os.remove(file)
 
 def get_instruments(instruments_name):
     instrument_dict = {'piano': list(range(1,9)),
