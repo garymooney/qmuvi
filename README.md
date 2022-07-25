@@ -26,6 +26,49 @@ A list of instrument collections (see example below) can be specified to assign,
 
 The velocity (which is proportional to volume) of each note is calculated by multiplying the propability of the pure state in the mixture and the probability of the computational basis state of the pure state's superposition, normalised such that there is always a note with velocity equal to 1.  
 
+# Example:
+```
+import quantum_music
+from quantum_music import make_music_midi, make_music_video, get_instruments, chromatic_middle_c
+import qiskit
+from qiskit import QuantumCircuit
+
+circ = QuantumCircuit(4)
+circ.h(0)
+circ.barrier() # signals to the quantum music transpiler to sample the state at this time step
+circ.cx(0, 1)
+circ.barrier()
+circ.cx(1, 2)
+circ.barrier()
+circ.cx(2, 3)
+circ.barrier()
+circ.h(3)
+circ.barrier()
+circ.cx(3,2)
+circ.barrier()
+circ.cx(2,1)
+circ.barrier()
+circ.cx(1,0)
+circ.barrier()
+rhythm = [(120, 60)]*8 # sound length and rest time for each sample
+single_qubit_error = 0.02
+two_qubit_error = 0.05
+
+                    
+intruments = []
+intruments.append([73]) # a pipe
+intruments.append(get_instruments('tuned_perc'))
+
+# Converts the circuit to music and outputs it as a midi file
+make_music_midi(circ, "my_quantum_midi", rhythm, single_qubit_error, two_qubit_error, intruments, note_map=chromatic_middle_c)
+
+# Converts the circuit to music and video and outputs the result as an mp4 file
+make_music_video(circ, "my_quantum_video", rhythm, single_qubit_error, two_qubit_error, intruments, note_map=chromatic_middle_c)
+```
+
+Run the python script and it should output all the content into a folder with the specified name (e.g. "my_quantum_video").  
+**Warning:** Using numbers in the name sometimes causes an error.
+
 # Methods
 ### make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, instrument_collections, note_map, invert_colours, fps)
 Generates a music video from a qiskit quantum algorithm with barriers  
@@ -77,49 +120,6 @@ _**state_number:**_ the state number (int)
 Used for the note map. Returns a note number calculated as the input state number + 60 then rounded down to a note in the F minor scale.  
 _**state_number:**_ the state number (int)  
 
-# Example:
-```
-import quantum_music
-from quantum_music import make_music_midi, make_music_video, get_instruments, chromatic_middle_c
-import qiskit
-from qiskit import QuantumCircuit
-
-circ = QuantumCircuit(4)
-circ.h(0)
-circ.barrier() # signals to the quantum music transpiler to sample the state at this time step
-circ.cx(0, 1)
-circ.barrier()
-circ.cx(1, 2)
-circ.barrier()
-circ.cx(2, 3)
-circ.barrier()
-circ.h(3)
-circ.barrier()
-circ.cx(3,2)
-circ.barrier()
-circ.cx(2,1)
-circ.barrier()
-circ.cx(1,0)
-circ.barrier()
-rhythm = [(120, 60)]*8 # sound length and rest time for each sample
-single_qubit_error = 0.02
-two_qubit_error = 0.05
-
-                    
-intruments = []
-intruments.append([73]) # a pipe
-intruments.append(get_instruments('tuned_perc'))
-
-# Converts the circuit to music and outputs it as a midi file
-make_music_midi(circ, "my_quantum_midi", rhythm, single_qubit_error, two_qubit_error, intruments, note_map=chromatic_middle_c)
-
-# Converts the circuit to music and video and outputs the result as an mp4 file
-make_music_video(circ, "my_quantum_video", rhythm, single_qubit_error, two_qubit_error, intruments, note_map=chromatic_middle_c)
-```
-
-Run the python script and it should output all the content into a folder with the specified name (e.g. "my_quantum_video").  
-**Warning:** Using numbers in the name sometimes causes an error.
-
 # Setup
 This project uses Python 3. Download the repo and use the example .py files as a starting point.
   
@@ -134,7 +134,7 @@ VLC needs to be configured to use a sound font (.sf2 file). If VLC can play a mi
 #### Mac OS
 Instead of adding the install directory to PATH, you can instead create a symlink of VLC in the usr/local/bin/ directory (or some other directory already in the PATH environment variable) with the following command.
 
-```ln -s Applications/VLC/Content/MacOS/VLC usr/local/bin/```
+```ln -s Application/VLC.app/Contents/MacOS/VLC usr/local/bin/```
 
 Note: if you haven't done this before you may need to create the usr/local/bin/ directory first.
 
