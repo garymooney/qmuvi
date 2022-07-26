@@ -324,7 +324,7 @@ def convert_midi_to_wav_vlc(midi_filename_no_ext, wait_time = 3):
         wait_time: The amount of time to wait after the VLC process has started. Used to make sure the process is finished before continuing execution.
     """
 
-    string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --sout-keep --sout "#transcode{acodec=s16l,channels=2}:std{access=file,mux=wav,dst=./' + midi_filename_no_ext + '.wav}"'
+    string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --synth-polyphony="65535 " --sout-keep --sout "#transcode{acodec=s16l,channels=2}:std{access=file,mux=wav,dst=./' + midi_filename_no_ext + '.wav}"'
     command_string = f"{string}"
 
     def run_vlc():
@@ -339,6 +339,88 @@ def convert_midi_to_wav_vlc(midi_filename_no_ext, wait_time = 3):
 
     import time
     print("Converting " + midi_filename_no_ext + ".mid midi to " + midi_filename_no_ext + ".wav...")
+    time.sleep(wait_time)
+
+def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3):
+    """ Uses timidity++ to convert a midi file to wav in the working directory.
+    Args:
+        midi_filename_no_ext: the name of the midi file in the working dir.
+        wait_time: The amount of time to wait after the VLC process has started. Used to make sure the process is finished before continuing execution.
+    """
+
+    #string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --synth-polyphony="65535 " --sout-keep --sout "#transcode{acodec=s16l,channels=2}:std{access=file,mux=wav,dst=./' + midi_filename_no_ext + '.wav}"'
+    
+    # documentation found here: https://www.mankier.com/1/timidity#Input_File
+    options = []
+    options.append("-Ow")
+    options.append("-A,120")
+    options.append("--no-anti-alias") # anti-aliasing seems to cause some crackling
+    options.append("--mod-wheel")
+    options.append("--portamento")
+    options.append("--vibrato")
+    options.append("--no-ch-pressure")
+    options.append("--mod-envelope")
+    options.append("--trace-text-meta")
+    options.append("--overlap-voice")
+    #options.append("--temper-control")
+    options.append("--default-bank=0")
+    options.append("--default-program=0")
+    options.append("--delay=d,0") #d: disabled, l: left, r: right, b: swap l&r
+    #d: disabled, 
+    # n: enable MIDI chorus effect control, 
+    # s: surround sound, chorus detuned to a lesser degree. 
+    # last number is chorus level 0-127
+    options.append("--chorus=n,64")
+    #d: disabled, 
+    # n: enable MIDI reverb effect control, 
+    # g: global reverb effect, 
+    # f: Freeverb MIDI reverb effect control, 
+    # G: global, Freeverb effect. 
+    # num 1: reverb level 0-127
+    # num 2: reverb scaleroom [0,1], roomsize = C * scaleroom + offsetroom, where C is reverberation character
+    # num 3: reverb offsetroom [0,1]
+    # num 4: reverb factor for pre-delay time of reverberation in percent
+    #options.append("--reverb=f,60,0.28,0.7,100")
+    options.append("--reverb=f,40,0.28,0.7,100")
+    options.append("--voice-lpf=c") # d: disable, c: Chamberlin resonant LPF (12dB/oct), m: Moog resonant low-pass VCF (24dB/oct)
+    options.append("--noise-shaping=4") # 0: no shaping, 1: trad, 2: Overdrive-like soft-clipping + new noise shaping, 3: Tube-amplifier-like soft-clipping + new noise shaping, 4: New noise shaping
+    options.append("--resample=5") # 0-5, 5 is highest quality
+    options.append("--voice-queue=0")
+    #options.append("--fast-decay") # 0 means no voices will be killed even when there's a delay due to so many in the queue
+    options.append("--decay-time=0")
+    #options.append("-R 100")
+    options.append("--interpolation=gauss")
+    options.append("-EFresamp=34") # for interpolation gauss: 0-34
+    options.append("--output-stereo")
+    options.append("--output-24bit")
+    options.append("--polyphony=16000")
+    options.append("--sampling-freq=44100")
+    options.append("--audio-buffer=5/100")
+    options.append("--volume-curve=1.661") # (regular: 0, linear: 1, ideal: ~1.661, GS: ~2)
+    #options.append("--module=4")
+    options_string = ""
+    for option in options:
+        options_string += option + " "
+
+    if os.name == 'nt':
+        string = '"TiMidity_Win\\timidity.exe" ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid'
+    else:
+        string = 'timidity ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid'
+    
+    command_string = f"{string}"
+
+    def run_timidity():
+        import os
+        #print(string)
+        directories = os.system(command_string)
+
+    import threading
+    t = threading.Thread(target=run_timidity,name="timidity++",args=())
+    t.daemon = True
+    t.start()
+
+    import time
+    print("Converting " + midi_filename_no_ext + ".mid midi to " + midi_filename_no_ext + ".wav using TiMidity++...")
     time.sleep(wait_time)
 
 
@@ -356,7 +438,7 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     """
     
     make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map=note_map)
-    convert_midi_to_wav_vlc(f'{name}/{name}', wait_time = 3)
+    convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 3)
     make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = note_map, invert_colours = invert_colours, fps = fps)
 
 def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = chromatic_middle_c, invert_colours = False, fps=60):
