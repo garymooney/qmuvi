@@ -441,7 +441,7 @@ def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, inpu
     convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 3)
     make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = note_map, invert_colours = invert_colours, fps = fps)
 
-def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = chromatic_middle_c, invert_colours = False, fps=60):
+def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None):
     
     import matplotlib
     import matplotlib.pylab as plt
@@ -452,7 +452,12 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     from moviepy.video.fx import invert_colors, crop, fadeout
     from moviepy.editor import CompositeVideoClip
     import copy
-    
+
+    if vpr == None:
+        vpr = lambda n: 1/3
+    else:
+        vpr = lambda n: vpr
+
     NAME = name
     target_folder = NAME
     circuit_layers_per_line = 50
@@ -466,6 +471,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     barrier_count = barrier_iter
 
     circuit_list = []
+    qubit_count = len(dag.qubits)
     current_circuit = QuantumCircuit(len(dag.qubits))
     for node in dag.topological_op_nodes():
         if node.name == "barrier":
@@ -510,7 +516,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         # ax3 = fig.add_subplot(gs[1, :])
 
         num_column = int(num_figs / 2)
-        fig, ax = plt.subplots(2, num_column, figsize=(24, 12))
+        fig, ax = plt.subplots(2, num_column, figsize=(24, (1 - vpr(qubit_count)) * 13.5))
         gs = fig.add_gridspec(2, num_column)
         # if str(main_title):
         #     fig.suptitle(str(main_title),fontsize=24)
@@ -609,6 +615,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         iter += 1
 
     video = concatenate(clips, method="compose")
+    video = video.resize(width = 1920)
 
     bg_color = [0xFF, 0xFF, 0xFF]
     bg_color_inverse = [0x00, 0x00, 0x00]
@@ -690,6 +697,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     
     composited_with_barrier_clips = []
     composited_with_barrier_clips.append(circ_clip_arr)
+    
     note_accumulated_info = [] # accumulated time, note length, note rest
     accumulated_time = 0
     
@@ -709,7 +717,8 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
 
 
     circ_clip_arr = CompositeVideoClip(composited_with_barrier_clips)
-    
+    circ_clip_arr = circ_clip_arr.resize(height = 1080 - video.size[1])
+
     vertical_scale = 1080 / float(video.size[1] + circ_clip_arr.size[1])
     circ_clip_target_width = int(1920 / vertical_scale)
     
@@ -769,14 +778,24 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
 
     video_final = crop.crop(video_final, x1=int(clip_arr.size[0]/2-circ_clip_target_width/2), x2=int(clip_arr.size[0]/2+circ_clip_target_width/2))
     
-    vertical_scale = 1080 / video_final.size[1]
-    if video_final.size[1] / 1080 > video_final.size[0] / 1920:
-        video_final = video_final.resize(height=1080)
-        left_margin = int((1920 - video_final.size[0])/2)
-        video_final = video_final.margin(left=left_margin, right=(1920 - video_final.size[0] - left_margin), color=bg_color)
-    else:
-        video_final = video_final.resize(width=1920)
-        video_final = video_final.margin(top=(1080 - video_final.size[1])/2, bottom=(1080 - video_final.size[1])/2, color=bg_color)
+    if video_final.size[1] > 1080:
+        difference = video_final.size[1] - 1080
+        video_final = crop.crop(video_final, x1=math.floor(difference/2), x2=video_final.size[0] - math.ceil(difference/2))
+    if video_final.size[1] < 1080:
+        difference = 1080 - video_final.size[1]
+        video_final = video_final.margin(left = math.floor(difference/2), right = math.ceil(difference/2))
+        
+
+
+
+    #vertical_scale = 1080 / video_final.size[1]
+    #if video_final.size[1] / 1080 > video_final.size[0] / 1920:
+    #    video_final = video_final.resize(height=1080)
+    #    left_margin = int((1920 - video_final.size[0])/2)
+    #    video_final = video_final.margin(left=left_margin, right=(1920 - video_final.size[0] - left_margin), color=bg_color)
+    #else:
+    #    video_final = video_final.resize(width=1920)
+    #    video_final = video_final.margin(top=(1080 - video_final.size[1])/2, bottom=(1080 - video_final.size[1])/2, color=bg_color)
     
     highlight_time = 1.0 / 8.0
     highlight_fade_time = 1.0 / 16.0
@@ -814,7 +833,6 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         lerp_time = (time_since_note_played - time_to_start_fade) / highlight_fade_time
         scale = (2.0 * (1 - fidelity) - 1.0) # -1 to 1
         scale = np.tanh(scale) / np.tanh(1)
-        #scale = np.arcsinh(scale) / np.arcsinh(1)
         scale = (scale + 1.0) / 2.0
 
         highlight_colour = [int(255 * cmap_jet(scale)[i]) for i in range(3)]
@@ -829,7 +847,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
 
     video_final = video_final.fl(draw_needle)
 
-    #video_final.save_frame(target_folder + '/' +"save_frame_0.png", t=0.0)
+    video_final.save_frame(target_folder + '/' +"save_frame_0.png", t=0.0)
     #video_final.save_frame(target_folder + '/' +"save_frame_1.png", t=1.0)
     #video_final.save_frame(target_folder + '/' +"save_frame_fading.png", t=1.0 - highlight_fade_time / 2.0)
 
