@@ -393,7 +393,7 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3):
     options.append("-EFresamp=34") # for interpolation gauss: 0-34
     options.append("--output-stereo")
     options.append("--output-24bit")
-    options.append("--polyphony=16000")
+    options.append("--polyphony=15887")
     options.append("--sampling-freq=44100")
     options.append("--audio-buffer=5/100")
     options.append("--volume-curve=1.661") # (regular: 0, linear: 1, ideal: ~1.661, GS: ~2)
@@ -631,12 +631,14 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     image_barrier_clip = ImageClip(target_folder + f'/partial_circ_barrier.png').set_duration(video.duration)
     if image_barrier_clip.size[0] > 156:
         image_barrier_clip = crop.crop(image_barrier_clip, x1=133, x2=image_barrier_clip.size[0]-23)
+    image_barrier_clip = image_barrier_clip.resize(height = 1080 - video.size[1])
     barrier_image_width = image_barrier_clip.size[0]
 
     # create image clip same size as barrier.
     image_empty_clip = ImageClip(target_folder + f'/partial_circ_empty.png').set_duration(video.duration)
     if image_empty_clip.size[0] > 156:
         image_empty_clip = crop.crop(image_empty_clip, x1=133, x2=image_empty_clip.size[0]-23)
+    image_empty_clip = image_empty_clip.resize(height = 1080 - video.size[1])
     image_empty_clip_array = clips_array([[image_empty_clip, image_empty_clip, image_empty_clip]], bg_color=[0xFF, 0xFF, 0xFF])
     image_empty_clip_array = crop.crop(image_empty_clip_array, x1=0, x2=barrier_image_width)
     
@@ -647,6 +649,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     
     barrier_only_clip = crop.crop(image_empty_clip, x1=35, x2=72)
     barrier_only_clip = barrier_only_clip.margin(left=35, right=72, color=[0xFF, 0xFF, 0xFF])
+    barrier_only_clip = barrier_only_clip.resize(height = 1080 - video.size[1])
 
     barrier_only_clip_mask = barrier_only_clip.to_mask()
     barrier_only_clip_mask = barrier_only_clip_mask.fl_image( lambda pic: filter_colour_round_with_threshold(pic, threshold=0.9, colour_dark=0.0, colour_light=1.0))
@@ -668,11 +671,15 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     
     #image_empty_clip_array = CompositeVideoClip([image_empty_clip_array, barrier_only_clip.set_position(("center", int((vertical_shrink/2.0) * height) + barrier_start_y))], use_bgclip=True)
 
+    
     for i, partial_circ in enumerate(circuit_list):
         
         new_image_clip = ImageClip(target_folder + f'/partial_circ_{i}.png').set_duration(video.duration)
+
         if new_image_clip.size[0] > 156:
             new_image_clip = crop.crop(new_image_clip, x1=133, x2=new_image_clip.size[0]-23)
+
+        new_image_clip = new_image_clip.resize(height = 1080 - video.size[1])
         
         if i != len(circuit_list)-1:
             accumulated_width += new_image_clip.size[0] + barrier_image_width
@@ -681,7 +688,6 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
 
         positions_x.append(accumulated_width)
         partial_circ_image_clips.append(new_image_clip)
-        
     
     all_clips = []
     for i in range(len(partial_circ_image_clips)):
@@ -704,7 +710,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     for iter in range(len(rhythm)):
         #new_barrier_clip = image_barrier_clip.set_start(accumulated_time).set_end(min(video.duration, accumulated_time + 1 / 4.0)).set_position((positions_x[iter]-barrier_image_width, 0))
         note_length = rhythm[iter][0] / 480.0
-        new_barrier_clip = image_barrier_clip.set_start(0).set_end(min(accumulated_time, video.duration)).set_position((positions_x[iter]-barrier_image_width, 0))
+        new_barrier_clip = image_barrier_clip.set_start(0).set_end(min(accumulated_time, video.duration)).set_position((int(positions_x[iter]-barrier_image_width), 0))
         note_accumulated_info.append((accumulated_time, rhythm[iter][0] / 480.0, rhythm[iter][1] / 480.0))
         accumulated_time += (rhythm[iter][0] + rhythm[iter][1]) / 480.0
         #new_barrier_clip.add_mask()
