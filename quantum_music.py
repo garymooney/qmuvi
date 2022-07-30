@@ -493,7 +493,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
 
     qc.draw(filename=f'./{NAME}/circuit.png',output="mpl", fold=circuit_layers_per_line)
 
-    def plot_quantum_state(input_probability_vector, angle_vector, main_title=None, fig_title=None, save=None):
+    def plot_quantum_state(input_probability_vector, angle_vector, plot_number, main_title=None, fig_title=None, save=None):
         num_figs = 8
         input_length = input_probability_vector.shape[1]
 
@@ -559,21 +559,19 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
             bar_list[x].set_color(rgba[x])
         # ax_main.set_title(str(fig_title[0]), fontsize=20)
         if save:
-            files = glob.glob(target_folder + '/*.png')
-            filename = target_folder + '/frame_' + str(len(files)) + '.png'
+            filename = target_folder + '/frame_' + str(plot_number) + '.png'
             plt.savefig(filename)
             plt.close('all')
         return 0
     
-    def plot_info_panel():
+    def plot_info_panel(plot_number):
         fig = plt.figure(figsize=(4, (1 - vpr(qubit_count)) * 13.5))
         ax1 = plt.subplot2grid((4, 1), (0, 0), rowspan=2)
         ax2 = plt.subplot2grid((4, 1), (2, 0))
         ax3 = plt.subplot2grid((4, 1), (3, 0))
         
 
-        files = glob.glob(target_folder + '/*.png')
-        filename = target_folder + '/info_panel_' + str(len(files)) + '.png'
+        filename = target_folder + '/info_panel_' + str(plot_number) + '.png'
         plt.savefig(filename)
         plt.close('all')
         return None
@@ -595,6 +593,10 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     for file in files:
         os.remove(file)
 
+    files = glob.glob(target_folder + '/info_panel_*')
+    for file in files:
+        os.remove(file)
+
     num_frames = len(sound_list)
 
     input_probability_vector = np.zeros((8, len(sound_list[0][0][2])))
@@ -607,14 +609,14 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
                 angle_vector[j, :] = sound_list[i][j][3]
 
 
-        plot_quantum_state(input_probability_vector, angle_vector, save=True)
-        plot_info_panel()
+        plot_quantum_state(input_probability_vector, angle_vector, i, save=True)
+        plot_info_panel(i)
 
     clips = []
 
     total_time = 0
     files = glob.glob(target_folder + '/frame_*')
-    iter = 0
+    
     file_tuples = []
     for file in files:
         file = file.replace("\\", "/")
@@ -622,9 +624,26 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         file_tuples.append((num, file))
     file_tuples = sorted(file_tuples)
     files = [x[1] for x in file_tuples]
+    iter = 0
     for file in files:
         time = (rhythm[iter][0] + rhythm[iter][1]) / 480.0
         clips.append(ImageClip(file).set_duration(time))
+        total_time += time
+        iter += 1
+
+    files = glob.glob(target_folder + '/info_panel_*')
+    file_tuples = []
+    for file in files:
+        file = file.replace("\\", "/")
+        num = int(os.path.splitext(file)[0].lstrip(target_folder + '/info_panel_'))
+        file_tuples.append((num, file))
+
+    file_tuples = sorted(file_tuples)
+    files = [x[1] for x in file_tuples]
+    iter = 0
+    for file in files:
+        time = (rhythm[iter][0] + rhythm[iter][1]) / 480.0
+        clips[iter] = clips_array([[clips[iter], ImageClip(file).set_duration(time)]], bg_color=[0xFF, 0xFF, 0xFF])
         total_time += time
         iter += 1
 
