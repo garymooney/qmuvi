@@ -1,5 +1,5 @@
 import quantum_music
-from quantum_music import make_music_video, get_instruments, make_music_midi
+from quantum_music import make_music_video, get_instruments, make_music_midi, convert_midi_to_wav_timidity
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -114,9 +114,11 @@ time_list = [[80,0],[40,0],[120,0],[120,0],[120,0],[240,0],
              [80,0],[40,0],[120,0],[120,0],[120,0],[120,0],[120,0],
              [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],]*repeats
 
+time_list[len(time_list)-1] = [360,0]
 # slow down by factor s
 s = 2
 time_list = [[s*t for t in tt] for tt in time_list]
 
-#make_music_video(c, "happy_bday_bassline", time_list, 0.01, 0.02, [get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")])
-make_music_midi(c, "happy_bday_bassline", time_list, 0.02, 0.04, [[75], get_instruments("pipe"), get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")])
+#make_music_video(c, "happy_bday_bassline", time_list, 0.02, 0.04, [get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")])
+make_music_midi(c, "happy_bday_bassline", time_list, 0.025, 0.045, [[75], get_instruments("pipe"), get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")])
+convert_midi_to_wav_timidity("happy_bday_bassline/happy_bday_bassline")
