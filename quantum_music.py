@@ -460,6 +460,9 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
 
     NAME = name
     target_folder = NAME
+    if os.path.isdir(target_folder) == False:
+        os.mkdir("./" + NAME)
+        
     circuit_layers_per_line = 50
     
     dag = circuit_to_dag(qc)
@@ -492,7 +495,13 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         partial_circ.draw(filename=f'./{NAME}/partial_circ_{i}.png',output="mpl", fold=-1)
 
     qc.draw(filename=f'./{NAME}/circuit.png',output="mpl", fold=circuit_layers_per_line)
-
+    
+    cmap_jet = cm.get_cmap('jet')
+    cmap_coolwarm = cm.get_cmap('coolwarm')
+    cmap_rainbow = cm.get_cmap('rainbow')
+    cmap_rvb = matplotlib.colors.LinearSegmentedColormap.from_list("", ["red","violet","blue"])
+    cmap_bvr = matplotlib.colors.LinearSegmentedColormap.from_list("", ["blue","violet","red"])
+    
     def plot_quantum_state(input_probability_vector, angle_vector, plot_number, main_title=None, fig_title=None, save=None):
         num_figs = 8
         input_length = input_probability_vector.shape[1]
@@ -564,13 +573,44 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
             plt.close('all')
         return 0
     
-    def plot_info_panel(plot_number):
+    def plot_info_panel(plot_number,fidelity): 
         fig = plt.figure(figsize=(4, (1 - vpr(qubit_count)) * 13.5))
-        ax1 = plt.subplot2grid((4, 1), (0, 0), rowspan=2)
-        ax2 = plt.subplot2grid((4, 1), (2, 0))
-        ax3 = plt.subplot2grid((4, 1), (3, 0))
+        ax1 = plt.subplot2grid((4, 1), (0, 0), rowspan=3, polar=True)
+        ax2 = plt.subplot2grid((4, 1), (3, 0))
+        # ax3 = plt.subplot2grid((4, 1), (3, 0))
         
-
+        # phase wheel
+        cmap = cm.get_cmap('hsv')
+        #if invert_colours:
+            #cmap = lambda t: (1,1,1)-cm.get_cmap('hsv')
+        
+        azimuths = np.arange(0, 361, 1)
+        zeniths = np.arange(40, 70, 1)
+        values = azimuths * np.ones((30, 361))
+        ax1.pcolormesh(azimuths*np.pi/180.0, zeniths, np.roll(values,180), cmap = cmap)
+        ax1.fill_between(azimuths*np.pi/180.0, 40, color = '#FFFFFF')
+        ax1.plot(azimuths*np.pi/180.0, [40]*361, color='#000000', lw=1)
+        ax1.set_yticks([])
+        ax1.set_title('Phase')
+        
+        # fidelity colorbar
+        cmap = cmap_rvb
+        c = '#00FF00'
+        #if invert_colours:
+        #    cmap = lambda t: (1,1,1)-cmap_rvb
+        #    c = '#FF00FF'
+        
+        ax2.imshow(np.array([np.linspace(0,1,100)]*5), cmap = cmap)
+        ax2.axvline(99*fidelity, c=c, lw=2)
+        ax2.set_title('Fidelity')
+        ax2.yaxis.set_visible(False)
+        ax2.set_xticks([0,19,39,59,79,99])
+        ax2.set_xticklabels([0.0,0.2,0.4,0.6,0.8,1.0])
+        
+        # info text
+        # ax3.axis('off')
+        # ax3.text(0.5,0.5,f"Fidelity = {fidelity}", ha='center', va='center')
+        
         filename = target_folder + '/info_panel_' + str(plot_number) + '.png'
         plt.savefig(filename)
         plt.close('all')
@@ -610,7 +650,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
 
 
         plot_quantum_state(input_probability_vector, angle_vector, i, save=True)
-        plot_info_panel(i)
+        plot_info_panel(i,fidelity_list[i])
 
     clips = []
 
@@ -839,10 +879,6 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     highlight_time = 1.0 / 8.0
     highlight_fade_time = 1.0 / 16.0
 
-    cmap_jet = cm.get_cmap('jet')
-    cmap_coolwarm = cm.get_cmap('coolwarm')
-    cmap_rainbow = cm.get_cmap('rainbow')
-
     def draw_needle(get_frame, t):
         """Draw a rectangle in the frame"""
         # change (top, bottom, left, right) to your coordinates
@@ -874,7 +910,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         scale = np.tanh(scale) / np.tanh(1)
         scale = (scale + 1.0) / 2.0
 
-        highlight_colour = [int(255 * cmap_jet(scale)[i]) for i in range(3)]
+        highlight_colour = [int(255 * cmap_bvr(scale)[i]) for i in range(3)]
 
         lerp_colour = [int(x) for x in ease_out(highlight_colour, idle_colour, lerp_time)]
         frame[top: top+3, left: right] = lerp_colour
