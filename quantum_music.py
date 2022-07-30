@@ -516,7 +516,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         # ax3 = fig.add_subplot(gs[1, :])
 
         num_column = int(num_figs / 2)
-        fig, ax = plt.subplots(2, num_column, figsize=(24, (1 - vpr(qubit_count)) * 13.5))
+        fig, ax = plt.subplots(2, num_column, figsize=(20, (1 - vpr(qubit_count)) * 13.5))
         gs = fig.add_gridspec(2, num_column)
         # if str(main_title):
         #     fig.suptitle(str(main_title),fontsize=24)
@@ -564,7 +564,20 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
             plt.savefig(filename)
             plt.close('all')
         return 0
+    
+    def plot_info_panel():
+        fig = plt.figure(figsize=(4, (1 - vpr(qubit_count)) * 13.5))
+        ax1 = plt.subplot2grid((4, 1), (0, 0), rowspan=2)
+        ax2 = plt.subplot2grid((4, 1), (2, 0))
+        ax3 = plt.subplot2grid((4, 1), (3, 0))
+        
 
+        files = glob.glob(target_folder + '/*.png')
+        filename = target_folder + '/info_panel_' + str(len(files)) + '.png'
+        plt.savefig(filename)
+        plt.close('all')
+        return None
+    
     import json
 
     with open(target_folder + '/sounds_list.json') as json_file:
@@ -595,6 +608,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
 
 
         plot_quantum_state(input_probability_vector, angle_vector, save=True)
+        plot_info_panel()
 
     clips = []
 
