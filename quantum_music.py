@@ -81,7 +81,15 @@ def f_minor(n):
             note -= 1
     return note
 
-def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = chromatic_middle_c):
+def get_simple_depolarising_noise_model(single_qubit_gater_error, cnot_gate_error):
+    noise_model = NoiseModel()
+    single_qubit_dep_error = depolarizing_error(single_qubit_gater_error, 1)
+    noise_model.add_all_qubit_quantum_error(single_qubit_dep_error, ['u1', 'u2', 'u3'])
+    cnot_gate_dep_error = depolarizing_error(cnot_gate_error, 2)
+    noise_model.add_all_qubit_quantum_error(cnot_gate_dep_error, ['cx'])
+    return noise_model
+
+def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c):
     """ Simulates the quantum circuit (with provided errors) and samples the state at every inserted barrier time step and converts the state info to a midi file. 
     Args:
         qc: The qiskit QuantumCircuit.
@@ -89,7 +97,7 @@ def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input
         rhythm: The sound length and post-rest times in units of ticks (480 ticks is 1 second) List[Tuple[int soundLength, int soundRest]]
         single_qubit_error: Amount of depolarisation error to add to each single-qubit gate.
         two_qubit_error: Amount of depolarisation error to add to each CNOT gate.
-        input_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections). 
+        input_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections) (defaults to 'synth_lead'). 
             Computational basis state phase determines which instrument from the collection is used. List[List[int intrument_index]]
         note_map: Converts state number to a note number where 60 is middle C. Map[int -> int]
     """
@@ -99,11 +107,9 @@ def make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input
     if os.path.isdir(target_folder) == False:
         os.mkdir("./" + NAME)
 
-    noise_model = NoiseModel()
-    single_qubit_dep_error = depolarizing_error(single_qubit_error, 1)
-    noise_model.add_all_qubit_quantum_error(single_qubit_dep_error, ['u1', 'u2', 'u3'])
-    two_qubit_dep_error = depolarizing_error(two_qubit_error, 2)
-    noise_model.add_all_qubit_quantum_error(two_qubit_dep_error, ['cx'])
+    if noise_model == None:
+        noise_model = NoiseModel()
+
     simulator = AerSimulator(noise_model = noise_model)
     simulator_zeronoise = AerSimulator()
 
@@ -449,7 +455,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     import moviepy.editor as mpy
     from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
     from moviepy.editor import ImageClip, concatenate, clips_array
-    from moviepy.video.fx import invert_colors, crop, fadeout
+    from moviepy.video.fx import invert_colors, crop, fadeout, freeze
     from moviepy.editor import CompositeVideoClip
     import copy
 
@@ -567,12 +573,16 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
                 #num_values = math.round(math.pow(2, num_qubits))
                 ax_dict[ax_name].set_xlim((-0.5, math.pow(2, num_qubits)-1+0.5))
                 ax_dict[ax_name].axes.xaxis.set_visible(True)
-                x_ticks = [int(math.pow(2, j)) for j in range(num_qubits)]
+                x_ticks = [0]
+                x_ticks.extend([int(math.pow(2, j+1)) for j in range(num_qubits-1)])
                 x_ticks.append(int(math.pow(2, num_qubits)-1))
                 if len(x_ticks) > 5:
                     x_ticks = x_ticks[-5:]
+                    x_tick_labels = x_ticks
                 ax_dict[ax_name].set_xticks(x_ticks)
-                ax_dict[ax_name].set_xticklabels(x_ticks)
+                if num_qubits < 7:
+                    x_tick_labels = [bin(x)[2:].zfill(num_qubits)[::-1] for x in x_ticks]
+                ax_dict[ax_name].set_xticklabels(x_tick_labels)
                 plt.xticks(fontsize=14)
             
 
@@ -1011,8 +1021,13 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         print("loading sound file " + str(files[0]) + "...")
         audio_clip = mpy.AudioFileClip(files[0], nbytes=4, fps=44100)
         arr = audio_clip.to_soundarray(nbytes=4)
+        total_time = audio_clip.duration
         audio_clip_new = AudioArrayClip(arr[0:int(44100 * total_time)], fps=44100)
+        video_final_duration = video_final.duration
+        video_final = video_final.set_duration(audio_clip_new.duration)
+        video_final = freeze.freeze(video_final, t=video_final_duration, freeze_duration=audio_clip_new.duration-video_final_duration)
         video_final = clip_arr.set_audio(audio_clip_new)
+        
 
     video_final = crop.crop(video_final, x1=int(clip_arr.size[0]/2-circ_clip_target_width/2), x2=int(clip_arr.size[0]/2+circ_clip_target_width/2))
     
