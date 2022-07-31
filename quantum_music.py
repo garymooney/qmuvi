@@ -462,7 +462,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     target_folder = NAME
     if os.path.isdir(target_folder) == False:
         os.mkdir("./" + NAME)
-        
+
     circuit_layers_per_line = 50
     
     dag = circuit_to_dag(qc)
@@ -501,9 +501,9 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     cmap_rainbow = cm.get_cmap('rainbow')
     cmap_rvb = matplotlib.colors.LinearSegmentedColormap.from_list("", ["red","violet","blue"])
     cmap_bvr = matplotlib.colors.LinearSegmentedColormap.from_list("", ["blue","violet","red"])
-    
+    tick_colour = [0.4, 0.4, 0.4, 1.0]
+
     def plot_quantum_state(input_probability_vector, angle_vector, plot_number, main_title=None, fig_title=None, save=None):
-        num_figs = 8
         input_length = input_probability_vector.shape[1]
 
         num_qubits = len(bin(input_length - 1)) - 2
@@ -515,57 +515,102 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
                 label_tem_2 = '0' + label_tem_2
             labels.append(label_tem_2)
 
-        cmap = cm.get_cmap('hsv')  # Get desired colormap - you can change this!
+        cmap = cm.get_cmap('hsv')
+        if invert_colours == True:
+            cmap = invert_cmap(cmap)
+
         max_height = 2 * np.pi
         min_height = -np.pi
-        X = np.linspace(1, input_length, input_length)
+        x_values = np.linspace(1, input_length, input_length)
 
         # ax1 = fig.add_subplot(gs[0, 0])
         # ax2 = fig.add_subplot(gs[0, 1])
         # ax3 = fig.add_subplot(gs[1, :])
 
-        num_column = int(num_figs / 2)
-        fig, ax = plt.subplots(2, num_column, figsize=(20, (1 - vpr(qubit_count)) * 13.5))
-        gs = fig.add_gridspec(2, num_column)
-        # if str(main_title):
-        #     fig.suptitle(str(main_title),fontsize=24)
-        ax_main = fig.add_subplot(gs[0, 1:3])
-        ax_main.axes.xaxis.set_visible(False)
-        ax_main.axes.yaxis.set_visible(False)
+        #num_column = int(num_figs / 2)
+        fig = plt.figure(figsize= (20, (1 - vpr(qubit_count)) * 13.5))
+        grid_spec = {
+                "bottom": 0.08,
+                "top": 0.95,
+                "left": 0.07,
+                "right": 0.99,
+                "wspace": 0.05,
+                "hspace": 0.08,
+            }
+        ax_dict = fig.subplot_mosaic(
+            [
+                ["pure_state_2", "main", "main", "pure_state_3"],
+                ["pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"],
+            ],
+            gridspec_kw = grid_spec,
+        )
+        
+        plots_order = ["main", "pure_state_2", "pure_state_3", "pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"]
+        for i, ax_name in enumerate(plots_order):
+            plt.sca(ax_dict[ax_name])
+            plt.yticks(fontsize=20)
+            bar_list = ax_dict[ax_name].bar(x_values, input_probability_vector[i, :], width=0.5)
+            ax_dict[ax_name].set_ylim([0, np.max(input_probability_vector)])
+            rgba = [cmap((k - min_height) / max_height) for k in angle_vector[i, :]]
+            for x in range(input_length):
+                bar_list[x].set_color(rgba[x])
+            
+            ax_dict[ax_name].tick_params(axis='x', colors=tick_colour)
+            ax_dict[ax_name].tick_params(axis='y', colors=tick_colour)
+            
+            ax_dict[ax_name].axes.xaxis.set_visible(False)
+            ax_dict[ax_name].axes.yaxis.set_visible(False)
+            if ax_name == "pure_state_2" or ax_name == "pure_state_4":
+                ax_dict[ax_name].axes.yaxis.set_visible(True)
+            
 
-        index = 1
-        for i in range(2):
-            for j in range(num_column):
-                if i == 0 and j == 1:
-                    ax[i, j].axes.yaxis.set_visible(False)
-                    ax[i, j].axes.xaxis.set_visible(False)
-                elif i == 0 and j == 2:
-                    ax[i, j].axes.yaxis.set_visible(False)
-                    ax[i, j].axes.xaxis.set_visible(False)
-                else:
-                    plt.sca(ax[i, j])
-                    rgba = [cmap((k - min_height) / max_height) for k in angle_vector[index, :]]
-                    bar_list = plt.bar(X, input_probability_vector[index, :], width=0.5)
-                    ax[i, j].set_ylim([0, np.max(input_probability_vector)])
-                    # if str(fig_title):
-                    #     ax[i, j].set_title(str(fig_title[index]), fontsize=20)
-                    for x in range(input_length):
-                        bar_list[x].set_color(rgba[x])
-                    if j != 0:
-                        ax[i, j].axes.yaxis.set_visible(False)
-                    ax[i, j].axes.xaxis.set_visible(False)
-                    if j == 0:
-                        plt.yticks(fontsize=20)
-                    index = index + 1
+        fig.text(0.01, (grid_spec["top"] - grid_spec["bottom"])/2 + grid_spec["bottom"], 'Probability', va='center', rotation='vertical', fontsize=20)
+        fig.text((grid_spec["right"] - grid_spec["left"])/2 + grid_spec["left"], 0.035, 'Quantum states', ha='center', fontsize=20)
+        
 
-        fig.text(0.5, 0.08, 'Quantum states', ha='center', fontsize=20)
-        fig.text(0.04, 0.5, 'Probability', va='center', rotation='vertical', fontsize=20)
+        #fig, ax = plt.subplots(2, num_column, figsize=(20, (1 - vpr(qubit_count)) * 13.5), sharey='row')
+        #gs = fig.add_gridspec(2, num_column)
+        ## if str(main_title):
+        ##     fig.suptitle(str(main_title),fontsize=24)
+        #ax_main = fig.add_subplot(gs[0, 1:3])
+        #ax_main.axes.xaxis.set_visible(False)
+        #ax_main.axes.yaxis.set_visible(False)
 
-        rgba = [cmap((k - min_height) / max_height) for k in angle_vector[0, :]]
-        bar_list = ax_main.bar(X, input_probability_vector[0, :], width=0.5)
-        ax_main.set_ylim([0, np.max(input_probability_vector)])
-        for x in range(input_length):
-            bar_list[x].set_color(rgba[x])
+        #index = 1
+        #for i in range(2):
+        #    for j in range(num_column):
+        #        if i == 0 and j == 1:
+        #            ax[i, j].axes.yaxis.set_visible(False)
+        #            ax[i, j].axes.xaxis.set_visible(False)
+        #        elif i == 0 and j == 2:
+        #            ax[i, j].axes.yaxis.set_visible(False)
+        #            ax[i, j].axes.xaxis.set_visible(False)
+        #        else:
+        #            plt.sca(ax[i, j])
+        #            rgba = [cmap((k - min_height) / max_height) for k in angle_vector[index, :]]
+        #            bar_list = plt.bar(x_values, input_probability_vector[index, :], width=0.5)
+        #            ax[i, j].set_ylim([0, np.max(input_probability_vector)])
+        #            # if str(fig_title):
+        #            #     ax[i, j].set_title(str(fig_title[index]), fontsize=20)
+        #            for x in range(input_length):
+        #                bar_list[x].set_color(rgba[x])
+        #            if j != 0:
+        #                ax[i, j].axes.yaxis.set_visible(False)
+        #            ax[i, j].axes.xaxis.set_visible(False)
+        #            if j == 0:
+        #                plt.yticks(fontsize=20)
+        #            index = index + 1
+
+        #fig.text(0.5, 0.1, 'Quantum states', ha='center', fontsize=20)
+        #fig.text(0.04, 0.5, 'Probability', va='center', rotation='vertical', fontsize=20)
+
+        #rgba = [cmap((k - min_height) / max_height) for k in angle_vector[0, :]]
+        #bar_list = ax_main.bar(x_values, input_probability_vector[0, :], width=0.5)
+        #ax_main.set_ylim([0, np.max(input_probability_vector)])
+
+        #for x in range(input_length):
+        #    bar_list[x].set_color(rgba[x])
+
         # ax_main.set_title(str(fig_title[0]), fontsize=20)
         if save:
             filename = target_folder + '/frame_' + str(plot_number) + '.png'
@@ -574,38 +619,141 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         return 0
     
     def plot_info_panel(plot_number,fidelity): 
-        fig = plt.figure(figsize=(4, (1 - vpr(qubit_count)) * 13.5))
-        ax1 = plt.subplot2grid((4, 1), (0, 0), rowspan=3, polar=True)
-        ax2 = plt.subplot2grid((4, 1), (3, 0))
+
+
+        fig = plt.figure(figsize = (4, (1 - vpr(qubit_count)) * 13.5))
+        grid_spec_bars = {
+                "bottom": (0.95 - 0.08)/2 + 0.08 + 0.02,
+                "top": 0.95,
+                "left": 0.01,
+                "right": 0.93,
+                "wspace": 0.0,
+                "hspace": 0.0,
+                "height_ratios": [1]
+            }
+        ax_dict_bars = fig.subplot_mosaic(
+            [
+                ["fidelity"]
+            ],
+            gridspec_kw = grid_spec_bars,
+        )
+        grid_spec_phase_wheel = {
+                "bottom": 0.12,
+                "top": 0.44,
+                "left": 0.01,
+                "right": 0.93,
+                "wspace": 0.0,
+                "hspace": 0.0,
+                "height_ratios": [1]
+            }
+        ax_dict_phase_wheel = fig.subplot_mosaic(
+            [
+                ["phase_wheel"],
+            ],
+            gridspec_kw = grid_spec_phase_wheel,
+            subplot_kw={"projection": "polar"}
+        )
+
+        #fig = plt.figure(figsize=(4, (1 - vpr(qubit_count)) * 13.5))
+        #ax1 = plt.subplot2grid((4, 1), (0, 0), rowspan=3, polar=True)
+        #ax2 = plt.subplot2grid((4, 1), (3, 0))
         # ax3 = plt.subplot2grid((4, 1), (3, 0))
         
+        plt.sca(ax_dict_phase_wheel["phase_wheel"])
+        plt.yticks(fontsize=20)
+        plt.xticks(fontsize=20)
+        #plt.tight_layout()
+
         # phase wheel
-        cmap = cm.get_cmap('hsv')
-        #if invert_colours:
-            #cmap = lambda t: (1,1,1)-cm.get_cmap('hsv')
+        cmap = cm.get_cmap('hsv', 256)
+        if invert_colours == True:
+            cmap = invert_cmap(cmap)
         
         azimuths = np.arange(0, 361, 1)
         zeniths = np.arange(40, 70, 1)
         values = azimuths * np.ones((30, 361))
-        ax1.pcolormesh(azimuths*np.pi/180.0, zeniths, np.roll(values,180), cmap = cmap)
-        ax1.fill_between(azimuths*np.pi/180.0, 40, color = '#FFFFFF')
-        ax1.plot(azimuths*np.pi/180.0, [40]*361, color='#000000', lw=1)
-        ax1.set_yticks([])
-        ax1.set_title('Phase')
+        ax_dict_phase_wheel["phase_wheel"].pcolormesh(azimuths*np.pi/180.0, zeniths, np.roll(values,180), cmap = cmap)
+        ax_dict_phase_wheel["phase_wheel"].fill_between(azimuths*np.pi/180.0, 40, color = '#FFFFFF')
         
+        if invert_colours == True:
+            ax_dict_phase_wheel["phase_wheel"].plot(azimuths*np.pi/180.0, [40]*361, color=tick_colour, lw=1)
+            #ax_dict_phase_wheel["phase_wheel"].axis("off")
+            ax_dict_phase_wheel["phase_wheel"].spines['polar'].set_color(tick_colour)
+        else:
+            ax_dict_phase_wheel["phase_wheel"].plot(azimuths*np.pi/180.0, [40]*361, color='#000000', lw=1)
+        ax_dict_phase_wheel["phase_wheel"].set_yticks([])
+
+
+        ax_dict_phase_wheel["phase_wheel"].tick_params(axis='x', colors=tick_colour)
+        ax_dict_phase_wheel["phase_wheel"].tick_params(axis='y', colors=tick_colour)
+        fig.text(0.82, 0.465, 'Phase', ha='right', va='bottom', fontsize=20)
+        
+
+        #ax_dict_phase_wheel["phase_wheel"].set_title('Phase', fontsize=20)
+
+
+        label_positions = [0, math.pi / 2, math.pi, 3 * math.pi / 2]
+        labels = ['0',r'$\frac{\pi}{2}$', r'$\pi$',r'$\frac{3\pi}{2}$']
+        ax_dict_phase_wheel["phase_wheel"].set_xticks(label_positions, labels)
+        ax_dict_phase_wheel["phase_wheel"].xaxis.set_tick_params(pad = 8)
+        #plt.thetagrids(label_positions, labels=labels, frac=1.2)
+        
+        plt.sca(ax_dict_bars["fidelity"])
+        plt.yticks(fontsize=20)
+        plt.xticks(fontsize=20)
+        #plt.tight_layout()
+
         # fidelity colorbar
         cmap = cmap_rvb
         c = '#00FF00'
+        c_gray = [0.6, 0.6, 0.6, 0.1]
+        if invert_colours == True:
+            cmap = invert_cmap(cmap_rvb)    
+            c = '#FF00FF'
+        
         #if invert_colours:
         #    cmap = lambda t: (1,1,1)-cmap_rvb
         #    c = '#FF00FF'
+        #[np.linspace(0,1,100)]*5
+        # aspect=200.0/5
+        ax_dict_bars["fidelity"].imshow(np.array(list(reversed([[val] * 6 for val in reversed(np.linspace(0,1,100))]))), cmap = cmap, interpolation='bicubic')
+        #ax_dict_bars["fidelity"].axhline(99*fidelity, c=c, lw=2)
+        #ax_dict_bars["fidelity"].annotate('', xy=(-0.1, fidelity), xycoords='axes fraction', xytext=(0.1, fidelity), arrowprops=dict(arrowstyle="-", color=c))
         
-        ax2.imshow(np.array([np.linspace(0,1,100)]*5), cmap = cmap)
-        ax2.axvline(99*fidelity, c=c, lw=2)
-        ax2.set_title('Fidelity')
-        ax2.yaxis.set_visible(False)
-        ax2.set_xticks([0,19,39,59,79,99])
-        ax2.set_xticklabels([0.0,0.2,0.4,0.6,0.8,1.0])
+        
+        from matplotlib.lines import Line2D
+        line_y = grid_spec_bars["bottom"] + (grid_spec_bars["top"] - grid_spec_bars["bottom"]) * fidelity
+        line_middle_x = grid_spec_bars["left"] + (grid_spec_bars["right"] - grid_spec_bars["left"]) / 2
+        line = Line2D([line_middle_x - 0.035, line_middle_x + 0.035], [line_y, line_y], lw=4, color=c_gray, alpha=1)
+        line.set_clip_on(False)
+        fig.add_artist(line)
+        ax_dict_bars["fidelity"].tick_params(axis='x', colors=tick_colour)
+        ax_dict_bars["fidelity"].tick_params(axis='y', colors=tick_colour)
+        if invert_colours == True:
+            #ax_dict_bars["fidelity"].spines['top'].set_visible(False)
+            #ax_dict_bars["fidelity"].spines['right'].set_visible(False)
+            #ax_dict_bars["fidelity"].spines['bottom'].set_visible(False)
+            #ax_dict_bars["fidelity"].spines['left'].set_visible(False)
+            ax_dict_bars["fidelity"].spines['bottom'].set_color(tick_colour)
+            ax_dict_bars["fidelity"].spines['top'].set_color(tick_colour)
+            ax_dict_bars["fidelity"].spines['left'].set_color(tick_colour)
+            ax_dict_bars["fidelity"].spines['right'].set_color(tick_colour)
+            for t in ax_dict_bars["fidelity"].xaxis.get_ticklines(): t.set_color(tick_colour)
+            for t in ax_dict_bars["fidelity"].yaxis.get_ticklines(): t.set_color(tick_colour)
+        
+
+
+        #ax_dict_bars["fidelity"].set_title('Fidelity', fontsize=20)
+        fig.text(0.82, 0.945, 'Fidelity', ha='right', va='center', fontsize=20)
+        fig.text(0.82, 0.905, format(fidelity, '.2f'), ha='right', va='center', fontsize=20)
+        
+        ax_dict_bars["fidelity"].xaxis.set_visible(False)
+        ax_dict_bars["fidelity"].set_ylim((0,99))
+        y_tick_positions = [0, 50, 99]
+        y_tick_labels = [0.0, 0.5, 1.0]
+        ax_dict_bars["fidelity"].set_yticks(y_tick_positions)
+        ax_dict_bars["fidelity"].set_yticklabels(y_tick_labels)
+        
         
         # info text
         # ax3.axis('off')
@@ -627,7 +775,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     with open(target_folder + '/fidelity_list.json') as json_file:
         fidelity_list = json.load(json_file)
 
-    print("rhythm: ", rhythm)
+    print("Generating pieces...")
 
     files = glob.glob(target_folder + '/frame_*')
     for file in files:
@@ -848,10 +996,9 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     files = glob.glob(target_folder + '/*.wav')
     video_final = clip_arr
     if len(files) > 0:
+        print("loading sound file " + str(files[0]) + "...")
         audio_clip = mpy.AudioFileClip(files[0], nbytes=4, fps=44100)
-        print("audio_clip:", audio_clip)
         arr = audio_clip.to_soundarray(nbytes=4)
-        print("arr:", arr)
         audio_clip_new = AudioArrayClip(arr[0:int(44100 * total_time)], fps=44100)
         video_final = clip_arr.set_audio(audio_clip_new)
 
@@ -923,8 +1070,8 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     video_final = video_final.fl(draw_needle)
 
     video_final.save_frame(target_folder + '/' +"save_frame_0.png", t=0.0)
-    #video_final.save_frame(target_folder + '/' +"save_frame_1.png", t=1.0)
-    #video_final.save_frame(target_folder + '/' +"save_frame_fading.png", t=1.0 - highlight_fade_time / 2.0)
+    video_final.save_frame(target_folder + '/' +"save_frame_1.png", t=1.0)
+    video_final.save_frame(target_folder + '/' +"save_frame_fading.png", t=1.0 - highlight_fade_time / 2.0)
 
     #def supersample(clip, d, nframes):
     #    """ Replaces each frame at time t by the mean of `nframes` equally spaced frames
@@ -938,7 +1085,8 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
 #
     #video_final = supersample(video_final, d=0.008, nframes=3)
     # preset options (speed vs filesize): ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo
-    video_final.write_videofile(target_folder + '/' + target_folder + '.mp4', preset='ultrafast', fps=fps, codec='mpeg4', audio_fps=44100, audio_bitrate="512K", audio_nbytes=4, ffmpeg_params=["-b:v", "12000K", "-b:a", "512K"])
+    
+    #video_final.write_videofile(target_folder + '/' + target_folder + '.mp4', preset='ultrafast', fps=fps, codec='mpeg4', audio_fps=44100, audio_bitrate="512K", audio_nbytes=4, ffmpeg_params=["-b:v", "12000K", "-b:a", "512K"])
 
     files = glob.glob(target_folder + '/*.mp4')
 #     for file in files:
@@ -1046,3 +1194,11 @@ def ease_out(ease_from, ease_to, t):
     t = max(min(t, 1.0), 0.0)
     scaled_t = math.sin(t * math.pi / 2.0)
     return [((1-scaled_t) * a) + (scaled_t * b) for a, b in zip(ease_from, ease_to)]
+
+def invert_cmap(cmap):
+    from matplotlib.colors import ListedColormap
+
+    newcolors = cmap(np.linspace(0, 1, 256))
+    for i in range(256):
+        newcolors[i, :] = np.array([1-cmap(i/256)[0],1-cmap(i/256)[1],1-cmap(i/256)[2],1])
+    return ListedColormap(newcolors)
