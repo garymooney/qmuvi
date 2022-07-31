@@ -521,7 +521,8 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
 
         max_height = 2 * np.pi
         min_height = -np.pi
-        x_values = np.linspace(1, input_length, input_length)
+        x_values = [x for x in range(input_length)]
+        #x_values = np.linspace(1, input_length, input_length)
 
         # ax1 = fig.add_subplot(gs[0, 0])
         # ax2 = fig.add_subplot(gs[0, 1])
@@ -535,7 +536,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
                 "left": 0.07,
                 "right": 0.99,
                 "wspace": 0.05,
-                "hspace": 0.08,
+                "hspace": 0.09,
             }
         ax_dict = fig.subplot_mosaic(
             [
@@ -562,6 +563,17 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
             ax_dict[ax_name].axes.yaxis.set_visible(False)
             if ax_name == "pure_state_2" or ax_name == "pure_state_4":
                 ax_dict[ax_name].axes.yaxis.set_visible(True)
+            if ax_name == "main":
+                #num_values = math.round(math.pow(2, num_qubits))
+                ax_dict[ax_name].set_xlim((-0.5, math.pow(2, num_qubits)-1+0.5))
+                ax_dict[ax_name].axes.xaxis.set_visible(True)
+                x_ticks = [int(math.pow(2, j)) for j in range(num_qubits)]
+                x_ticks.append(int(math.pow(2, num_qubits)-1))
+                if len(x_ticks) > 5:
+                    x_ticks = x_ticks[-5:]
+                ax_dict[ax_name].set_xticks(x_ticks)
+                ax_dict[ax_name].set_xticklabels(x_ticks)
+                plt.xticks(fontsize=14)
             
 
         fig.text(0.01, (grid_spec["top"] - grid_spec["bottom"])/2 + grid_spec["bottom"], 'Probability', va='center', rotation='vertical', fontsize=20)
@@ -1086,7 +1098,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     #video_final = supersample(video_final, d=0.008, nframes=3)
     # preset options (speed vs filesize): ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo
     
-    #video_final.write_videofile(target_folder + '/' + target_folder + '.mp4', preset='ultrafast', fps=fps, codec='mpeg4', audio_fps=44100, audio_bitrate="512K", audio_nbytes=4, ffmpeg_params=["-b:v", "12000K", "-b:a", "512K"])
+    video_final.write_videofile(target_folder + '/' + target_folder + '.mp4', preset='ultrafast', fps=fps, codec='mpeg4', audio_fps=44100, audio_bitrate="512K", audio_nbytes=4, ffmpeg_params=["-b:v", "12000K", "-b:a", "512K"])
 
     files = glob.glob(target_folder + '/*.mp4')
 #     for file in files:
