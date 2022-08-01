@@ -81,7 +81,7 @@ def f_minor(n):
             note -= 1
     return note
 
-def get_simple_depolarising_noise_model(single_qubit_gater_error, cnot_gate_error):
+def get_depolarising_noise(single_qubit_gater_error, cnot_gate_error):
     noise_model = NoiseModel()
     single_qubit_dep_error = depolarizing_error(single_qubit_gater_error, 1)
     noise_model.add_all_qubit_quantum_error(single_qubit_dep_error, ['u1', 'u2', 'u3'])
@@ -351,7 +351,7 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3):
     """ Uses timidity++ to convert a midi file to wav in the working directory.
     Args:
         midi_filename_no_ext: the name of the midi file in the working dir.
-        wait_time: The amount of time to wait after the VLC process has started. Used to make sure the process is finished before continuing execution.
+        wait_time: The amount of time to wait after the Timidity process has started. Used to make sure the process is finished before continuing execution.
     """
 
     #string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --synth-polyphony="65535 " --sout-keep --sout "#transcode{acodec=s16l,channels=2}:std{access=file,mux=wav,dst=./' + midi_filename_no_ext + '.wav}"'
@@ -430,24 +430,43 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3):
     time.sleep(wait_time)
 
 
-def make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = chromatic_middle_c, invert_colours = False, fps=60):
+def make_music_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True):
     """ Simulates the quantum circuit (with provided errors) and samples the state at every inserted barrier time step and converts the state info to a music video file (.avi). 
     Args:
         qc: The qiskit QuantumCircuit.
         name: The name of the midi file to output to a folder in the working directory with the same name. The folder is created if it does not exist.
         rhythm: The sound length and post-rest times in units of ticks (480 ticks is 1 second) List[Tuple[int soundLength, int soundRest]]
-        single_qubit_error: Amount of depolarisation error to add to each single-qubit gate.
-        two_qubit_error: Amount of depolarisation error to add to each CNOT gate.
+        noise_model: A qiskit NoiseModel. If None then no noise will be used in the simulations.
         input_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections). 
             Computational basis state phase determines which instrument from the collection is used. List[List[int intrument_index]]
         note_map: Converts state number to a note number where 60 is middle C. Map[int -> int]
+        invert_colours: Whether to render the video in dark mode. (default: False) Bool
+        fps: The frames per second of the output video. (default: 60) Int
+        vpr: Propotion of vertical space that the circuit with be scaled to fit. Float (default: 1/3)
+        smooth_transitions: Whether to smoothly animate between histogram frames. Significantly increased render time. (default: False) Bool
+        phase_marker: Whether to draw lines on the phase wheel indicating phases of the primary pure state.
     """
     
-    make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map=note_map)
+    make_music_midi(qc, name, rhythm, noise_model, input_instruments = input_instruments, note_map=note_map)
     convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 3)
-    make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = note_map, invert_colours = invert_colours, fps = fps)
+    make_video(qc, name, rhythm, noise_model, input_instruments, note_map = note_map, invert_colours = invert_colours, fps = fps, vpr = vpr, smooth_transitions = smooth_transitions, phase_marker = phase_marker)
 
-def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_instruments, note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None):
+def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True):
+    """ Only renders the video, assuming the relevant circuit sample data is available in a folder with the given name.
+    Args:
+        qc: The qiskit QuantumCircuit.
+        name: The name of the folder where the circuit data is stored.
+        rhythm: The sound length and post-rest times in units of ticks (480 ticks is 1 second) List[Tuple[int soundLength, int soundRest]]
+        noise_model: A qiskit NoiseModel. If None then no noise will be used in the simulations.
+        input_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections). 
+            Computational basis state phase determines which instrument from the collection is used. List[List[int intrument_index]]
+        note_map: Converts state number to a note number where 60 is middle C. Map[int -> int]
+        invert_colours: Whether to render the video in dark mode. (default: False) Bool
+        fps: The frames per second of the output video. (default: 60) Int
+        vpr: Propotion of vertical space that the circuit with be scaled to fit. Float (default: 1/3)
+        smooth_transitions: Whether to smoothly animate between histogram frames. Significantly increased render time. (default: False) Bool
+        phase_marker: Whether to draw lines on the phase wheel indicating phases of the primary pure state.
+    """
     
     import matplotlib
     import matplotlib.pylab as plt
@@ -456,7 +475,9 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
     from moviepy.editor import ImageClip, concatenate, clips_array
     from moviepy.video.fx import invert_colors, crop, fadeout, freeze
-    from moviepy.editor import CompositeVideoClip
+    from moviepy.editor import CompositeVideoClip, VideoClip
+    from matplotlib.lines import Line2D
+    from moviepy.video.io.bindings import mplfig_to_npimage
     import copy
 
     if vpr == None:
@@ -509,8 +530,38 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     cmap_bvr = matplotlib.colors.LinearSegmentedColormap.from_list("", ["blue","violet","red"])
     tick_colour = [0.4, 0.4, 0.4, 1.0]
 
-    def plot_quantum_state(input_probability_vector, angle_vector, plot_number, main_title=None, fig_title=None, save=None):
-        input_length = input_probability_vector.shape[1]
+    def plot_quantum_state(input_probability_vector_list, angle_vector_list, plot_number, interpolate = False, save=True, fig = None):
+        '''
+        Args:
+            interpolate: whether to interpolate plot numbers.
+            fig: an already created figure
+        '''
+        
+        if interpolate == True:
+            input_probability_vector_1 = input_probability_vector_list[math.floor(plot_number)]
+            input_probability_vector_2 = input_probability_vector_list[math.ceil(plot_number)]
+            input_length = input_probability_vector_list[0].shape[1]
+            input_probability_vector = np.zeros((8, input_length))
+            for i in range(input_probability_vector_1.shape[0]):
+                input_probability_vector[i, :] = lerp(input_probability_vector_1[i, :], input_probability_vector_2[i, :], plot_number - math.floor(plot_number))
+
+            angle_vector_1 = angle_vector_list[math.floor(plot_number)]
+            angle_vector_2 = angle_vector_list[math.ceil(plot_number)]
+            angle_vector = np.zeros((8, input_length))
+            for i in range(angle_vector.shape[0]):
+                angle_vector[i, :] = lerp(angle_vector_1[i, :], angle_vector_2[i, :], plot_number - math.floor(plot_number))
+            
+            for i in range(angle_vector.shape[0]):
+                for j in range(angle_vector.shape[1]):
+                    if input_probability_vector_1[i, j] <= 0.0001 and input_probability_vector_2[i, j] > 0:
+                        angle_vector[i, j] = angle_vector_2[i, j]
+                    if input_probability_vector_1[i, j] > 0 and input_probability_vector_2[i, j] <= 0.0001:
+                        angle_vector[i, j] = angle_vector_1[i, j]
+            
+        else:
+            input_probability_vector = input_probability_vector_list[plot_number]
+            angle_vector = angle_vector_list[plot_number]
+            input_length = input_probability_vector.shape[1]
 
         num_qubits = len(bin(input_length - 1)) - 2
         labels = []
@@ -528,14 +579,10 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         max_height = 2 * np.pi
         min_height = -np.pi
         x_values = [x for x in range(input_length)]
-        #x_values = np.linspace(1, input_length, input_length)
 
-        # ax1 = fig.add_subplot(gs[0, 0])
-        # ax2 = fig.add_subplot(gs[0, 1])
-        # ax3 = fig.add_subplot(gs[1, :])
+        if fig == None:
+            fig = plt.figure(figsize= (20, (1 - vpr(qubit_count)) * 13.5))
 
-        #num_column = int(num_figs / 2)
-        fig = plt.figure(figsize= (20, (1 - vpr(qubit_count)) * 13.5))
         grid_spec = {
                 "bottom": 0.08,
                 "top": 0.95,
@@ -554,10 +601,13 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         
         plots_order = ["main", "pure_state_2", "pure_state_3", "pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"]
         for i, ax_name in enumerate(plots_order):
-            plt.sca(ax_dict[ax_name])
-            plt.yticks(fontsize=20)
-            bar_list = ax_dict[ax_name].bar(x_values, input_probability_vector[i, :], width=0.5)
+            
+            ax_dict[ax_name].tick_params(axis='y', labelsize=20)
+
+            in_prob_vec = input_probability_vector[i, :]
+            bar_list = ax_dict[ax_name].bar(x_values, in_prob_vec, width=0.5)
             ax_dict[ax_name].set_ylim([0, np.max(input_probability_vector)])
+
             rgba = [cmap((k - min_height) / max_height) for k in angle_vector[i, :]]
             for x in range(input_length):
                 bar_list[x].set_color(rgba[x])
@@ -573,9 +623,18 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
                 #num_values = math.round(math.pow(2, num_qubits))
                 ax_dict[ax_name].set_xlim((-0.5, math.pow(2, num_qubits)-1+0.5))
                 ax_dict[ax_name].axes.xaxis.set_visible(True)
-                x_ticks = [0]
-                x_ticks.extend([int(math.pow(2, j+1)) for j in range(num_qubits-1)])
-                x_ticks.append(int(math.pow(2, num_qubits)-1))
+                number_of_states = math.pow(2, num_qubits)
+                if num_qubits > 2:
+                    x_ticks = [0]
+                    x_ticks.append(int(number_of_states / 4))
+                    x_ticks.append(int(2 * number_of_states / 4))
+                    x_ticks.append(int(3 * number_of_states / 4))
+                    x_ticks.append(int(number_of_states-1))
+                else:
+                    if num_qubits == 2:
+                        x_ticks = [0, 1, 2, 3]
+                    else:
+                        x_ticks = [0, 1]
                 if len(x_ticks) > 5:
                     x_ticks = x_ticks[-5:]
                     x_tick_labels = x_ticks
@@ -583,65 +642,23 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
                 if num_qubits < 7:
                     x_tick_labels = [bin(x)[2:].zfill(num_qubits)[::-1] for x in x_ticks]
                 ax_dict[ax_name].set_xticklabels(x_tick_labels)
-                plt.xticks(fontsize=14)
+                #plt.xticks(fontsize=14)
+                ax_dict[ax_name].tick_params(axis='x', labelsize=14)
             
 
         fig.text(0.01, (grid_spec["top"] - grid_spec["bottom"])/2 + grid_spec["bottom"], 'Probability', va='center', rotation='vertical', fontsize=20)
         fig.text((grid_spec["right"] - grid_spec["left"])/2 + grid_spec["left"], 0.035, 'Quantum states', ha='center', fontsize=20)
         
-
-        #fig, ax = plt.subplots(2, num_column, figsize=(20, (1 - vpr(qubit_count)) * 13.5), sharey='row')
-        #gs = fig.add_gridspec(2, num_column)
-        ## if str(main_title):
-        ##     fig.suptitle(str(main_title),fontsize=24)
-        #ax_main = fig.add_subplot(gs[0, 1:3])
-        #ax_main.axes.xaxis.set_visible(False)
-        #ax_main.axes.yaxis.set_visible(False)
-
-        #index = 1
-        #for i in range(2):
-        #    for j in range(num_column):
-        #        if i == 0 and j == 1:
-        #            ax[i, j].axes.yaxis.set_visible(False)
-        #            ax[i, j].axes.xaxis.set_visible(False)
-        #        elif i == 0 and j == 2:
-        #            ax[i, j].axes.yaxis.set_visible(False)
-        #            ax[i, j].axes.xaxis.set_visible(False)
-        #        else:
-        #            plt.sca(ax[i, j])
-        #            rgba = [cmap((k - min_height) / max_height) for k in angle_vector[index, :]]
-        #            bar_list = plt.bar(x_values, input_probability_vector[index, :], width=0.5)
-        #            ax[i, j].set_ylim([0, np.max(input_probability_vector)])
-        #            # if str(fig_title):
-        #            #     ax[i, j].set_title(str(fig_title[index]), fontsize=20)
-        #            for x in range(input_length):
-        #                bar_list[x].set_color(rgba[x])
-        #            if j != 0:
-        #                ax[i, j].axes.yaxis.set_visible(False)
-        #            ax[i, j].axes.xaxis.set_visible(False)
-        #            if j == 0:
-        #                plt.yticks(fontsize=20)
-        #            index = index + 1
-
-        #fig.text(0.5, 0.1, 'Quantum states', ha='center', fontsize=20)
-        #fig.text(0.04, 0.5, 'Probability', va='center', rotation='vertical', fontsize=20)
-
-        #rgba = [cmap((k - min_height) / max_height) for k in angle_vector[0, :]]
-        #bar_list = ax_main.bar(x_values, input_probability_vector[0, :], width=0.5)
-        #ax_main.set_ylim([0, np.max(input_probability_vector)])
-
-        #for x in range(input_length):
-        #    bar_list[x].set_color(rgba[x])
-
-        # ax_main.set_title(str(fig_title[0]), fontsize=20)
         if save:
             filename = target_folder + '/frame_' + str(plot_number) + '.png'
             plt.savefig(filename)
             plt.close('all')
-        return 0
+        return fig
     
-    def plot_info_panel(plot_number,fidelity): 
+    def plot_info_panel(plot_number,fidelity, prob_vec, angles_vec): 
 
+        probs = list(prob_vec[0, :])
+        angles = list(angles_vec[0, :])
 
         fig = plt.figure(figsize = (4, (1 - vpr(qubit_count)) * 13.5))
         grid_spec_bars = {
@@ -676,11 +693,6 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
             subplot_kw={"projection": "polar"}
         )
 
-        #fig = plt.figure(figsize=(4, (1 - vpr(qubit_count)) * 13.5))
-        #ax1 = plt.subplot2grid((4, 1), (0, 0), rowspan=3, polar=True)
-        #ax2 = plt.subplot2grid((4, 1), (3, 0))
-        # ax3 = plt.subplot2grid((4, 1), (3, 0))
-        
         plt.sca(ax_dict_phase_wheel["phase_wheel"])
         plt.yticks(fontsize=20)
         plt.xticks(fontsize=20)
@@ -691,59 +703,51 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         if invert_colours == True:
             cmap = invert_cmap(cmap)
         
+        c_gray = [0.6, 0.6, 0.6, 0.1]
+
         azimuths = np.arange(0, 361, 1)
         zeniths = np.arange(40, 70, 1)
         values = azimuths * np.ones((30, 361))
         ax_dict_phase_wheel["phase_wheel"].pcolormesh(azimuths*np.pi/180.0, zeniths, np.roll(values,180), cmap = cmap)
         ax_dict_phase_wheel["phase_wheel"].fill_between(azimuths*np.pi/180.0, 40, color = '#FFFFFF')
-        
+
         if invert_colours == True:
             ax_dict_phase_wheel["phase_wheel"].plot(azimuths*np.pi/180.0, [40]*361, color=tick_colour, lw=1)
-            #ax_dict_phase_wheel["phase_wheel"].axis("off")
+            if phase_marker == True:
+                for angle_iter, angle in enumerate(angles):
+                    if probs[angle_iter] > 0.0001:
+                        ax_dict_phase_wheel["phase_wheel"].plot([angle] * 40, np.arange(0, 40, 1), color=tick_colour, lw=2)
             ax_dict_phase_wheel["phase_wheel"].spines['polar'].set_color(tick_colour)
         else:
-            ax_dict_phase_wheel["phase_wheel"].plot(azimuths*np.pi/180.0, [40]*361, color='#000000', lw=1)
+            ax_dict_phase_wheel["phase_wheel"].plot(azimuths*np.pi/180.0, [40]*361, color=tick_colour, lw=1)
+            if phase_marker == True:
+                for angle_iter, angle in enumerate(angles):
+                    if probs[angle_iter] > 0.0001:
+                        ax_dict_phase_wheel["phase_wheel"].plot([angle] * 40, np.arange(0, 40, 1), color=tick_colour, lw=2)
         ax_dict_phase_wheel["phase_wheel"].set_yticks([])
 
 
         ax_dict_phase_wheel["phase_wheel"].tick_params(axis='x', colors=tick_colour)
         ax_dict_phase_wheel["phase_wheel"].tick_params(axis='y', colors=tick_colour)
         fig.text(0.82, 0.465, 'Phase', ha='right', va='bottom', fontsize=20)
-        
-
-        #ax_dict_phase_wheel["phase_wheel"].set_title('Phase', fontsize=20)
-
 
         label_positions = [0, math.pi / 2, math.pi, 3 * math.pi / 2]
         labels = ['0',r'$\frac{\pi}{2}$', r'$\pi$',r'$\frac{3\pi}{2}$']
         ax_dict_phase_wheel["phase_wheel"].set_xticks(label_positions, labels)
         ax_dict_phase_wheel["phase_wheel"].xaxis.set_tick_params(pad = 8)
-        #plt.thetagrids(label_positions, labels=labels, frac=1.2)
         
         plt.sca(ax_dict_bars["fidelity"])
         plt.yticks(fontsize=20)
         plt.xticks(fontsize=20)
-        #plt.tight_layout()
 
         # fidelity colorbar
         cmap = cmap_rvb
-        c = '#00FF00'
-        c_gray = [0.6, 0.6, 0.6, 0.1]
+        
         if invert_colours == True:
             cmap = invert_cmap(cmap_rvb)    
-            c = '#FF00FF'
         
-        #if invert_colours:
-        #    cmap = lambda t: (1,1,1)-cmap_rvb
-        #    c = '#FF00FF'
-        #[np.linspace(0,1,100)]*5
-        # aspect=200.0/5
         ax_dict_bars["fidelity"].imshow(np.array(list(reversed([[val] * 6 for val in reversed(np.linspace(0,1,100))]))), cmap = cmap, interpolation='bicubic')
-        #ax_dict_bars["fidelity"].axhline(99*fidelity, c=c, lw=2)
-        #ax_dict_bars["fidelity"].annotate('', xy=(-0.1, fidelity), xycoords='axes fraction', xytext=(0.1, fidelity), arrowprops=dict(arrowstyle="-", color=c))
         
-        
-        from matplotlib.lines import Line2D
         line_y = grid_spec_bars["bottom"] + (grid_spec_bars["top"] - grid_spec_bars["bottom"]) * fidelity
         line_middle_x = grid_spec_bars["left"] + (grid_spec_bars["right"] - grid_spec_bars["left"]) / 2
         line = Line2D([line_middle_x - 0.035, line_middle_x + 0.035], [line_y, line_y], lw=4, color=c_gray, alpha=1)
@@ -752,10 +756,6 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         ax_dict_bars["fidelity"].tick_params(axis='x', colors=tick_colour)
         ax_dict_bars["fidelity"].tick_params(axis='y', colors=tick_colour)
         if invert_colours == True:
-            #ax_dict_bars["fidelity"].spines['top'].set_visible(False)
-            #ax_dict_bars["fidelity"].spines['right'].set_visible(False)
-            #ax_dict_bars["fidelity"].spines['bottom'].set_visible(False)
-            #ax_dict_bars["fidelity"].spines['left'].set_visible(False)
             ax_dict_bars["fidelity"].spines['bottom'].set_color(tick_colour)
             ax_dict_bars["fidelity"].spines['top'].set_color(tick_colour)
             ax_dict_bars["fidelity"].spines['left'].set_color(tick_colour)
@@ -764,8 +764,6 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
             for t in ax_dict_bars["fidelity"].yaxis.get_ticklines(): t.set_color(tick_colour)
         
 
-
-        #ax_dict_bars["fidelity"].set_title('Fidelity', fontsize=20)
         fig.text(0.82, 0.945, 'Fidelity', ha='right', va='center', fontsize=20)
         fig.text(0.82, 0.905, format(fidelity, '.2f'), ha='right', va='center', fontsize=20)
         
@@ -776,10 +774,6 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         ax_dict_bars["fidelity"].set_yticks(y_tick_positions)
         ax_dict_bars["fidelity"].set_yticklabels(y_tick_labels)
         
-        
-        # info text
-        # ax3.axis('off')
-        # ax3.text(0.5,0.5,f"Fidelity = {fidelity}", ha='center', va='center')
         
         filename = target_folder + '/info_panel_' + str(plot_number) + '.png'
         plt.savefig(filename)
@@ -809,37 +803,89 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
 
     num_frames = len(sound_list)
 
-    input_probability_vector = np.zeros((8, len(sound_list[0][0][2])))
-    angle_vector = np.zeros((8, len(sound_list[0][0][2])))
-
-    for i, sound_data in enumerate(sound_list):
+    
+    input_probability_vector_list = []
+    angle_vector_list = []
+    clips = []
+    for sound_iter, sound_data in enumerate(sound_list):
+        input_probability_vector = np.zeros((8, len(sound_list[0][0][2])))
+        angle_vector = np.zeros((8, len(sound_list[0][0][2])))
         for j in range(8):
             if j < len(sound_data):
-                input_probability_vector[j, :] = np.array(sound_list[i][j][2]) * sound_list[i][j][0]
-                angle_vector[j, :] = sound_list[i][j][3]
+                input_probability_vector[j, :] = np.array(sound_list[sound_iter][j][2]) * sound_list[sound_iter][j][0]
+                angle_vector[j, :] = sound_list[sound_iter][j][3]
+        input_probability_vector_list.append(input_probability_vector)
+        angle_vector_list.append(angle_vector)
 
+    accumulated_times = []
+    accumulated_times.append(0)
+    accumulated_time = 0
+    for times in rhythm:
+        frame_time = (times[0] + times[1]) / 480.0
+        accumulated_time += frame_time
+        accumulated_times.append(accumulated_time)
 
-        plot_quantum_state(input_probability_vector, angle_vector, i, save=True)
-        plot_info_panel(i,fidelity_list[i])
+    for sound_iter, sound_data in enumerate(sound_list):
+        plot_info_panel(sound_iter,fidelity_list[sound_iter], input_probability_vector_list[sound_iter], angle_vector_list[sound_iter])
+        # histograms
+        if smooth_transitions == True:
+            anim_fig = plt.figure(figsize= (20, (1 - vpr(qubit_count)) * 13.5))
+            
+            def make_histogram_frame(t, temp = sound_iter):
+                frame_iter = temp
+                accumulated_time = accumulated_times[frame_iter+1]
+                frame_time = (rhythm[frame_iter][0] + rhythm[frame_iter][1]) / 480.0
+                anim_fig.clear()
+                plt.cla()
+                plt.clf()
+                target_transition_time = 0.1
 
-    clips = []
+                time_since_frame = t
+                time_between_frames = frame_time
+                
+                transition_scale = 0
+                if time_between_frames < target_transition_time:
+                    target_transition_time = time_between_frames * 0.3
 
-    total_time = 0
-    files = glob.glob(target_folder + '/frame_*')
+                if time_since_frame >= target_transition_time:
+                    transition_scale = 1
+                else:
+                    transition_scale = time_since_frame / target_transition_time
+
+                if frame_iter == 0:
+                    interpolated_frame = frame_iter
+                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, interpolated_frame, interpolate = False, save=False, fig=anim_fig)    
+                else:
+                    interpolated_frame = frame_iter - 1 + transition_scale
+                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, interpolated_frame, interpolate = True, save=False, fig=anim_fig)
+                return mplfig_to_npimage(fig)
+            clips.append(VideoClip(make_histogram_frame, duration = (rhythm[sound_iter][0] + rhythm[sound_iter][1]) / 480))
+        else:
+            plot_quantum_state(input_probability_vector_list, angle_vector_list, sound_iter, save=True)
     
-    file_tuples = []
-    for file in files:
-        file = file.replace("\\", "/")
-        num = int(os.path.splitext(file)[0].lstrip(target_folder + '/frame_'))
-        file_tuples.append((num, file))
-    file_tuples = sorted(file_tuples)
-    files = [x[1] for x in file_tuples]
-    iter = 0
-    for file in files:
-        time = (rhythm[iter][0] + rhythm[iter][1]) / 480.0
-        clips.append(ImageClip(file).set_duration(time))
-        total_time += time
-        iter += 1
+    if smooth_transitions == False:
+        clips = []
+        total_time = 0
+        files = glob.glob(target_folder + '/frame_*')
+        
+        file_tuples = []
+        for file in files:
+            file = file.replace("\\", "/")
+            num = int(os.path.splitext(file)[0].lstrip(target_folder + '/frame_'))
+            file_tuples.append((num, file))
+        file_tuples = sorted(file_tuples)
+        files = [x[1] for x in file_tuples]
+        iter = 0
+        for file in files:
+            time = (rhythm[iter][0] + rhythm[iter][1]) / 480.0
+            clips.append(ImageClip(file).set_duration(time))
+            total_time += time
+            iter += 1
+    else:
+        total_time = 0
+        for times in rhythm:
+            total_time += (times[0] + times[1]) / 480.0
+
 
     files = glob.glob(target_folder + '/info_panel_*')
     file_tuples = []
@@ -1024,8 +1070,11 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
         total_time = audio_clip.duration
         audio_clip_new = AudioArrayClip(arr[0:int(44100 * total_time)], fps=44100)
         video_final_duration = video_final.duration
+        #print("duration (before):", video_final.duration)
         video_final = video_final.set_duration(audio_clip_new.duration)
         video_final = freeze.freeze(video_final, t=video_final_duration, freeze_duration=audio_clip_new.duration-video_final_duration)
+        video_final = video_final.set_duration(video_final.duration)
+        #print("duration (after):", video_final.duration)
         video_final = clip_arr.set_audio(audio_clip_new)
         
 
@@ -1097,7 +1146,7 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
     video_final = video_final.fl(draw_needle)
 
     video_final.save_frame(target_folder + '/' +"save_frame_0.png", t=0.0)
-    video_final.save_frame(target_folder + '/' +"save_frame_1.png", t=1.0)
+    video_final.save_frame(target_folder + '/' +"save_frame_1.png", t=video_final.duration - 1)
     video_final.save_frame(target_folder + '/' +"save_frame_fading.png", t=1.0 - highlight_fade_time / 2.0)
 
     #def supersample(clip, d, nframes):
@@ -1112,8 +1161,8 @@ def make_video(qc, name, rhythm, single_qubit_error, two_qubit_error, input_inst
 #
     #video_final = supersample(video_final, d=0.008, nframes=3)
     # preset options (speed vs filesize): ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo
-    
-    video_final.write_videofile(target_folder + '/' + target_folder + '.mp4', preset='ultrafast', fps=fps, codec='mpeg4', audio_fps=44100, audio_bitrate="512K", audio_nbytes=4, ffmpeg_params=["-b:v", "12000K", "-b:a", "512K"])
+    # audio_codec = "libmp3lame"
+    video_final.write_videofile(target_folder + '/' + target_folder + '.mp4', preset='ultrafast', fps=fps, codec='mpeg4', audio_fps=44100, audio_codec='libmp3lame', audio_bitrate="3000k", audio_nbytes=4, ffmpeg_params=["-b:v", "12000K", "-b:a", "3000k"])
 
     files = glob.glob(target_folder + '/*.mp4')
 #     for file in files:
@@ -1217,7 +1266,7 @@ def ease_in(ease_from, ease_to, t):
     return [((1-scaled_t) * a) + (scaled_t * b) for a, b in zip(ease_from, ease_to)]
 
 def ease_out(ease_from, ease_to, t):
-    ''' slow at the beginning, fast at the end.'''
+    ''' fast at the beginning, slow at the end.'''
     t = max(min(t, 1.0), 0.0)
     scaled_t = math.sin(t * math.pi / 2.0)
     return [((1-scaled_t) * a) + (scaled_t * b) for a, b in zip(ease_from, ease_to)]

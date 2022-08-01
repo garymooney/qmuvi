@@ -1,5 +1,5 @@
 import quantum_music
-from quantum_music import make_music_video, get_instruments, make_music_midi, convert_midi_to_wav_timidity
+from quantum_music import make_music_video, get_instruments, get_depolarising_noise
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -119,6 +119,4 @@ time_list[len(time_list)-1] = [360,0]
 s = 2
 time_list = [[s*t for t in tt] for tt in time_list]
 
-#make_music_video(c, "happy_bday_bassline", time_list, 0.02, 0.04, [get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")])
-make_music_midi(c, "happy_bday_bassline", time_list, 0.025, 0.045, [[75], get_instruments("pipe"), get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")])
-convert_midi_to_wav_timidity("happy_bday_bassline/happy_bday_bassline")
+make_music_video(c, "happy_bday_bassline", time_list, get_depolarising_noise(0.025, 0.045), [[75], get_instruments("pipe"), get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")], invert_colours=False, fps=60, smooth_transitions=True)

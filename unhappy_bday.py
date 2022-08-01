@@ -1,5 +1,5 @@
 import quantum_music
-from quantum_music import make_music_video, get_instruments
+from quantum_music import make_music_video, get_instruments, get_depolarising_noise
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -66,4 +66,4 @@ time_list = [[80,0],[40,0],[120,0],[120,0],[120,0],[240,0],
              [80,0],[40,0],[120,0],[120,0],[120,0],[120,0],[120,0],
              [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],]
 
-make_music_video(circ, "unhappy_bday", time_list, 0.5, 0.5, [get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")])
+make_music_video(circ, "unhappy_bday", time_list, get_depolarising_noise(0.2, 0.4), [get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")], invert_colours=False, fps=24, smooth_transitions=True)

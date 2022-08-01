@@ -63,4 +63,4 @@ circ.h(3)
 circ.barrier()
 
 time_list = [[60,0]]*8+[[960,0]]+[[240,0]]*4+[[1920,0]]
-make_music_video(circ, "grover_Cmaj", time_list, 0.0, 0.0, [get_instruments("windband")])
+make_music_video(circ, "grover_Cmaj", time_list, None, [get_instruments("windband")], invert_colours=False, fps=60, smooth_transitions=True)

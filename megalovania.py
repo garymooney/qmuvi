@@ -1,5 +1,5 @@
 import quantum_music
-from quantum_music import make_music_midi, make_music_video, get_instruments, chromatic_middle_c
+from quantum_music import make_music_video, get_depolarising_noise
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -141,5 +141,4 @@ time_list = [(60,0),(60,0),(60,60),(60,120),(60,60),(60,60),(120,0),(60,0),(60,0
 #time_list = [(6,0),(6,0),(6,6),(6,12),(6,6),(6,6),(12,0),(6,0),(6,0),(6,0)]*2
 chromatic_G1 = lambda n: n + 31
 
-make_music_video(circ, "megalovania", time_list, 0.01, 0.02, [[81]], note_map=chromatic_G1, invert_colours=True, fps=60)
-#make_music_midi(circ, "megalovania_midi", time_list, 0.01, 0.02, [[81], [80, 82, 83, 84]], note_map=chromatic_G1)
+make_music_video(circ, "megalovania", time_list, get_depolarising_noise(0.01, 0.02), [[81], [80, 82, 83, 84]], note_map=chromatic_G1, invert_colours=True, fps=24, smooth_transitions=True)

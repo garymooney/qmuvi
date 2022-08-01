@@ -66,4 +66,4 @@ time_list = [[80,0],[40,0],[120,0],[120,0],[120,0],[240,0],
              [80,0],[40,0],[120,0],[120,0],[120,0],[120,0],[120,0],
              [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],]
 
-make_music_video(circ, "happy_bday", time_list, 0.0, 0.0, [get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")])
+make_music_video(circ, "happy_bday", time_list, None, [get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")], invert_colours=False, fps=24, smooth_transitions=True)
