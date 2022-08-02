@@ -89,7 +89,35 @@ def get_depolarising_noise(single_qubit_gater_error, cnot_gate_error):
     noise_model.add_all_qubit_quantum_error(cnot_gate_dep_error, ['cx'])
     return noise_model
 
-def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c):
+def make_music_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True, synth="timidity"):
+    """ Simulates the quantum circuit (with provided errors) and samples the state at every inserted barrier time step and converts the state info to a music video file (.avi). 
+    Args:
+        qc: The qiskit QuantumCircuit.
+        name: The name of the midi file to output to a folder in the working directory with the same name. The folder is created if it does not exist.
+        rhythm: The sound length and post-rest times in units of ticks (480 ticks is 1 second) List[Tuple[int soundLength, int soundRest]]
+        noise_model: A qiskit NoiseModel. If None then no noise will be used in the simulations.
+        input_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections). 
+            Computational basis state phase determines which instrument from the collection is used. List[List[int intrument_index]]
+        note_map: Converts state number to a note number where 60 is middle C. Map[int -> int]
+        invert_colours: Whether to render the video in dark mode. (default: False) Bool
+        fps: The frames per second of the output video. (default: 60) Int
+        vpr: Propotion of vertical space that the circuit with be scaled to fit. Float (default: 1/3)
+        smooth_transitions: Whether to smoothly animate between histogram frames. Significantly increased render time. (default: False) Bool
+        phase_marker: Whether to draw lines on the phase wheel indicating phases of the primary pure state.
+    """
+    
+    make_music_midi(qc, name, rhythm, noise_model, input_instruments = input_instruments, note_map=note_map, separate_audio_files=True)
+
+    if synth.lower() == "timidity":
+        convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 8)
+    elif synth.lower() == "vlc":
+        convert_midi_to_wav_vlc(f'{name}/{name}', wait_time = 8)
+    else:
+        print("Error: unrecognised midi to wav conversion synth '" + synth + "' (expecting 'timidity' or 'vlc'), defaulting to timidity...")
+        convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 8)
+    make_video(qc, name, rhythm, noise_model, input_instruments, note_map = note_map, invert_colours = invert_colours, fps = fps, vpr = vpr, smooth_transitions = smooth_transitions, phase_marker = phase_marker, separate_audio_files=True)
+
+def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, separate_audio_files = True):
     """ Simulates the quantum circuit (with provided errors) and samples the state at every inserted barrier time step and converts the state info to a midi file. 
     Args:
         qc: The qiskit QuantumCircuit.
@@ -195,7 +223,10 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
 
     from mido import Message, MetaMessage, MidiFile, MidiTrack, bpm2tempo
 
-    mid = MidiFile()
+    if separate_audio_files == True:
+        mid_files = [MidiFile(),MidiFile(),MidiFile(),MidiFile(),MidiFile(),MidiFile(),MidiFile(),MidiFile()]
+    else:
+        mid = MidiFile()
     numtracks = 8
     tracks = [MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack(),MidiTrack()]
     #track_instruments = ['piano','bass','brass','ensemble','organ','pipe','reed','strings']
@@ -207,9 +238,18 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
         else:
             track_instruments.append(input_instruments[len(input_instruments)-1])
 
-    #track_instruments = ['ensemble']*8
 
-    tracks[0].append(MetaMessage('set_tempo', tempo=bpm2tempo(60)))
+
+
+    print("input_instruments:", input_instruments)
+    print("track_instruments:", track_instruments)
+
+
+
+
+    #track_instruments = ['ensemble']*8
+    for track in tracks:
+        track.append(MetaMessage('set_tempo', tempo=bpm2tempo(60)))
 
     #for track in tracks:
     #    track.append(Message('control_change', program=81, control=68, value=0))
@@ -226,8 +266,9 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
     with open(f'{NAME}/rhythm.json', 'w') as f:
         json.dump(time_list, f)
 
-    print("len(sounds_list):", len(sounds_list))
-
+    #print("len(sounds_list):", len(sounds_list))
+    
+    available_channels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 15]
     for t_i, sound in enumerate(sounds_list):    
         
         active_notes = []
@@ -235,10 +276,14 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
         sorted_chords = sorted(sound, key = lambda a: a[0], reverse=True)
         max_chord_prob = sorted_chords[0][0]
         for trackno in range(numtracks):
+            if separate_audio_files == True:
+                channel = 0
+            else:
+                channel = trackno
             track = tracks[trackno]
 
             if trackno >= len(sorted_chords):
-                track.append(Message('note_on', channel=trackno, note=0, velocity=0, time=0))
+                track.append(Message('note_on', channel=channel, note=0, velocity=0, time=0))
                 active_notes.append((trackno,note))
                 continue
                 
@@ -264,40 +309,69 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
                 instruments = track_instruments[trackno]
                 #instrument = instruments[0]
                 angle = angle % 2*np.pi
-                instrument = instruments[int((len(instruments)-1) * (angle)/(2*np.pi))]
+                instrument_index = int((len(instruments)-1) * (angle)/(2*np.pi))
+                instrument = instruments[instrument_index]
+
+                if trackno == 0:
+                    print("inst (" + str(trackno) + "):" + str(instrument))
+
                 
                 phase = int(127*(angle)/(2*np.pi))
                 #print("angle:", angle)
                 #print("phase", phase)
                 #instrument = 1
 
+                if separate_audio_files == True:
+                    channel = available_channels[instrument_index % len(available_channels)]
                 
-                track.append(Message('program_change', channel=trackno, program=instrument, time=0))
+                track.append(Message('program_change', channel=channel, program=instrument, time=0))
                 #track.append(Message('control_change', channel=trackno, control=8, value=phase, time=0))
-                track.append(Message('note_on', channel=trackno, note=note, velocity=vol_128, time=0))
-                active_notes.append((trackno,note))
+                track.append(Message('note_on', channel=channel, note=note, velocity=vol_128, time=0))
+                active_notes.append((trackno, note, channel))
         
         
         for trackno, track in enumerate(tracks):   
-            track.append(Message('note_on', channel=trackno, note=0, velocity=0, time=time_list[t_i][0]))
-            track.append(Message('note_off', channel=trackno, note=0, velocity=0, time=0))
+            if separate_audio_files == True:
+                channel = 0
+            else:
+                channel = trackno
+            track.append(Message('note_on', channel=channel, note=0, velocity=0, time=time_list[t_i][0]))
+            track.append(Message('note_off', channel=channel, note=0, velocity=0, time=0))
         
-        for trackno, note in active_notes:
+        for trackno, note, channel in active_notes:
             track = tracks[trackno]
-            track.append(Message('note_off', channel=trackno, note=note, velocity=0, time=0))
+            track.append(Message('note_off', channel=channel, note=note, velocity=0, time=0))
             
         for trackno, track in enumerate(tracks): 
-            track.append(Message('note_on', channel=trackno, note=0, velocity=0, time=time_list[t_i][1]))
-            track.append(Message('note_off', channel=trackno, note=0, velocity=0, time=0))
-                            
-                            
-    for track in tracks:
-        mid.tracks.append(track)
-        
-    midi_filename = f'{NAME}/{NAME}'
-    mid.save(midi_filename + ".mid")
+            if separate_audio_files == True:
+                channel = 0
+            else:
+                channel = trackno
+            track.append(Message('note_on', channel=channel, note=0, velocity=0, time=time_list[t_i][1]))
+            track.append(Message('note_off', channel=channel, note=0, velocity=0, time=0))
+    
+    if separate_audio_files == True:
+        try:
+            files = glob.glob(NAME + "/" + NAME + '-*.mid')
+            for file in files:
+                os.remove(file)
+        except:
+            pass
+        for i, track in enumerate(tracks):
+            mid_files[i].tracks.append(track)
+            
+            midi_filename = f'{NAME}/{NAME}-{i}'
+            mid_files[i].save(midi_filename + ".mid")
 
-    return mid
+        return mid_files
+    else:                        
+        for track in tracks:
+            mid.tracks.append(track)
+            
+        midi_filename = f'{NAME}/{NAME}'
+        mid.save(midi_filename + ".mid")
+
+        return mid
 
 def convert_midi_to_mp3_vlc(midi_filename_no_ext, wait_time = 3):
     """ Uses headless VLC to convert a midi file to mp3 in the working directory.
@@ -323,7 +397,7 @@ def convert_midi_to_mp3_vlc(midi_filename_no_ext, wait_time = 3):
     print("Converting " + midi_filename_no_ext + ".mid midi to " + midi_filename_no_ext + ".mp3...")
     time.sleep(wait_time)
 
-def convert_midi_to_wav_vlc(midi_filename_no_ext, wait_time = 3):
+def convert_midi_to_wav_vlc(midi_filename_no_ext, wait_time = 3, separate_audio_files = True):
     """ Uses headless VLC to convert a midi file to wav in the working directory.
     Args:
         midi_filename_no_ext: the name of the midi file in the working dir.
@@ -333,21 +407,45 @@ def convert_midi_to_wav_vlc(midi_filename_no_ext, wait_time = 3):
     string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --synth-polyphony="65535" --sout-keep --sout "#transcode{acodec=s16l,channels=2}:std{access=file,mux=wav,dst=./' + midi_filename_no_ext + '.wav}"'
     command_string = f"{string}"
 
-    def run_vlc():
+    import os
+
+
+    def run_vlc(midi_filename_no_ext):
         import os
-        #print(string)
-        directories = os.system(command_string)
+
+        string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --synth-polyphony="65535" --sout-keep --sout "#transcode{acodec=s16l,channels=2}:std{access=file,mux=wav,dst=./' + midi_filename_no_ext + '.wav}"'
+        command_string = f"{string}"
+
+        os.system(command_string)
 
     import threading
-    t = threading.Thread(target=run_vlc,name="vlc",args=())
-    t.daemon = True
-    t.start()
+
+    if separate_audio_files == True:
+        try:
+            wav_files = glob.glob(midi_filename_no_ext + '-*.wav')
+            for file in wav_files:
+                os.remove(file)
+        except:
+            pass
+
+        files = glob.glob("./" + midi_filename_no_ext + '-*.mid')
+    else:
+        files = glob.glob("./" + midi_filename_no_ext + '.mid')
+    
+    filenames = []
+    for file in files:
+        filename = file.replace("\\", "/")
+        filename = os.path.splitext(filename)[0]
+        filenames.append(filename)
+        t = threading.Thread(target=lambda : run_vlc(filename),name="vlc convert",args=())
+        t.daemon = True
+        t.start()
 
     import time
-    print("Converting " + midi_filename_no_ext + ".mid midi to " + midi_filename_no_ext + ".wav...")
+    print("Converting " + str(filenames) + " midi files to .wav using VLC...")
     time.sleep(wait_time)
 
-def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3):
+def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_audio_files = True):
     """ Uses timidity++ to convert a midi file to wav in the working directory.
     Args:
         midi_filename_no_ext: the name of the midi file in the working dir.
@@ -407,57 +505,47 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3):
     options_string = ""
     for option in options:
         options_string += option + " "
-
-    if os.name == 'nt':
-        string = '"TiMidity_Win\\timidity.exe" ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid'
-    else:
-        string = 'timidity ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid'
     
-    command_string = f"{string}"
+    import os
 
-    def run_timidity():
+    def run_timidity(midi_filename_no_ext, options_string=options_string):
         import os
         #print(string)
-        directories = os.system(command_string)
+        if os.name == 'nt':
+            string = '"TiMidity_Win\\timidity.exe" ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid'
+        else:
+            string = 'timidity ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid'
+    
+        command_string = f"{string}"
+        os.system(command_string)
 
     import threading
-    t = threading.Thread(target=run_timidity,name="timidity++",args=())
-    t.daemon = True
-    t.start()
+
+    if separate_audio_files == True:
+        try:
+            wav_files = glob.glob(midi_filename_no_ext + '-*.wav')
+            for file in wav_files:
+                os.remove(file)
+        except:
+            pass
+        files = glob.glob("./" + midi_filename_no_ext + '-*.mid')
+    else:
+        files = glob.glob("./" + midi_filename_no_ext + '.mid')
+
+    filenames = []
+    for file in files:
+        filename = file.replace("\\", "/")
+        filename = os.path.splitext(filename)[0]
+        filenames.append(filename)
+        t = threading.Thread(target=lambda : run_timidity(filename),name="timidity++ convert",args=())
+        t.daemon = True
+        t.start()
 
     import time
-    print("Converting " + midi_filename_no_ext + ".mid midi to " + midi_filename_no_ext + ".wav using TiMidity++...")
+    print("Converting " + str(filenames) + " midi files to .wav using TiMidity++...")
     time.sleep(wait_time)
 
-
-def make_music_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True, synth="timidity"):
-    """ Simulates the quantum circuit (with provided errors) and samples the state at every inserted barrier time step and converts the state info to a music video file (.avi). 
-    Args:
-        qc: The qiskit QuantumCircuit.
-        name: The name of the midi file to output to a folder in the working directory with the same name. The folder is created if it does not exist.
-        rhythm: The sound length and post-rest times in units of ticks (480 ticks is 1 second) List[Tuple[int soundLength, int soundRest]]
-        noise_model: A qiskit NoiseModel. If None then no noise will be used in the simulations.
-        input_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections). 
-            Computational basis state phase determines which instrument from the collection is used. List[List[int intrument_index]]
-        note_map: Converts state number to a note number where 60 is middle C. Map[int -> int]
-        invert_colours: Whether to render the video in dark mode. (default: False) Bool
-        fps: The frames per second of the output video. (default: 60) Int
-        vpr: Propotion of vertical space that the circuit with be scaled to fit. Float (default: 1/3)
-        smooth_transitions: Whether to smoothly animate between histogram frames. Significantly increased render time. (default: False) Bool
-        phase_marker: Whether to draw lines on the phase wheel indicating phases of the primary pure state.
-    """
-    
-    make_music_midi(qc, name, rhythm, noise_model, input_instruments = input_instruments, note_map=note_map)
-    if synth.lower() == "timidity":
-        convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 3)
-    elif synth.lower() == "vlc":
-        convert_midi_to_wav_vlc(f'{name}/{name}', wait_time = 3)
-    else:
-        print("Error: unrecognised midi to wav conversion synth '" + synth + "' (expecting 'timidity' or 'vlc'), defaulting to timidity...")
-        convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 3)
-    make_video(qc, name, rhythm, noise_model, input_instruments, note_map = note_map, invert_colours = invert_colours, fps = fps, vpr = vpr, smooth_transitions = smooth_transitions, phase_marker = phase_marker)
-
-def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True):
+def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True, separate_audio_files = True):
     """ Only renders the video, assuming the relevant circuit sample data is available in a folder with the given name.
     Args:
         qc: The qiskit QuantumCircuit.
@@ -481,6 +569,7 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
     from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
     from moviepy.editor import ImageClip, concatenate, clips_array
     from moviepy.video.fx import invert_colors, crop, fadeout, freeze
+    import moviepy.audio.fx.all as afx
     from moviepy.editor import CompositeVideoClip, VideoClip
     from matplotlib.lines import Line2D
     from moviepy.video.io.bindings import mplfig_to_npimage
@@ -1091,21 +1180,46 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
     #clip_arr = clips_array([[circuit_video.resize(circuit_rescale)], [video]], bg_color=bg_color)
     clip_arr = clips_array([[circ_clip_arr], [video]], bg_color=bg_color)
     
-    files = glob.glob(target_folder + '/*.wav')
     video_final = clip_arr
-    if len(files) > 0:
-        print("loading sound file " + str(files[0]) + "...")
-        audio_clip = mpy.AudioFileClip(files[0], nbytes=4, fps=44100)
-        arr = audio_clip.to_soundarray(nbytes=4)
-        total_time = audio_clip.duration
-        audio_clip_new = AudioArrayClip(arr[0:int(44100 * total_time)], fps=44100)
-        video_final_duration = video_final.duration
-        #print("duration (before):", video_final.duration)
-        video_final = video_final.set_duration(audio_clip_new.duration)
-        video_final = freeze.freeze(video_final, t=video_final_duration, freeze_duration=audio_clip_new.duration-video_final_duration)
-        video_final = video_final.set_duration(video_final.duration)
-        #print("duration (after):", video_final.duration)
-        video_final = clip_arr.set_audio(audio_clip_new)
+    
+    if separate_audio_files == True:
+        files = glob.glob(NAME + "/" + NAME + '-*.wav')
+        audio_clips = []
+        audio_file_clips = []
+        for file in files:
+            filename = file.replace("\\", "/")
+            audio_file_clip = mpy.AudioFileClip(filename, nbytes=4, fps=44100)
+            audio_file_clips.append(audio_file_clip)
+            audio_array = audio_file_clip.to_soundarray(nbytes=4)
+            total_time = audio_file_clip.duration
+            audio_array_clip = AudioArrayClip(audio_array[0:int(44100 * total_time)], fps=44100)
+            audio_clips.append(audio_array_clip)
+        
+        composed_audio_clip = CompositeAudioClip(audio_file_clips)
+        video_duration = video_final.duration
+        target_duration = max(video_duration, composed_audio_clip.duration)
+        video_final = video_final.set_duration(target_duration)
+        video_final = freeze.freeze(video_final, t=video_duration, freeze_duration=target_duration-video_duration)
+        video_final = video_final.set_duration(target_duration)
+
+        video_final = clip_arr.set_audio(composed_audio_clip)
+        #video_final = video_final.fx(afx.audio_normalize)
+    else:
+        files = glob.glob(NAME + "/" + NAME + '.wav')
+
+        if len(files) > 0:
+            print("loading sound file " + str(files[0]) + "...")
+            audio_clip = mpy.AudioFileClip(files[0], nbytes=4, fps=44100)
+            arr = audio_clip.to_soundarray(nbytes=4)
+            total_time = audio_clip.duration
+            audio_clip_new = AudioArrayClip(arr[0:int(44100 * total_time)], fps=44100)
+            video_final_duration = video_final.duration
+
+            video_final = video_final.set_duration(audio_clip_new.duration)
+            video_final = freeze.freeze(video_final, t=video_final_duration, freeze_duration=audio_clip_new.duration-video_final_duration)
+            video_final = video_final.set_duration(video_final.duration)
+
+            video_final = clip_arr.set_audio(audio_clip_new)
         
 
     video_final = crop.crop(video_final, x1=int(clip_arr.size[0]/2-circ_clip_target_width/2), x2=int(clip_arr.size[0]/2+circ_clip_target_width/2))
@@ -1194,7 +1308,8 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
     # audio_codec = "libmp3lame"
     video_final.write_videofile(target_folder + '/' + target_folder + '.mp4', preset='ultrafast', fps=fps, codec='mpeg4', audio_fps=44100, audio_codec='libmp3lame', audio_bitrate="3000k", audio_nbytes=4, ffmpeg_params=["-b:v", "12000K", "-b:a", "3000k"])
 
-    files = glob.glob(target_folder + '/*.mp4')
+    #files = glob.glob(target_folder + '/*.mp4')
+    #files = glob.glob(NAME + "/" + NAME + '-*.wav')
 #     for file in files:
 #         os.remove(file)
 
@@ -1234,7 +1349,7 @@ def get_instruments(instruments_name):
                     'synth_effects': list(range(97,105)),
                     'ethnic': list(range(105,113)),
                     'percussive': list(range(113,121)),
-                    'sound_effects': list(range(121,128)),
+                    'sound_effects': list(range(122,128)),
                     'windband': [74,69,72,67,57,58,71,59]}
     return instrument_dict[instruments_name]
 
