@@ -142,7 +142,8 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
     simulator_zeronoise = AerSimulator()
 
     dag = circuit_to_dag(qc)
-    new_qc = QuantumCircuit(len(dag.qubits))
+    number_of_qubits = len(dag.qubits)
+    new_qc = QuantumCircuit(number_of_qubits)
 
     barrier_iter = 0
     for node in dag.topological_op_nodes():
@@ -172,6 +173,7 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
 
     sounds_list = []
 
+    global_phasors = np.ones(rhos[0].shape[0])
     for rho in rhos:
         sound_data = []
         eps = 1E-8
@@ -181,7 +183,12 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
                 prob0 = p.real
                 note = {}
                 vec = v[:,i]
-                angles = np.angle(vec*np.conj(vec[0]))
+                if abs(complex(vec[0])) > 0.0000001:
+                    global_phasor = np.conj(complex(vec[0]))
+                    global_phasors[i] = global_phasor
+                else:
+                    global_phasor = global_phasors[i]
+                angles = np.angle(vec*global_phasor)
                 for j,a in enumerate(vec):
                     if np.abs(a)**2 > eps:
                         prob1 = np.abs(a)**2
@@ -240,13 +247,6 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
 
 
 
-
-    print("input_instruments:", input_instruments)
-    print("track_instruments:", track_instruments)
-
-
-
-
     #track_instruments = ['ensemble']*8
     for track in tracks:
         track.append(MetaMessage('set_tempo', tempo=bpm2tempo(60)))
@@ -284,7 +284,7 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
 
             if trackno >= len(sorted_chords):
                 track.append(Message('note_on', channel=channel, note=0, velocity=0, time=0))
-                active_notes.append((trackno,note))
+                active_notes.append((trackno,note, channel))
                 continue
                 
             chord_prob, chord, _, _ = sorted_chords[trackno]
@@ -308,13 +308,11 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
                 #instrument = round(127*(angle + np.pi)/(2*np.pi))
                 instruments = track_instruments[trackno]
                 #instrument = instruments[0]
-                angle = angle % 2*np.pi
-                instrument_index = int((len(instruments)-1) * (angle)/(2*np.pi))
+                angle = (angle + np.pi / (len(instruments))) % (2*np.pi)
+                instrument_index = int((len(instruments)) * (angle)/(2*np.pi))
+                if instrument_index == len(instruments):
+                    instrument_index = 0
                 instrument = instruments[instrument_index]
-
-                if trackno == 0:
-                    print("inst (" + str(trackno) + "):" + str(instrument))
-
                 
                 phase = int(127*(angle)/(2*np.pi))
                 #print("angle:", angle)
@@ -397,7 +395,7 @@ def convert_midi_to_mp3_vlc(midi_filename_no_ext, wait_time = 3):
     print("Converting " + midi_filename_no_ext + ".mid midi to " + midi_filename_no_ext + ".mp3...")
     time.sleep(wait_time)
 
-def convert_midi_to_wav_vlc(midi_filename_no_ext, wait_time = 3, separate_audio_files = True):
+def convert_midi_to_wav_vlc(midi_filename_no_ext, wait_time = 3, separate_audio_files = True, output_combined_audio = True):
     """ Uses headless VLC to convert a midi file to wav in the working directory.
     Args:
         midi_filename_no_ext: the name of the midi file in the working dir.
@@ -444,8 +442,26 @@ def convert_midi_to_wav_vlc(midi_filename_no_ext, wait_time = 3, separate_audio_
     import time
     print("Converting " + str(filenames) + " midi files to .wav using VLC...")
     time.sleep(wait_time)
+    if output_combined_audio == True:
+        if separate_audio_files == True:
+            import moviepy.editor as mpy
+            from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
+            files = glob.glob(midi_filename_no_ext + '-*.wav')
+            audio_clips = []
+            audio_file_clips = []
+            for file in files:
+                filename = file.replace("\\", "/")
+                audio_file_clip = mpy.AudioFileClip(filename, nbytes=4, fps=44100)
+                audio_file_clips.append(audio_file_clip)
+                audio_array = audio_file_clip.to_soundarray(nbytes=4)
+                total_time = audio_file_clip.duration
+                audio_array_clip = AudioArrayClip(audio_array[0:int(44100 * total_time)], fps=44100)
+                audio_clips.append(audio_array_clip)
+            
+            composed_audio_clip = CompositeAudioClip(audio_file_clips)
+            composed_audio_clip.write_audiofile(midi_filename_no_ext + ".wav",codec='pcm_s16le')
 
-def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_audio_files = True):
+def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_audio_files = True, output_combined_audio = True):
     """ Uses timidity++ to convert a midi file to wav in the working directory.
     Args:
         midi_filename_no_ext: the name of the midi file in the working dir.
@@ -457,6 +473,7 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_a
     # documentation found here: https://www.mankier.com/1/timidity#Input_File
     options = []
     options.append("-Ow")
+    options.append("--preserve-silence")
     options.append("-A,120")
     options.append("--no-anti-alias") # anti-aliasing seems to cause some crackling
     options.append("--mod-wheel")
@@ -512,7 +529,7 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_a
         import os
         #print(string)
         if os.name == 'nt':
-            string = '"TiMidity_Win\\timidity.exe" ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid'
+            string = '"TiMidity-2.15.0-w32\\timidity.exe" ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid'
         else:
             string = 'timidity ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid'
     
@@ -544,6 +561,25 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_a
     import time
     print("Converting " + str(filenames) + " midi files to .wav using TiMidity++...")
     time.sleep(wait_time)
+    if output_combined_audio == True:
+        if separate_audio_files == True:
+            import moviepy.editor as mpy
+            from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
+            files = glob.glob(midi_filename_no_ext + '-*.wav')
+            audio_clips = []
+            audio_file_clips = []
+            for file in files:
+                filename = file.replace("\\", "/")
+                audio_file_clip = mpy.AudioFileClip(filename, nbytes=4, fps=44100)
+                audio_file_clips.append(audio_file_clip)
+                audio_array = audio_file_clip.to_soundarray(nbytes=4)
+                total_time = audio_file_clip.duration
+                audio_array_clip = AudioArrayClip(audio_array[0:int(44100 * total_time)], fps=44100)
+                audio_clips.append(audio_array_clip)
+            
+            composed_audio_clip = CompositeAudioClip(audio_file_clips)
+            #composed_audio_clip.set_fps(44100)
+            composed_audio_clip.write_audiofile(midi_filename_no_ext + ".wav",codec='pcm_s16le', fps=44100)
 
 def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True, separate_audio_files = True):
     """ Only renders the video, assuming the relevant circuit sample data is available in a folder with the given name.
@@ -564,16 +600,15 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
     
     import matplotlib
     import matplotlib.pylab as plt
-    from matplotlib.pylab import cm, mpl
+    from matplotlib.pylab import cm
     import moviepy.editor as mpy
     from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
     from moviepy.editor import ImageClip, concatenate, clips_array
-    from moviepy.video.fx import invert_colors, crop, fadeout, freeze
-    import moviepy.audio.fx.all as afx
+    from moviepy.video.fx import invert_colors, crop, freeze
     from moviepy.editor import CompositeVideoClip, VideoClip
     from matplotlib.lines import Line2D
     from moviepy.video.io.bindings import mplfig_to_npimage
-    import copy
+    import re
 
     if vpr == None:
         vpr = lambda n: 1/3
@@ -990,7 +1025,8 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
         file_tuples = []
         for file in files:
             file = file.replace("\\", "/")
-            num = int(os.path.splitext(file)[0].lstrip(target_folder + '/frame_'))
+            num_string = re.search(r'\d+$', os.path.splitext(file)[0]).group()
+            num = int(num_string)
             file_tuples.append((num, file))
         file_tuples = sorted(file_tuples)
         files = [x[1] for x in file_tuples]
@@ -1010,7 +1046,8 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
     file_tuples = []
     for file in files:
         file = file.replace("\\", "/")
-        num = int(os.path.splitext(file)[0].lstrip(target_folder + '/info_panel_'))
+        num_string = re.search(r'\d+$', os.path.splitext(file)[0]).group()
+        num = int(num_string)
         file_tuples.append((num, file))
 
     file_tuples = sorted(file_tuples)
@@ -1349,7 +1386,7 @@ def get_instruments(instruments_name):
                     'synth_effects': list(range(97,105)),
                     'ethnic': list(range(105,113)),
                     'percussive': list(range(113,121)),
-                    'sound_effects': list(range(122,128)),
+                    'sound_effects': list(range(120,128)),
                     'windband': [74,69,72,67,57,58,71,59]}
     return instrument_dict[instruments_name]
 
