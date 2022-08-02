@@ -459,7 +459,7 @@ def convert_midi_to_wav_vlc(midi_filename_no_ext, wait_time = 3, separate_audio_
                 audio_clips.append(audio_array_clip)
             
             composed_audio_clip = CompositeAudioClip(audio_file_clips)
-            composed_audio_clip.write_audiofile(midi_filename_no_ext + ".wav",codec='pcm_s16le')
+            composed_audio_clip.write_audiofile(midi_filename_no_ext + ".wav",codec='pcm_s16le', fps=44100)
 
 def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_audio_files = True, output_combined_audio = True):
     """ Uses timidity++ to convert a midi file to wav in the working directory.
@@ -578,7 +578,6 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_a
                 audio_clips.append(audio_array_clip)
             
             composed_audio_clip = CompositeAudioClip(audio_file_clips)
-            #composed_audio_clip.set_fps(44100)
             composed_audio_clip.write_audiofile(midi_filename_no_ext + ".wav",codec='pcm_s16le', fps=44100)
 
 def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True, separate_audio_files = True):
