@@ -153,12 +153,13 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
                 prob0 = p.real
                 note = {}
                 vec = v[:,i]
+                angles = np.angle(vec*np.conj(vec[0]))
                 for j,a in enumerate(vec):
                     if np.abs(a)**2 > eps:
                         prob1 = np.abs(a)**2
-                        angle = np.angle(a)
+                        angle = angles[j]
                         note[j] = (prob1,angle)
-                sound_data.append((prob0,note,[abs(complex(x))*abs(complex(x)) for x in vec],[np.angle(x) for x in vec]))
+                sound_data.append((prob0,note,[abs(complex(x))*abs(complex(x)) for x in vec],list(angles)))
         sounds_list.append(sound_data)
 
     for i, sound in enumerate(sounds_list):
@@ -264,7 +265,6 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
                 #instrument = instruments[0]
                 angle = angle % 2*np.pi
                 instrument = instruments[int((len(instruments)-1) * (angle)/(2*np.pi))]
-
                 
                 phase = int(127*(angle)/(2*np.pi))
                 #print("angle:", angle)
