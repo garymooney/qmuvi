@@ -484,7 +484,11 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
         vpr = lambda n: 1/3
     else:
         vpr = lambda n: vpr
-
+    
+    zero_noise = False
+    if noise_model == None:
+        zero_noise = True
+    
     NAME = name
     target_folder = NAME
     if os.path.isdir(target_folder) == False:
@@ -530,7 +534,7 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
     cmap_bvr = matplotlib.colors.LinearSegmentedColormap.from_list("", ["blue","violet","red"])
     tick_colour = [0.4, 0.4, 0.4, 1.0]
 
-    def plot_quantum_state(input_probability_vector_list, angle_vector_list, plot_number, interpolate = False, save=True, fig = None):
+    def plot_quantum_state(input_probability_vector_list, angle_vector_list, plot_number, interpolate = False, save=True, fig = None, zero_noise = False):
         '''
         Args:
             interpolate: whether to interpolate plot numbers.
@@ -582,8 +586,26 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
 
         if fig == None:
             fig = plt.figure(figsize= (20, (1 - vpr(qubit_count)) * 13.5))
-
-        grid_spec = {
+            
+        if zero_noise:
+            grid_spec = {
+                "bottom": 0.1,
+                "top": 0.95,
+                "left": 0.07,
+                "right": 0.99,
+                "wspace": 0.05,
+                "hspace": 0.09,
+            }
+            ax_dict = fig.subplot_mosaic(
+                [
+                    ["main", "main", "main", "main"],
+                    ["main", "main", "main", "main"],
+                ],
+                gridspec_kw = grid_spec,
+            )
+            plots_order = ["main"]
+        else:
+            grid_spec = {
                 "bottom": 0.08,
                 "top": 0.95,
                 "left": 0.07,
@@ -591,15 +613,15 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
                 "wspace": 0.05,
                 "hspace": 0.09,
             }
-        ax_dict = fig.subplot_mosaic(
-            [
-                ["pure_state_2", "main", "main", "pure_state_3"],
-                ["pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"],
-            ],
-            gridspec_kw = grid_spec,
-        )
-        
-        plots_order = ["main", "pure_state_2", "pure_state_3", "pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"]
+            ax_dict = fig.subplot_mosaic(
+                [
+                    ["pure_state_2", "main", "main", "pure_state_3"],
+                    ["pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"],
+                ],
+                gridspec_kw = grid_spec,
+            )
+            plots_order = ["main", "pure_state_2", "pure_state_3", "pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"]
+
         for i, ax_name in enumerate(plots_order):
             
             ax_dict[ax_name].tick_params(axis='y', labelsize=20)
@@ -617,6 +639,8 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
             
             ax_dict[ax_name].axes.xaxis.set_visible(False)
             ax_dict[ax_name].axes.yaxis.set_visible(False)
+            if zero_noise and ax_name == "main":
+                ax_dict[ax_name].axes.yaxis.set_visible(True)
             if ax_name == "pure_state_2" or ax_name == "pure_state_4":
                 ax_dict[ax_name].axes.yaxis.set_visible(True)
             if ax_name == "main":
@@ -854,14 +878,14 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
 
                 if frame_iter == 0:
                     interpolated_frame = frame_iter
-                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, interpolated_frame, interpolate = False, save=False, fig=anim_fig)    
+                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, interpolated_frame, interpolate = False, save=False, fig=anim_fig, zero_noise = zero_noise)    
                 else:
                     interpolated_frame = frame_iter - 1 + transition_scale
-                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, interpolated_frame, interpolate = True, save=False, fig=anim_fig)
+                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, interpolated_frame, interpolate = True, save=False, fig=anim_fig, zero_noise = zero_noise)
                 return mplfig_to_npimage(fig)
             clips.append(VideoClip(make_histogram_frame, duration = (rhythm[sound_iter][0] + rhythm[sound_iter][1]) / 480))
         else:
-            plot_quantum_state(input_probability_vector_list, angle_vector_list, sound_iter, save=True)
+            plot_quantum_state(input_probability_vector_list, angle_vector_list, sound_iter, save=True, zero_noise = zero_noise)
     
     if smooth_transitions == False:
         clips = []
