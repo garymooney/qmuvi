@@ -153,12 +153,13 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
                 prob0 = p.real
                 note = {}
                 vec = v[:,i]
+                angles = np.angle(vec*np.conj(vec[0]))
                 for j,a in enumerate(vec):
                     if np.abs(a)**2 > eps:
                         prob1 = np.abs(a)**2
-                        angle = np.angle(a)
+                        angle = angles[j]
                         note[j] = (prob1,angle)
-                sound_data.append((prob0,note,[abs(complex(x))*abs(complex(x)) for x in vec],[np.angle(x) for x in vec]))
+                sound_data.append((prob0,note,[abs(complex(x))*abs(complex(x)) for x in vec],list(angles)))
         sounds_list.append(sound_data)
 
     for i, sound in enumerate(sounds_list):
@@ -264,7 +265,6 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
                 #instrument = instruments[0]
                 angle = angle % 2*np.pi
                 instrument = instruments[int((len(instruments)-1) * (angle)/(2*np.pi))]
-
                 
                 phase = int(127*(angle)/(2*np.pi))
                 #print("angle:", angle)
@@ -330,7 +330,7 @@ def convert_midi_to_wav_vlc(midi_filename_no_ext, wait_time = 3):
         wait_time: The amount of time to wait after the VLC process has started. Used to make sure the process is finished before continuing execution.
     """
 
-    string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --synth-polyphony="65535 " --sout-keep --sout "#transcode{acodec=s16l,channels=2}:std{access=file,mux=wav,dst=./' + midi_filename_no_ext + '.wav}"'
+    string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --synth-polyphony="65535" --sout-keep --sout "#transcode{acodec=s16l,channels=2}:std{access=file,mux=wav,dst=./' + midi_filename_no_ext + '.wav}"'
     command_string = f"{string}"
 
     def run_vlc():
@@ -430,7 +430,7 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3):
     time.sleep(wait_time)
 
 
-def make_music_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True):
+def make_music_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True, synth="timidity"):
     """ Simulates the quantum circuit (with provided errors) and samples the state at every inserted barrier time step and converts the state info to a music video file (.avi). 
     Args:
         qc: The qiskit QuantumCircuit.
@@ -448,7 +448,13 @@ def make_music_video(qc, name, rhythm, noise_model = None, input_instruments = [
     """
     
     make_music_midi(qc, name, rhythm, noise_model, input_instruments = input_instruments, note_map=note_map)
-    convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 3)
+    if synth.lower() == "timidity":
+        convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 3)
+    elif synth.lower() == "vlc":
+        convert_midi_to_wav_vlc(f'{name}/{name}', wait_time = 3)
+    else:
+        print("Error: unrecognised midi to wav conversion synth '" + synth + "' (expecting 'timidity' or 'vlc'), defaulting to timidity...")
+        convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 3)
     make_video(qc, name, rhythm, noise_model, input_instruments, note_map = note_map, invert_colours = invert_colours, fps = fps, vpr = vpr, smooth_transitions = smooth_transitions, phase_marker = phase_marker)
 
 def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True):
@@ -484,7 +490,11 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
         vpr = lambda n: 1/3
     else:
         vpr = lambda n: vpr
-
+    
+    zero_noise = False
+    if noise_model == None:
+        zero_noise = True
+    
     NAME = name
     target_folder = NAME
     if os.path.isdir(target_folder) == False:
@@ -530,7 +540,7 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
     cmap_bvr = matplotlib.colors.LinearSegmentedColormap.from_list("", ["blue","violet","red"])
     tick_colour = [0.4, 0.4, 0.4, 1.0]
 
-    def plot_quantum_state(input_probability_vector_list, angle_vector_list, plot_number, interpolate = False, save=True, fig = None):
+    def plot_quantum_state(input_probability_vector_list, angle_vector_list, plot_number, interpolate = False, save=True, fig = None, zero_noise = False):
         '''
         Args:
             interpolate: whether to interpolate plot numbers.
@@ -582,8 +592,26 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
 
         if fig == None:
             fig = plt.figure(figsize= (20, (1 - vpr(qubit_count)) * 13.5))
-
-        grid_spec = {
+            
+        if zero_noise:
+            grid_spec = {
+                "bottom": 0.1,
+                "top": 0.95,
+                "left": 0.07,
+                "right": 0.99,
+                "wspace": 0.05,
+                "hspace": 0.09,
+            }
+            ax_dict = fig.subplot_mosaic(
+                [
+                    ["main", "main", "main", "main"],
+                    ["main", "main", "main", "main"],
+                ],
+                gridspec_kw = grid_spec,
+            )
+            plots_order = ["main"]
+        else:
+            grid_spec = {
                 "bottom": 0.08,
                 "top": 0.95,
                 "left": 0.07,
@@ -591,15 +619,15 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
                 "wspace": 0.05,
                 "hspace": 0.09,
             }
-        ax_dict = fig.subplot_mosaic(
-            [
-                ["pure_state_2", "main", "main", "pure_state_3"],
-                ["pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"],
-            ],
-            gridspec_kw = grid_spec,
-        )
-        
-        plots_order = ["main", "pure_state_2", "pure_state_3", "pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"]
+            ax_dict = fig.subplot_mosaic(
+                [
+                    ["pure_state_2", "main", "main", "pure_state_3"],
+                    ["pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"],
+                ],
+                gridspec_kw = grid_spec,
+            )
+            plots_order = ["main", "pure_state_2", "pure_state_3", "pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"]
+
         for i, ax_name in enumerate(plots_order):
             
             ax_dict[ax_name].tick_params(axis='y', labelsize=20)
@@ -617,6 +645,8 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
             
             ax_dict[ax_name].axes.xaxis.set_visible(False)
             ax_dict[ax_name].axes.yaxis.set_visible(False)
+            if zero_noise and ax_name == "main":
+                ax_dict[ax_name].axes.yaxis.set_visible(True)
             if ax_name == "pure_state_2" or ax_name == "pure_state_4":
                 ax_dict[ax_name].axes.yaxis.set_visible(True)
             if ax_name == "main":
@@ -854,14 +884,14 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
 
                 if frame_iter == 0:
                     interpolated_frame = frame_iter
-                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, interpolated_frame, interpolate = False, save=False, fig=anim_fig)    
+                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, interpolated_frame, interpolate = False, save=False, fig=anim_fig, zero_noise = zero_noise)    
                 else:
                     interpolated_frame = frame_iter - 1 + transition_scale
-                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, interpolated_frame, interpolate = True, save=False, fig=anim_fig)
+                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, interpolated_frame, interpolate = True, save=False, fig=anim_fig, zero_noise = zero_noise)
                 return mplfig_to_npimage(fig)
             clips.append(VideoClip(make_histogram_frame, duration = (rhythm[sound_iter][0] + rhythm[sound_iter][1]) / 480))
         else:
-            plot_quantum_state(input_probability_vector_list, angle_vector_list, sound_iter, save=True)
+            plot_quantum_state(input_probability_vector_list, angle_vector_list, sound_iter, save=True, zero_noise = zero_noise)
     
     if smooth_transitions == False:
         clips = []
