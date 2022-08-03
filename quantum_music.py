@@ -1058,7 +1058,7 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
     iter = 0
     for file in files:
         time = (rhythm[iter][0] + rhythm[iter][1]) / 480.0
-        clips[iter] = clips_array([[clips[iter], ImageClip(file).set_duration(time)]], bg_color=[0xFF, 0xFF, 0xFF])
+        clips[iter] = clips_array([[clips[iter], ImageClip(file).set_duration(time).resize(height = clips[iter].size[1])]], bg_color=[0xFF, 0xFF, 0xFF])
         total_time += time
         iter += 1
 
