@@ -475,7 +475,8 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_a
     # documentation found here: https://www.mankier.com/1/timidity#Input_File
     options = []
     options.append("-Ow")
-    options.append("--verbose=3")
+    if output_logs == True:
+        options.append("--verbose=3")
     options.append("--preserve-silence")
     options.append("-A,120")
     options.append("--no-anti-alias") # anti-aliasing seems to cause some crackling
@@ -790,20 +791,15 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
                 ax_dict[ax_name].set_xlim((-0.5, math.pow(2, num_qubits)-1+0.5))
                 ax_dict[ax_name].axes.xaxis.set_visible(True)
                 number_of_states = math.pow(2, num_qubits)
-                if num_qubits > 2:
+                if (zero_noise and num_qubits > 4) or ((not zero_noise) and num_qubits > 3):
                     x_ticks = [0]
                     x_ticks.append(int(number_of_states / 4))
                     x_ticks.append(int(2 * number_of_states / 4))
                     x_ticks.append(int(3 * number_of_states / 4))
                     x_ticks.append(int(number_of_states-1))
                 else:
-                    if num_qubits == 2:
-                        x_ticks = [0, 1, 2, 3]
-                    else:
-                        x_ticks = [0, 1]
-                if len(x_ticks) > 5:
-                    x_ticks = x_ticks[-5:]
-                    x_tick_labels = x_ticks
+                    x_ticks = list(range(2**num_qubits))
+                    
                 ax_dict[ax_name].set_xticks(x_ticks)
                 if num_qubits < 7:
                     x_tick_labels = [bin(x)[2:].zfill(num_qubits)[::-1] for x in x_ticks]
