@@ -173,7 +173,7 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
 
     sounds_list = []
 
-    global_phasors = np.ones(rhos[0].shape[0])
+    global_phasors = np.ones(rhos[0].shape[0], dtype=complex)
     for rho in rhos:
         sound_data = []
         eps = 1E-8
