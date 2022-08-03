@@ -89,7 +89,7 @@ def get_depolarising_noise(single_qubit_gater_error, cnot_gate_error):
     noise_model.add_all_qubit_quantum_error(cnot_gate_dep_error, ['cx'])
     return noise_model
 
-def make_music_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True, synth="timidity"):
+def make_music_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True, synth="timidity", output_logs = False):
     """ Simulates the quantum circuit (with provided errors) and samples the state at every inserted barrier time step and converts the state info to a music video file (.avi). 
     Args:
         qc: The qiskit QuantumCircuit.
@@ -104,17 +104,19 @@ def make_music_video(qc, name, rhythm, noise_model = None, input_instruments = [
         vpr: Propotion of vertical space that the circuit with be scaled to fit. Float (default: 1/3)
         smooth_transitions: Whether to smoothly animate between histogram frames. Significantly increased render time. (default: False) Bool
         phase_marker: Whether to draw lines on the phase wheel indicating phases of the primary pure state.
+        synth: The synth program to use for midi to wav conversion. Expecting either 'vlc' or 'timidity' (default)
+        output_logs: Whether to output the synth midi conversion log files. Only works for timitidy atm.
     """
     
     make_music_midi(qc, name, rhythm, noise_model, input_instruments = input_instruments, note_map=note_map, separate_audio_files=True)
 
     if synth.lower() == "timidity":
-        convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 8)
+        convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 8, output_logs=output_logs)
     elif synth.lower() == "vlc":
         convert_midi_to_wav_vlc(f'{name}/{name}', wait_time = 8)
     else:
         print("Error: unrecognised midi to wav conversion synth '" + synth + "' (expecting 'timidity' or 'vlc'), defaulting to timidity...")
-        convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 8)
+        convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 8, output_logs=output_logs)
     make_video(qc, name, rhythm, noise_model, input_instruments, note_map = note_map, invert_colours = invert_colours, fps = fps, vpr = vpr, smooth_transitions = smooth_transitions, phase_marker = phase_marker, separate_audio_files=True)
 
 def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, separate_audio_files = True):
@@ -461,7 +463,7 @@ def convert_midi_to_wav_vlc(midi_filename_no_ext, wait_time = 3, separate_audio_
             composed_audio_clip = CompositeAudioClip(audio_file_clips)
             composed_audio_clip.write_audiofile(midi_filename_no_ext + ".wav",codec='pcm_s16le', fps=44100)
 
-def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_audio_files = True, output_combined_audio = True):
+def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_audio_files = True, output_combined_audio = True, output_logs = False):
     """ Uses timidity++ to convert a midi file to wav in the working directory.
     Args:
         midi_filename_no_ext: the name of the midi file in the working dir.
@@ -531,11 +533,18 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_a
         import re
         #print(string)
         num_string = re.search(r'\d+$', midi_filename_no_ext).group()
-        num = int(num_string)
         if os.name == 'nt':
-            string = '"TiMidity-2.15.0-w32\\timidity.exe" ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid > log-timidity-' + str(num) + '.txt'
+            string = '"TiMidity-2.15.0-w32\\timidity.exe" ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid'
+            if output_logs == True:
+                if separate_audio_files == True:
+                    num_string = '-' + num_string
+                string += ' > log-timidity' + num_string + '.txt'
         else:
-            string = 'timidity ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid > log-timidity-' + str(num) + '.txt'
+            string = 'timidity ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid'
+            if output_logs == True:
+                if separate_audio_files == True:
+                    num_string = '-' + num_string
+                string += ' > log-timidity' + num_string + '.txt'
     
         command_string = f"{string}"
         os.system(command_string)
