@@ -473,6 +473,7 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_a
     # documentation found here: https://www.mankier.com/1/timidity#Input_File
     options = []
     options.append("-Ow")
+    options.append("--verbose=3")
     options.append("--preserve-silence")
     options.append("-A,120")
     options.append("--no-anti-alias") # anti-aliasing seems to cause some crackling
@@ -527,11 +528,14 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_a
 
     def run_timidity(midi_filename_no_ext, options_string=options_string):
         import os
+        import re
         #print(string)
+        num_string = re.search(r'\d+$', midi_filename_no_ext).group()
+        num = int(num_string)
         if os.name == 'nt':
-            string = '"TiMidity-2.15.0-w32\\timidity.exe" ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid'
+            string = '"TiMidity-2.15.0-w32\\timidity.exe" ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid > log-timidity-' + str(num) + '.txt'
         else:
-            string = 'timidity ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid'
+            string = 'timidity ' + options_string + '-o ' + midi_filename_no_ext + '.wav ' + midi_filename_no_ext + '.mid > log-timidity-' + str(num) + '.txt'
     
         command_string = f"{string}"
         os.system(command_string)
