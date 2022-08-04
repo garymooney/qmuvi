@@ -124,18 +124,20 @@ _**instrument_collection_name:**_ the name of a predefined collection (string)
 'ensemble': list(range(49,57))  
 'brass': list(range(57,65))  
 'pipe': list(range(73,81))  
+'synth_lead': list(range(81,89))  
+'synth_pad': list(range(89,97))  
+'synth_effects': list(range(97,105))  
+'ethnic': list(range(105,113))  
+'percussive': list(range(113,121))  
+'sound_effects': list(range(121,128))  
 'windband': [74,69,72,67,57,58,71,59]  
 
-### chromatic_middle_c(state_number)
-Used for the note map. Returns a note number calculated as the input state number + 60 such that state number zero is middle C.  
-_**state_number:**_ the state number (int)  
+### Note Maps
+**chromatic_middle_c(state_number)**  
+**c_major(state_number)**  
+**f_minor(state_number)**  
 
-### c_major(state_number)
-Used for the note map. Returns a note number calculated as the input state number + 60 then rounded down to a note in the C major scale.  
-_**state_number:**_ the state number (int)  
-
-### f_minor(state_number)
-Used for the note map. Returns a note number calculated as the input state number + 60 then rounded down to a note in the F minor scale.  
+The predefined note maps. Returns a note number calculated as the input state number + 60 so that 0 is middle C, then rounded down to the nearest note of the scale.  
 _**state_number:**_ the state number (int)  
 
 # Setup
@@ -145,19 +147,31 @@ This project uses Python 3. Download the repo and use the example .py files as a
 Python packages: qiskit==0.37.0, and mido==1.2.10. Earlier versions will probably work too.
 
 ## Convert to wav:
+### Windows
 The project already comes with a verion of TiMidity++ that runs on windows. So you don't need to do anything.
 
 #### (optional) Use VLC player instead:
 If preferred, you can use headless VLC to convert midi files to wav files instead. To do this, install VLC player and add its install path to the PATH system variable. 
 
-VLC needs to be configured to use a sound font (.sf2 file). If VLC can play a midi file successfully then it is already configured. There is one located in the folder "GeneralUser GS 1.471" (this will likely be removed from the repo later), however you can use whichever modern SoundFont you like. Go to VLC preferences (show all settings) -> Input/Codecs -> Audio codecs -> (FluidSynth or whatever MAC version uses) -> Browse to SoundFont location.  
+VLC needs to be configured to use a sound font (.sf2 file). If VLC can play a midi file successfully then it is already configured. There is one located in the folder "GeneralUser GS 1.471", however you can use whichever modern SoundFont you like. Go to VLC preferences (show all settings) -> Input/Codecs -> Audio codecs -> FluidSynth -> Browse to SoundFont location.  
 
-#### Mac OS
-Instead of adding the install directory to PATH, you can instead create a symlink of VLC in the usr/local/bin/ directory (or some other directory already in the PATH environment variable) with the following command.
+### Mac OS
+You should install either TiMidity++ or VLC player to do the MIDI to wav conversions.
+
+#### TiMidity++
+Use your package manager to install timidity. (I'll add instructions to set up the soundfont in TiMidity++ for MacOs later, there are instructions online somewhere)
+
+#### VLC player
+Download and install VLC player. Create a symlink of VLC in the usr/local/bin/ directory (or some other directory already in the PATH environment variable) with the following command.
 
 ```ln -s Application/VLC.app/Contents/MacOS/VLC usr/local/bin/```
 
 Note: if you haven't done this before you may need to create the usr/local/bin/ directory first.
+
+VLC needs to be configured to use a sound font (.sf2 file). If VLC can play a midi file successfully then it is already configured. There is one located in the folder "GeneralUser GS 1.471", however you can use whichever modern SoundFont you like. Setting it up would be something like VLC preferences (show all settings) -> Input/Codecs -> Audio codecs -> (whatever MIDI synth program VLC MacOs uses) -> Browse to SoundFont location.  
+
+### Alternative method
+You can do this process manually using whatever method you like instead of using TiMidity++ or VLC to automatically do it. Just output the circuit as a MIDI file first using _make_music_midi_, then convert to WAV using whatever method you like, then put the WAV file in the folder with the MIDI (and other content) and give it the same name. Then use the _make_video_ method to finish converting the quantum algorthm to video. The _make_video_ method will use the WAV file in the folder instead of generating a new one.
 
 ## Convert to video:
 Python packages: qiskit==0.37.0, moviepy==1.0.3, mido==1.2.10, matplotlib==3.5.2, and pylatexenc. Earlier versions will probably work too.
