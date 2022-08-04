@@ -1,35 +1,52 @@
-# Quantum Music Videos
-<img src="https://user-images.githubusercontent.com/6459545/179480013-c3bf340d-32ec-4738-85c7-e16513dbfeb1.png" width="700">
+
+<img src="https://user-images.githubusercontent.com/6459545/182747409-52b2b800-4c01-45ca-a826-2120aa50fc5c.png" width="256">
+
+An open-source **q**uantum **Mu**sic **Vi**deo tool 
+
+<img src="https://user-images.githubusercontent.com/6459545/182753376-bf01d486-6310-4e17-bee5-37ff5b2cb088.png" width="700">
+
+qMuVi is a python library that can be used by your qiskit project to convert your quantum circuits into music video files. 
+
+Quantum computing is notorious for being unintuitive and difficult to imagine. This tool attempts to create some kind of connection between a human observer and the complex workings of quantum computation. By transforming quantum circuits into music videos, it allows you to "hear" and "see" how a quantum state evolves as it is processed by a quantum algorithm.
+
+# Qiskit Hackathon winning project
+qMuVi was originally created for the Qiskit Hackathon Melbourne 2022 and won first place by the judges and also won the community vote.  
 
 
-Quantum computing is notorious for being unintuitive and difficult to imagine. This python module attempts to create some kind of connection between a human observer and the complex workings of quantum computation by transforming quantum algorithms into music videos. 
+<img src="https://user-images.githubusercontent.com/6459545/179168389-ee36690b-0cc8-4192-becd-1e699b179ce3.png" width="512">
+From left to right, our team was Yang Yang, Gary Mooney (team leader), Harish Vallury, and Gan Yu Pin.
 
-This is a python library that can be included into your qiskit project and used to convert your quantum circuits into music video files (in .mp4 format). Add a barrier to a quantum circuit for each time step to sample the quantum state for, then call the _make_music_video_ or _make_music_midi_ methods. This will create a folder with all of the generated content inside it.
+# How it works
+The quantum circuits are run on Qiskit Aer’s simulator which supports noise models that are used to mimic noise in a physical quantum device. For your quantum circuit, you are able to specify a noise model to be applied to the quantum simulation during qMuVi's sampling of the states. This is particularly useful in understanding how the noise present on a real quantum computer will affect the outcome of your states.
 
-# Qiskit Melbourne 2022 Hackathon
-<img src="https://user-images.githubusercontent.com/6459545/179168389-ee36690b-0cc8-4192-becd-1e699b179ce3.png" width="700">
+Various instruments that play your music can be selected easily using the get_instruments() method, with a range of predefined collections, including piano, tuned percussion, organ, guitar etc. Behind the scenes, the instruments are assigned as integers according to the [General MIDI](https://en.wikipedia.org/wiki/General_MIDI) standard, which the [Mido Python library](https://mido.readthedocs.io/en/latest/index.html) uses to generate the music using the specified digital instruments.
 
-This is our team’s project for the competition. We won first place by the judges and also won the community vote. From left to right, our team was Yang Yang, Gary Mooney (team leader), Harish Vallury, and Gan Yu Pin.
+There are three note maps that are provided by default, the chromatic C scale, the C major scale and the F minor scale, which are used to map the quantum basis state numbers (e.g. |0>, |2>, |7>, etc...) to MIDI note numbers. For example, the C major scale map works by adding 60 to the state number so that the |0> basis state is mapped to middle C, then rounds the note number down to the nearest note in the C major scale. This mapping is readily customised by defining your own method that maps an _int_ to an _int_.
+
+Another important part to music is the rhythm. The note play duration as well as the rest time after the note is defined as a list of tuples. The tuples specify the play and rest time in units of ticks (where 480 ticks is 1 second) for the sound samples of the quantum state.
+
+The music video output will display a visual representation of your input circuit. The quantum state is visualised by animating plots that show various important information, such as the fidelity and the probability distribution of basis states with colours representing their phases.
+
+Once your quantum circuit, instruments and rhythm are defined (and optionally noise model and note map), you can input these parameters into methods such as  _make_music_video()_ or _make_music_midi()_ to generate a music video file or a raw MIDI file respectively. See below for code examples.  
 
 # Mapping quantum to music
 <img src="https://user-images.githubusercontent.com/6459545/179481509-843ede43-20a9-4392-916e-3e6b4757bbe7.png" width="220">
-A quantum density matrix simulator is used to sample mixed states (a probabilistic mixture of pure states) at various time steps.  
+A quantum simulator is used to sample density matrices representing physical quantum states at various time steps. Density matrices can keep track of the uncertainty of the system's actual quantum state by containing all of the possible states that could have been produced by the noise model. The exact quantum state of a system is called a pure state. As incoherent noise is introduced to a density matrix representing a pure state, it can be thought of as changing from a single pure state to a statistical mixture of pure states due to the uncertainty introduced by the noise. When this happens, we say that the density matrix represents a mixed state. A density matrix can be written as its statistical distribution of pure states by performing an eigendecomposition where the eigenvectors are the pure states and the eigenvalues are the corresponding probabilities in the distribution.
 <br />
 <br />
 
-![image](https://user-images.githubusercontent.com/6459545/177944433-b3ea5a8e-d750-47c6-a1e2-58357f3db3ce.png)  
-![image](https://user-images.githubusercontent.com/6459545/177961479-e6dc704e-9fb1-43b1-858c-674c414a743a.png)
+<img src="https://user-images.githubusercontent.com/6459545/177944433-b3ea5a8e-d750-47c6-a1e2-58357f3db3ce.png" height="110">
 
-Each pure state is a state vector representing a superposition of computational basis states. A state with no noise is a pure state and so will only have a single non-zero term in the probabilistic mixture. As incoherent noise is introduced, more terms with non-zero probability will appear. The superposition of states in a pure state will determine the notes that are played. The mapping from integer representation of the state to note number can be customised by passing in a method that takes an int and returns an int (60 is middle C), this allows the possibility to map states to notes of musical scales. 
+<img src="https://user-images.githubusercontent.com/6459545/177961479-e6dc704e-9fb1-43b1-858c-674c414a743a.png" height="160">
 
-A list of instrument collections (see example below) can be specified to assign, in order of decreasing probability, instrument collections to the pure states of the mixture (the instrument collection list can be manually specified in the method call). A maximum of 8 instrument collections can be specified (if there are less than 8, the remaining pure states will use the last instrument collection in the list). The instrument for each note is chosen from the collection by the state's phase angle in the superposition. The angles are discretised to match the size of the collection, where an angle of zero corresponds to the first instrument. 
+Each pure state is a statevector representing a superposition of basis states, e.g. (statevector) = (a|00> + b|11>) / sqrt(2) = (a|0> + b|3>) / sqrt(2). The basis state numbers (e.g. 0 and 3) of the superposition of states are mapped (using a note map) to the MIDI note numbers to be played. The volume of each note is calculated as the probability of the basis state in the statevector (e.g. |a|^2 and |b|^2) multiplied by the probability of the pure state in the statistical distribution. So each pure state is a chord and because the statistical distribution can have multiple pure state terms, this means that multiple chords can be playing at the same time.
 
-The velocity (which is proportional to volume) of each note is calculated by multiplying the propability of the pure state in the mixture and the probability of the computational basis state of the pure state's superposition, normalised such that there is always a note with velocity equal to 1.  
+Each pure state of the statistical distribution is assigned a instrument collection. The instrument in the collection that will be used to play a note is determined by the corresponding basis state's phase in the superposition. The angles are discretised to match the size of the collection, where an angle of zero corresponds to the first instrument. A list of up to 8 instrument collections should be specified when making the music video. The collections from the list will be assigned to pure states in the statistical distribution in order of decreasing probability. If there are less than 8 collections specified, the remaining pure states will use the last instrument collection in the list. 
 
 # Example:
 ```
 import quantum_music
-from quantum_music import make_music_midi, make_music_video, get_instruments, chromatic_middle_c
+from quantum_music import make_music_midi, make_music_video, get_instruments, chromatic_middle_c, get_depolarising_noise
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -50,24 +67,25 @@ circ.cx(2,1)
 circ.barrier()
 circ.cx(1,0)
 circ.barrier()
-rhythm = [(120, 60)]*8 # sound length and rest time for each sample
+
+rhythm = [(120, 60)]*8 # sound length and rest time for each sample (length must match the number of barriers)
+
 single_qubit_error = 0.02
 two_qubit_error = 0.05
-
+depolarising_noise_model = get_depolarising_noise(single_qubit_error, two_qubit_error)
                     
 intruments = []
 intruments.append([73]) # a pipe
 intruments.append(get_instruments('tuned_perc'))
 
-# Converts the circuit to music and outputs it as a midi file
-make_music_midi(circ, "my_quantum_midi", rhythm, single_qubit_error, two_qubit_error, intruments, note_map=chromatic_middle_c)
+# Uncomment to convert the circuit to music and outputs a MIDI file
+# make_music_midi(circ, "my_quantum_midi", rhythm, depolarising_noise_model, intruments, note_map=chromatic_middle_c)
 
-# Converts the circuit to music and video and outputs the result as an mp4 file
-make_music_video(circ, "my_quantum_video", rhythm, single_qubit_error, two_qubit_error, intruments, note_map=chromatic_middle_c)
+# Converts the circuit to music and video and outputs all generated content and an .mp4 file
+make_music_video(circ, "my_quantum_video", rhythm, depolarising_noise_model, intruments, note_map=chromatic_middle_c, invert_colours = False, fps=60)
 ```
 
 Run the python script and it should output all the content into a folder with the specified name (e.g. "my_quantum_video").  
-**Warning:** Using numbers in the name sometimes causes an error.
 
 # Methods
 ### make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, instrument_collections, note_map, invert_colours, fps)
@@ -124,10 +142,13 @@ _**state_number:**_ the state number (int)
 This project uses Python 3. Download the repo and use the example .py files as a starting point.
   
 ## Convert to midi:
-Python packages: qiskit==0.37.0, and mido==1.2.10 (and some other common packages like numpy). Earlier versions will probably work too.
+Python packages: qiskit==0.37.0, and mido==1.2.10. Earlier versions will probably work too.
 
-## Convert to mp3:
-Install VLC player and add its install path to the PATH system variable. 
+## Convert to wav:
+The project already comes with a verion of TiMidity++ that runs on windows. So you don't need to do anything.
+
+#### (optional) Use VLC player instead:
+If preferred, you can use headless VLC to convert midi files to wav files instead. To do this, install VLC player and add its install path to the PATH system variable. 
 
 VLC needs to be configured to use a sound font (.sf2 file). If VLC can play a midi file successfully then it is already configured. There is one located in the folder "GeneralUser GS 1.471" (this will likely be removed from the repo later), however you can use whichever modern SoundFont you like. Go to VLC preferences (show all settings) -> Input/Codecs -> Audio codecs -> (FluidSynth or whatever MAC version uses) -> Browse to SoundFont location.  
 
@@ -139,7 +160,7 @@ Instead of adding the install directory to PATH, you can instead create a symlin
 Note: if you haven't done this before you may need to create the usr/local/bin/ directory first.
 
 ## Convert to video:
-Python packages: qiskit==0.37.0, moviepy==1.0.3, mido==1.2.10, and matplotlib==3.5.2 (and some other common packages like numpy). Earlier versions will probably work too.
+Python packages: qiskit==0.37.0, moviepy==1.0.3, mido==1.2.10, matplotlib==3.5.2, and pylatexenc. Earlier versions will probably work too.
 
 #### Mac OS
 The ffmpeg codec for video processing may not be installed after installing MoviePy. If so, install it manually using your package manager. E.g.
