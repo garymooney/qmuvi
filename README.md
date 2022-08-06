@@ -25,7 +25,7 @@ There are three note maps that are provided by default, the chromatic C scale, t
 
 Another important part to music is the rhythm. The note play duration as well as the rest time after the note is defined as a list of tuples. The tuples specify the play and rest time in units of ticks (where 480 ticks is 1 second) for the sound samples of the quantum state.
 
-The music video output will display a visual representation of your input circuit. The quantum state is visualised by animating plots that show various important information, such as the fidelity and the probability distribution of basis states with colours representing their phases.
+The [MoviePy Python library](https://zulko.github.io/moviepy/) is used to render the music videos which display a visual representation of your input circuit. The quantum state is visualised by animating plots that show various important information, such as the probability distribution of basis states for each pure state, with colours representing their phases.
 
 Once your quantum circuit, instruments and rhythm are defined (and optionally noise model and note map), you can input these parameters into methods such as  _make_music_video()_ or _make_music_midi()_ to generate a music video file or a raw MIDI file respectively. See below for code examples.  
 
