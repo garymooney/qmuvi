@@ -5,7 +5,7 @@ An open-source **q**uantum **Mu**sic **Vi**deo tool
 
 <img src="https://user-images.githubusercontent.com/6459545/182753376-bf01d486-6310-4e17-bee5-37ff5b2cb088.png" width="700">
 
-qMuVi is a python library that can be used by your qiskit project to convert your quantum circuits into music video files. 
+qMuVi is a python library that can be used by your [qiskit](https://qiskit.org/) project to convert your quantum circuits into music video files. 
 
 Quantum computing is notorious for being unintuitive and difficult to imagine. This tool attempts to create some kind of connection between a human observer and the complex workings of quantum computation. By transforming quantum circuits into music videos, it allows you to "hear" and "see" how a quantum state evolves as it is processed by a quantum algorithm.
 
@@ -17,7 +17,7 @@ qMuVi was originally created for the Qiskit Hackathon Melbourne 2022 and won fir
 From left to right, our team was Yang Yang, Gary Mooney (team leader), Harish Vallury, and Gan Yu Pin.
 
 # How it works
-The quantum circuits are run on Qiskit Aer’s simulator which supports noise models that are used to mimic noise in a physical quantum device. For your quantum circuit, you are able to specify a noise model to be applied to the quantum simulation during qMuVi's sampling of the states. This is particularly useful in understanding how the noise present on a real quantum computer will affect the outcome of your states.
+The quantum circuits are run on [Qiskit Aer’s simulator](https://qiskit.org/documentation/tutorials/simulators/1_aer_provider.html) which supports noise models ([NoiseModel](https://qiskit.org/documentation/stubs/qiskit.providers.aer.noise.NoiseModel.html)) that are used to mimic noise in a physical quantum device. For your quantum circuit, you are able to specify a noise model to be applied to the quantum simulation during qMuVi's sampling of the states. This is particularly useful in understanding how the noise present on a real quantum computer will affect the outcome of your states.
 
 Various instruments that play your music can be selected easily using the get_instruments() method, with a range of predefined collections, including piano, tuned percussion, organ, guitar etc. Behind the scenes, the instruments are assigned as integers according to the [General MIDI](https://en.wikipedia.org/wiki/General_MIDI) standard, which the [Mido Python library](https://mido.readthedocs.io/en/latest/index.html) uses to generate the music using the specified digital instruments.
 
@@ -25,7 +25,7 @@ There are three note maps that are provided by default, the chromatic C scale, t
 
 Another important part to music is the rhythm. The note play duration as well as the rest time after the note is defined as a list of tuples. The tuples specify the play and rest time in units of ticks (where 480 ticks is 1 second) for the sound samples of the quantum state.
 
-The music video output will display a visual representation of your input circuit. The quantum state is visualised by animating plots that show various important information, such as the fidelity and the probability distribution of basis states with colours representing their phases.
+The [MoviePy Python library](https://zulko.github.io/moviepy/) is used to render the music videos which display a visual representation of your input circuit. The quantum state is visualised by animating plots that show various important information, such as the probability distribution of basis states for each pure state, with colours representing their phases.
 
 Once your quantum circuit, instruments and rhythm are defined (and optionally noise model and note map), you can input these parameters into methods such as  _make_music_video()_ or _make_music_midi()_ to generate a music video file or a raw MIDI file respectively. See below for code examples.  
 
@@ -79,36 +79,51 @@ intruments.append([73]) # a pipe
 intruments.append(get_instruments('tuned_perc'))
 
 # Uncomment to convert the circuit to music and outputs a MIDI file
-# make_music_midi(circ, "my_quantum_midi", rhythm, depolarising_noise_model, intruments, note_map=chromatic_middle_c)
+# make_music_midi(circ, "my_quantum_midi", rhythm, depolarising_noise_model, intruments, note_map=chromatic_middle_c, separate_audio_files=True)
 
 # Converts the circuit to music and video and outputs all generated content and an .mp4 file
-make_music_video(circ, "my_quantum_video", rhythm, depolarising_noise_model, intruments, note_map=chromatic_middle_c, invert_colours = False, fps=60)
+make_music_video(circ, "my_quantum_video", rhythm, depolarising_noise_model, intruments, note_map=chromatic_middle_c, invert_colours = False, fps=60, smooth_transitions=True, synth="timidity", output_logs = False)
 ```
 
 Run the python script and it should output all the content into a folder with the specified name (e.g. "my_quantum_video").  
 
 # Methods
-### make_music_video(qc, name, rhythm, single_qubit_error, two_qubit_error, instrument_collections, note_map, invert_colours, fps)
+### make_music_video(qc, name, rhythm, noise_model, instrument_collections, note_map, invert_colours, fps, smooth_transitions, synth, output_logs)
 Generates a music video from a qiskit quantum algorithm with barriers  
 _**qc:**_ quantum circuit (qiskit QuantumCircuit)  
 _**name:**_ name of the music video file and the folder that the data will be saved to (string)  
 _**rhythm:**_ the timings for each sample (list of tuples (int, int). First element is note length, second element is rest time. Units of ticks 480 = 1 sec).  
-_**single_qubit_error:**_ single qubit depolarisation noise (float)  
-_**two_qubit_error:**_ two-qubit depolarisation noise (float)  
-_**instrument_collections:**_ list of instrument collections for each pure state. Instrument for note is chosen from collection based on state phase (list of list of ints)  
+_**noise_model:**_ a qiskit noise model to use for the simulation (default: None, will perform a noiseless simulation) ([NoiseModel](https://qiskit.org/documentation/stubs/qiskit.providers.aer.noise.NoiseModel.html))  
+_**instrument_collections:**_ list of instrument collections for each pure state. Instrument for note is chosen from collection based on state phase (default: [list(range(81,89))], synth_lead) (list of list of ints)  
 _**note_map:**_ the note map to convert from state number to note number. Middle C is 60 (default: chromatic_middle_c) (map from int to int)  
 _**invert_colours:**_ whether to invert the colours of the video so that the background is black (default: False) (bool)  
-_**fps:**_ the fps of the output video (default: 60) (int)
+_**fps:**_ the fps of the output video (default: 60) (int)  
+_**smooth_transitions:**_ Whether to animate smooth transitions between histogram states. This slows down rendering significantly (default: True) (bool)  
+_**synth:**_ the synth to use to convert mid to wav. Options are "timidity" and "vlc" (default: "timidity") (string)  
+_**output_logs:**_ Outputs log files generated by timidity when converting mid files to wav. (default: False) (bool)  
 
-### make_music_midi(qc, name, rhythm, single_qubit_error, two_qubit_error, instrument_collections, note_map)
-Generates music from a qiskit quantum algorithm with barriers and outputs it as a midi file  
+### make_music_midi(qc, name, rhythm, noise_model, instrument_collections, note_map, separate_audio_files)
+Generates music from a qiskit quantum algorithm with barriers and outputs it as a mid file  
 _**qc:**_ quantum circuit (qiskit QuantumCircuit)  
 _**name:**_ name of the music file and the folder that the data will be saved to (string)  
 _**rhythm:**_ the timings for each sample (list of tuples (int, int). First element is note length, second element is rest time. Units of ticks 480 = 1 sec).  
-_**single_qubit_error:**_ single qubit depolarisation noise (float)  
-_**two_qubit_error:**_ two-qubit depolarisation noise (float)  
-_**instrument_collections:**_ list of instrument collections for each pure state. Instrument for note is chosen from collection based on state phase (list of list of ints)  
-_**note_map:**_ the note map to convert from state number to note number. Middle C is 60 (default: chromatic_middle_c) (map from int to int)
+_**noise_model:**_ a qiskit noise model to use for the simulation (default: None, will perform a noiseless simulation) ([NoiseModel](https://qiskit.org/documentation/stubs/qiskit.providers.aer.noise.NoiseModel.html))  
+_**instrument_collections:**_ list of instrument collections for each pure state. Instrument for note is chosen from collection based on state phase (default: [list(range(81,89))], synth_lead) (list of list of ints)  
+_**note_map:**_ the note map to convert from state number to note number. Middle C is 60 (default: chromatic_middle_c) (map from int to int)  
+_**separate_audio_files:**_ whether to output separate mid files for each pure state in the mixed state ensemble. Good for maximum audio quality (up to 8 pure states). (default: True) (bool)  
+
+### make_video(qc, name, rhythm, noise_model, instrument_collections, note_map, invert_colours, fps, smooth_transitions, separate_audio_files)
+Generates a video from data that was already generated using make_music_midi or make_music_video.  
+_**qc:**_ quantum circuit (qiskit QuantumCircuit)  
+_**name:**_ name of the music video file and the folder that the data will be saved to (string)  
+_**rhythm:**_ the timings for each sample (list of tuples (int, int). First element is note length, second element is rest time. Units of ticks 480 = 1 sec).  
+_**noise_model:**_ a qiskit noise model to use for the simulation (default: None, will perform a noiseless simulation) ([NoiseModel](https://qiskit.org/documentation/stubs/qiskit.providers.aer.noise.NoiseModel.html))  
+_**instrument_collections:**_ list of instrument collections for each pure state. Instrument for note is chosen from collection based on state phase (default: [list(range(81,89))], synth_lead) (list of list of ints)  
+_**note_map:**_ the note map to convert from state number to note number. Middle C is 60 (default: chromatic_middle_c) (map from int to int)  
+_**invert_colours:**_ whether to invert the colours of the video so that the background is black (default: False) (bool)  
+_**fps:**_ the fps of the output video (default: 60) (int)  
+_**smooth_transitions:**_ Whether to animate smooth transitions between histogram states. This slows down rendering significantly (default: True) (bool)  
+_**separate_audio_files:**_ whether to look for separate mid files for each pure state in the mixed state ensemble and combine them together for the video output. Good for maximum audio quality (up to 8 pure states). (default: True) (bool)  
 
 ### get_instruments(instrument_collection_name)
 Gets a list of integers corresponding to instruments according to the standard General MIDI (see https://en.wikipedia.org/wiki/General_MIDI)  
@@ -141,17 +156,24 @@ The predefined note maps. Returns a note number calculated as the input state nu
 _**state_number:**_ the state number (int)  
 
 # Setup
-This project uses Python 3. Download the repo and use the example .py files as a starting point.
+Download the repo and use the example .py files as a starting point (python 3). 
+
+There are three conversion processes in qMuVi to configure. Each of the conversions below can be used independently without needing to configure the other ones (apart from video, this will be made independent soon). The conversions are: 
+- **Output to mid file:** Process and output the quantum circuit as data files and MIDI (mid) file(s). MIDI is a standard format that describes the sounds to play and when to play them.  
+- **Convert mid to wav:** wav files are the typical audio files that can be directly listened to using any audio playback software.
+- **Convert to video:** Generate a video using the data files and wav file(s). If there were no wav files generated, the video will be silent.
   
-## Convert to midi:
+## Output to mid file (MIDI):
 Python packages: qiskit==0.37.0, and mido==1.2.10. Earlier versions will probably work too.
 
-## Convert to wav:
+## Convert mid to wav:
+The conversion can either be configured to be automatic using the TiMidity++ or VLC programs, or the conversion can be done manually (see **Manual Conversion** below) 
+
 ### Windows
-The project already comes with a verion of TiMidity++ that runs on windows. So you don't need to do anything.
+The project already comes with a verion of TiMidity++ that runs on windows. So qMuVi should already be configured to automatically convert mid files to wav files.
 
 #### (optional) Use VLC player instead:
-If preferred, you can use headless VLC to convert midi files to wav files instead. To do this, install VLC player and add its install path to the PATH system variable. 
+If preferred, you can use headless VLC to convert mid files to wav files instead. To do this, install VLC player and add its install path to the PATH system variable. 
 
 VLC needs to be configured to use a sound font (.sf2 file). If VLC can play a midi file successfully then it is already configured. There is one located in the folder "GeneralUser GS 1.471", however you can use whichever modern SoundFont you like. Go to VLC preferences (show all settings) -> Input/Codecs -> Audio codecs -> FluidSynth -> Browse to SoundFont location.  
 
@@ -168,9 +190,9 @@ Download and install VLC player. Create a symlink of VLC in the usr/local/bin/ d
 
 Note: if you haven't done this before you may need to create the usr/local/bin/ directory first.
 
-VLC needs to be configured to use a sound font (.sf2 file). If VLC can play a midi file successfully then it is already configured. There is one located in the folder "GeneralUser GS 1.471", however you can use whichever modern SoundFont you like. Setting it up would be something like VLC preferences (show all settings) -> Input/Codecs -> Audio codecs -> (whatever MIDI synth program VLC MacOs uses) -> Browse to SoundFont location.  
+VLC needs to be configured to use a sound font (.sf2 file). If VLC can play a mid file successfully then it is already configured. There is one located in the folder "GeneralUser GS 1.471", however you can use whichever modern SoundFont you like. Setting it up would be something like VLC preferences (show all settings) -> Input/Codecs -> Audio codecs -> (whatever MIDI synth program VLC MacOs uses) -> Browse to SoundFont location.  
 
-### Alternative method
+### Manual Conversion (mid -> wav)
 You can do this process manually using whatever method you like instead of using TiMidity++ or VLC to automatically do it. Just output the circuit as a MIDI file first using _make_music_midi_, then convert to WAV using whatever method you like, then put the WAV file in the folder with the MIDI (and other content) and give it the same name. Then use the _make_video_ method to finish converting the quantum algorthm to video. The _make_video_ method will use the WAV file in the folder instead of generating a new one.
 
 ## Convert to video:
