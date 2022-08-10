@@ -5,7 +5,7 @@ An open-source **q**uantum **Mu**sic **Vi**deo tool
 
 <img src="https://user-images.githubusercontent.com/6459545/182753376-bf01d486-6310-4e17-bee5-37ff5b2cb088.png" width="700">
 
-qMuVi is a python library that can be used by your [qiskit](https://qiskit.org/) project to convert your quantum circuits into music video files. 
+qMuVi is a python library that can be used by your [qiskit](https://qiskit.org/) project to convert quantum circuits into music video files. 
 
 Quantum computing is notorious for being unintuitive and difficult to imagine. This tool attempts to create some kind of connection between a human observer and the complex workings of quantum computation. By transforming quantum circuits into music videos, it allows you to "hear" and "see" how a quantum state evolves as it is processed by a quantum algorithm.
 
@@ -23,9 +23,9 @@ Various instruments that play your music can be selected easily using the get_in
 
 There are three note maps that are provided by default, the chromatic C scale, the C major scale and the F minor scale, which are used to map the quantum basis state numbers (e.g. |0>, |2>, |7>, etc...) to MIDI note numbers. For example, the C major scale map works by adding 60 to the state number so that the |0> basis state is mapped to middle C, then rounds the note number down to the nearest note in the C major scale. This mapping is readily customised by defining your own method that maps an _int_ to an _int_.
 
-Another important part to music is the rhythm. The note play duration as well as the rest time after the note is defined as a list of tuples. The tuples specify the play and rest time in units of ticks (where 480 ticks is 1 second) for the sound samples of the quantum state.
+Another important part to music is the rhythm. The note play duration, as well as the rest time after the note, is defined as a list of tuples. The tuples specify the play and rest time in units of ticks (where 480 ticks is 1 second) for the sound samples of the quantum state.
 
-The [MoviePy Python library](https://zulko.github.io/moviepy/) is used to render the music videos which display a visual representation of your input circuit. The quantum state is visualised by animating plots that show various important information, such as the probability distribution of basis states for each pure state, with colours representing their phases.
+The [MoviePy Python library](https://zulko.github.io/moviepy/) is used to render the music videos which display a visual representation of your input circuit. The quantum state is visualised by animating figures that show various important information, such as the probability distribution of basis states for each pure state, with colours representing their phases.
 
 Once your quantum circuit, instruments and rhythm are defined (and optionally noise model and note map), you can input these parameters into methods such as  _make_music_video()_ or _make_music_midi()_ to generate a music video file or a raw MIDI file respectively. See below for code examples.  
 
