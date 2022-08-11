@@ -7,14 +7,13 @@ An open-source **q**uantum **Mu**sic **Vi**deo tool
 
 qMuVi is a python library that can be used by your [qiskit](https://qiskit.org/) project to transform quantum circuits into music videos. 
 
-Quantum computing is notorious for being unintuitive and difficult to imagine. This tool attempts to create some kind of connection between a human observer and the complex workings of quantum computation. By transforming quantum circuits into music videos, it allows you to "hear" and "see" how a quantum state evolves as it is processed by a quantum algorithm.
+Quantum computing is notorious for being unintuitive and difficult to imagine. This tool attempts to create a connection between a human observer and the complex workings of quantum computation. By transforming quantum circuits into music videos, it allows you to "hear" and "see" how a quantum state evolves as it is processed by a quantum algorithm.  
 
 # Qiskit Hackathon winning project
-qMuVi was originally created for the Qiskit Hackathon Melbourne 2022 and won first place by the judges and also won the community vote.  
-
+qMuVi was the winning project of the Qiskit Hackathon Melbourne 2022 hosted by [IBM Quantum Network Hub @ the University of Melbourne](https://www.unimelb.edu.au/quantumhub). It has continued to be developed since the competition.  
 
 <img src="https://user-images.githubusercontent.com/6459545/179168389-ee36690b-0cc8-4192-becd-1e699b179ce3.png" width="512">
-From left to right, our team was Yang Yang, Gary Mooney (team leader), Harish Vallury, and Gan Yu Pin.
+From left to right, our qiskit hackathon team was Yang Yang, Gary Mooney (team leader), Harish Vallury, and Gan Yu Pin.
 
 # How it works
 The quantum circuits are run on [Qiskit Aer’s simulator](https://qiskit.org/documentation/tutorials/simulators/1_aer_provider.html) which supports noise models ([NoiseModel](https://qiskit.org/documentation/stubs/qiskit.providers.aer.noise.NoiseModel.html)) that are used to mimic noise in a physical quantum device. For your quantum circuit, you are able to specify a noise model to be applied to the quantum simulation during qMuVi's sampling of the states. This is particularly useful in understanding how the noise present on a real quantum computer will affect the outcome of your states.
