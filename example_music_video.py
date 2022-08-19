@@ -21,4 +21,6 @@ circ.barrier()
 circ.cx(1,0)
 circ.barrier()
 
-make_music_video(circ, "example_music_video", [(16, 8)]*8, get_depolarising_noise(0.02, 0.05), [[57], get_instruments('tuned_perc')], note_map=chromatic_middle_c, invert_colours=False, fps=24, smooth_transitions=True)
+rhythm = [(160, 80)]*8
+
+make_music_video(circ, "example_music_video", rhythm, get_depolarising_noise(0.02, 0.05), [[57], get_instruments('tuned_perc')], note_map=chromatic_middle_c, invert_colours=False, fps=8, smooth_transitions=True, probability_distribution_only = False)

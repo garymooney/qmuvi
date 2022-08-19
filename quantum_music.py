@@ -89,7 +89,7 @@ def get_depolarising_noise(single_qubit_gater_error, cnot_gate_error):
     noise_model.add_all_qubit_quantum_error(cnot_gate_dep_error, ['cx'])
     return noise_model
 
-def make_music_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True, synth="timidity", output_logs = False):
+def make_music_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True, synth="timidity", output_logs = False, probability_distribution_only = False):
     """ Simulates the quantum circuit (with provided errors) and samples the state at every inserted barrier time step and converts the state info to a music video file (.avi). 
     Args:
         qc: The qiskit QuantumCircuit.
@@ -117,7 +117,20 @@ def make_music_video(qc, name, rhythm, noise_model = None, input_instruments = [
     else:
         print("Error: unrecognised midi to wav conversion synth '" + synth + "' (expecting 'timidity' or 'vlc'), defaulting to timidity...")
         convert_midi_to_wav_timidity(f'{name}/{name}', wait_time = 8, output_logs=output_logs)
-    make_video(qc, name, rhythm, noise_model, input_instruments, note_map = note_map, invert_colours = invert_colours, fps = fps, vpr = vpr, smooth_transitions = smooth_transitions, phase_marker = phase_marker, separate_audio_files=True)
+    make_video(qc, 
+               name, 
+               rhythm, 
+               noise_model, 
+               input_instruments, 
+               note_map = note_map, 
+               invert_colours = invert_colours, 
+               fps = fps, 
+               vpr = vpr, 
+               smooth_transitions = smooth_transitions, 
+               phase_marker = phase_marker, 
+               separate_audio_files = True, 
+               probability_distribution_only = probability_distribution_only
+              )
 
 def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, separate_audio_files = True):
     """ Simulates the quantum circuit (with provided errors) and samples the state at every inserted barrier time step and converts the state info to a midi file. 
@@ -176,10 +189,15 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
     sounds_list = []
 
     global_phasors = np.ones(rhos[0].shape[0], dtype=complex)
+    meas_probs_list = []
     for rho in rhos:
         sound_data = []
         eps = 1E-8
         w,v = np.linalg.eig(rho)
+        meas_probs = [0] * rho.shape[0]
+        for i in range(rho.shape[0]):
+            meas_probs[i] = rho[i,i].real
+        meas_probs_list.append(meas_probs)
         for i,p in enumerate(w):
             if p.real > eps:
                 prob0 = p.real
@@ -209,26 +227,8 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
     with open(f'{NAME}/fidelity_list.json', 'w') as f:
         json.dump(fidelity_list, f)
 
-    E_MIX = [4, 6, 8, 9, 11, 13, 14, 16, 18, 20, 21, 23, 25, 26, 28, 30, 32, 33, 35, 37, 38, 40, 42, 44, 45, 47, 49, 50, 52, 54, 56, 57, 59, 61, 62, 64, 66, 68, 69, 71, 73, 74, 76, 78, 80, 81, 83, 85, 86, 88, 90, 92, 93, 95, 97, 98, 100, 102, 104, 105, 107, 109, 110, 112, 114, 116, 117, 119, 121, 122, 124, 126]
-
-    F_MIN = [5, 7, 8, 10, 12, 13, 15, 17, 19, 20, 22, 24, 25, 27, 29, 31, 32, 34, 36, 37, 39, 41, 43, 44, 46, 48,  49, 51, 53, 55, 56, 58, 60, 61, 63, 65, 67, 68, 70, 72, 74, 75, 77, 79, 80, 82, 84, 86, 87, 89, 91, 92, 94, 96, 97, 99, 101, 103, 104, 106, 108, 109, 111, 113, 115, 116, 118, 120, 121, 123, 125, 127]
-
-    C_MAJ = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24, 26, 28, 29, 31, 33, 35, 36, 38, 40, 41, 43, 45, 47, 48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84, 86, 88, 89, 91, 93, 95, 96, 98, 100, 101, 103, 105, 107, 108, 110, 112, 113, 115, 117, 119, 120, 122, 124, 125, 127]
-
-
-    def round_to_scale(n, scale = C_MAJ):
-        CURR_MODE = scale
-        note = 60+n
-        
-        # Shifting
-        if CURR_MODE and note < CURR_MODE[0]:
-            note = CURR_MODE[0]
-        else:
-            while (CURR_MODE and note not in CURR_MODE):
-                note -= 1
-        return note
-
-    
+    with open(f'{NAME}/meas_probs_list.json', 'w') as f:
+        json.dump(meas_probs_list, f)
 
     from mido import Message, MetaMessage, MidiFile, MidiTrack, bpm2tempo
 
@@ -247,29 +247,15 @@ def make_music_midi(qc, name, rhythm, noise_model = None, input_instruments = [l
         else:
             track_instruments.append(input_instruments[len(input_instruments)-1])
 
-
-
-    #track_instruments = ['ensemble']*8
     for track in tracks:
         track.append(MetaMessage('set_tempo', tempo=bpm2tempo(60)))
 
-    #for track in tracks:
-    #    track.append(Message('control_change', program=81, control=68, value=0))
-    #    track.append(Message('control_change', program=80, control=68, value=0))
-
-    #time_list = [[120,0]]*25
     time_list = rhythm
     print("time_list:", time_list)
-    #time_list = [[80,0],[40,0],[120,0],[120,0],[120,0],[240,0],
-    #             [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],
-    #             [80,0],[40,0],[120,0],[120,0],[120,0],[120,0],[120,0],
-    #             [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],]
 
     with open(f'{NAME}/rhythm.json', 'w') as f:
         json.dump(time_list, f)
 
-    #print("len(sounds_list):", len(sounds_list))
-    
     available_channels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 15]
     for t_i, sound in enumerate(sounds_list):    
         
@@ -594,7 +580,7 @@ def convert_midi_to_wav_timidity(midi_filename_no_ext, wait_time = 3, separate_a
             composed_audio_clip = CompositeAudioClip(audio_file_clips)
             composed_audio_clip.write_audiofile(midi_filename_no_ext + ".wav",codec='pcm_s16le', fps=44100)
 
-def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True, separate_audio_files = True):
+def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(range(81,89))], note_map = chromatic_middle_c, invert_colours = False, fps=60, vpr = None, smooth_transitions = True, phase_marker = True, separate_audio_files = True, probability_distribution_only = False):
     """ Only renders the video, assuming the relevant circuit sample data is available in a folder with the given name.
     Args:
         qc: The qiskit QuantumCircuit.
@@ -677,7 +663,7 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
     cmap_bvr = matplotlib.colors.LinearSegmentedColormap.from_list("", ["blue","violet","red"])
     tick_colour = [0.4, 0.4, 0.4, 1.0]
 
-    def plot_quantum_state(input_probability_vector_list, angle_vector_list, plot_number, interpolate = False, save=True, fig = None, zero_noise = False):
+    def plot_quantum_state(input_probability_vector_list, angle_vector_list, meas_prob_vector_list, plot_number, interpolate = False, save=True, fig = None, zero_noise = False, probability_distribution_only = probability_distribution_only):
         '''
         Args:
             interpolate: whether to interpolate plot numbers.
@@ -698,6 +684,10 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
             for i in range(angle_vector.shape[0]):
                 angle_vector[i, :] = lerp(angle_vector_1[i, :], angle_vector_2[i, :], plot_number - math.floor(plot_number))
             
+            meas_prob_vector_1 = meas_prob_vector_list[math.floor(plot_number)]
+            meas_prob_vector_2 = meas_prob_vector_list[math.ceil(plot_number)]
+            meas_prob_vector = lerp(meas_prob_vector_1[:], meas_prob_vector_2[:], plot_number - math.floor(plot_number))
+
             for i in range(angle_vector.shape[0]):
                 for j in range(angle_vector.shape[1]):
                     if input_probability_vector_1[i, j] <= 0.0001 and input_probability_vector_2[i, j] > 0:
@@ -709,6 +699,7 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
             input_probability_vector = input_probability_vector_list[plot_number]
             angle_vector = angle_vector_list[plot_number]
             input_length = input_probability_vector.shape[1]
+            meas_prob_vector = meas_prob_vector_list[plot_number]
 
         num_qubits = len(bin(input_length - 1)) - 2
         labels = []
@@ -729,69 +720,92 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
 
         if fig == None:
             fig = plt.figure(figsize= (20, (1 - vpr(qubit_count)) * 13.5))
-            
-        if zero_noise:
+        
+        if probability_distribution_only:
             grid_spec = {
-                "bottom": 0.1,
-                "top": 0.95,
-                "left": 0.07,
-                "right": 0.99,
-                "wspace": 0.05,
-                "hspace": 0.09,
-            }
+                    "bottom": 0.1,
+                    "top": 0.95,
+                    "left": 0.07,
+                    "right": 0.99,
+                    "wspace": 0.05,
+                    "hspace": 0.09,
+                }
             ax_dict = fig.subplot_mosaic(
                 [
-                    ["main", "main", "main", "main"],
-                    ["main", "main", "main", "main"],
+                    ["meas_probs", "meas_probs", "meas_probs", "meas_probs"],
+                    ["meas_probs", "meas_probs", "meas_probs", "meas_probs"],
                 ],
                 gridspec_kw = grid_spec,
             )
-            plots_order = ["main"]
+            plots_order = ["meas_probs"]
         else:
-            grid_spec = {
-                "bottom": 0.08,
-                "top": 0.95,
-                "left": 0.07,
-                "right": 0.99,
-                "wspace": 0.05,
-                "hspace": 0.09,
-            }
-            ax_dict = fig.subplot_mosaic(
-                [
-                    ["pure_state_2", "main", "main", "pure_state_3"],
-                    ["pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"],
-                ],
-                gridspec_kw = grid_spec,
-            )
-            plots_order = ["main", "pure_state_2", "pure_state_3", "pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"]
+            if zero_noise:
+                grid_spec = {
+                    "bottom": 0.1,
+                    "top": 0.95,
+                    "left": 0.07,
+                    "right": 0.99,
+                    "wspace": 0.05,
+                    "hspace": 0.09,
+                }
+                ax_dict = fig.subplot_mosaic(
+                    [
+                        ["main", "main", "main", "main"],
+                        ["main", "main", "main", "main"],
+                    ],
+                    gridspec_kw = grid_spec,
+                )
+                plots_order = ["main"]
+            else:
+                grid_spec = {
+                    "bottom": 0.08,
+                    "top": 0.95,
+                    "left": 0.07,
+                    "right": 0.99,
+                    "wspace": 0.05,
+                    "hspace": 0.09,
+                }
+                ax_dict = fig.subplot_mosaic(
+                    [
+                        ["pure_state_2", "main", "main", "pure_state_3"],
+                        ["pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"],
+                    ],
+                    gridspec_kw = grid_spec,
+                )
+                plots_order = ["main", "pure_state_2", "pure_state_3", "pure_state_4", "pure_state_5", "pure_state_6", "pure_state_7"]
 
         for i, ax_name in enumerate(plots_order):
             
             ax_dict[ax_name].tick_params(axis='y', labelsize=20)
-
-            in_prob_vec = input_probability_vector[i, :]
+            
+            if ax_name == "meas_probs":
+                in_prob_vec = meas_prob_vector
+            else:
+                in_prob_vec = input_probability_vector[i, :]
             bar_list = ax_dict[ax_name].bar(x_values, in_prob_vec, width=0.5)
             ax_dict[ax_name].set_ylim([0, np.max(input_probability_vector)])
 
-            rgba = [cmap((k - min_height) / max_height) for k in angle_vector[i, :]]
-            for x in range(input_length):
-                bar_list[x].set_color(rgba[x])
+            if ax_name != "meas_probs":
+                rgba = [cmap((k - min_height) / max_height) for k in angle_vector[i, :]]
+                for x in range(input_length):
+                    bar_list[x].set_color(rgba[x])
             
             ax_dict[ax_name].tick_params(axis='x', colors=tick_colour)
             ax_dict[ax_name].tick_params(axis='y', colors=tick_colour)
             
             ax_dict[ax_name].axes.xaxis.set_visible(False)
             ax_dict[ax_name].axes.yaxis.set_visible(False)
-            if zero_noise and ax_name == "main":
+            if (zero_noise and ax_name == "main") or ax_name == "meas_probs":
                 ax_dict[ax_name].axes.yaxis.set_visible(True)
             if ax_name == "pure_state_2" or ax_name == "pure_state_4":
                 ax_dict[ax_name].axes.yaxis.set_visible(True)
-            if ax_name == "main":
-                #num_values = math.round(math.pow(2, num_qubits))
+            if ax_name == "main" or ax_name == "meas_probs":
                 ax_dict[ax_name].set_xlim((-0.5, math.pow(2, num_qubits)-1+0.5))
                 ax_dict[ax_name].axes.xaxis.set_visible(True)
                 number_of_states = math.pow(2, num_qubits)
-                if (zero_noise and num_qubits > 4) or ((not zero_noise) and num_qubits > 3):
+                if (zero_noise and num_qubits > 4) \
+                        or ((not zero_noise) and num_qubits > 3) \
+                        or (ax_name == "meas_probs" and num_qubits > 4):
                     x_ticks = [0]
                     x_ticks.append(int(number_of_states / 4))
                     x_ticks.append(int(2 * number_of_states / 4))
@@ -817,7 +831,7 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
             plt.close('all')
         return fig
     
-    def plot_info_panel(plot_number,fidelity, prob_vec, angles_vec): 
+    def plot_info_panel(plot_number,fidelity, prob_vec, angles_vec, probability_distribution_only=probability_distribution_only): 
 
         probs = list(prob_vec[0, :])
         angles = list(angles_vec[0, :])
@@ -838,65 +852,69 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
             ],
             gridspec_kw = grid_spec_bars,
         )
-        grid_spec_phase_wheel = {
-                "bottom": 0.12,
-                "top": 0.44,
-                "left": 0.01,
-                "right": 0.93,
-                "wspace": 0.0,
-                "hspace": 0.0,
-                "height_ratios": [1]
-            }
-        ax_dict_phase_wheel = fig.subplot_mosaic(
-            [
-                ["phase_wheel"],
-            ],
-            gridspec_kw = grid_spec_phase_wheel,
-            subplot_kw={"projection": "polar"}
-        )
-
-        plt.sca(ax_dict_phase_wheel["phase_wheel"])
-        plt.yticks(fontsize=20)
-        plt.xticks(fontsize=20)
-        #plt.tight_layout()
-
-        # phase wheel
-        cmap = cm.get_cmap('hsv', 256)
-        if invert_colours == True:
-            cmap = invert_cmap(cmap)
         
         c_gray = [0.6, 0.6, 0.6, 0.1]
 
-        azimuths = np.arange(0, 361, 1)
-        zeniths = np.arange(40, 70, 1)
-        values = azimuths * np.ones((30, 361))
-        ax_dict_phase_wheel["phase_wheel"].pcolormesh(azimuths*np.pi/180.0, zeniths, np.roll(values,180), cmap = cmap)
-        ax_dict_phase_wheel["phase_wheel"].fill_between(azimuths*np.pi/180.0, 40, color = '#FFFFFF')
+        if probability_distribution_only == False:
+            grid_spec_phase_wheel = {
+                    "bottom": 0.12,
+                    "top": 0.44,
+                    "left": 0.01,
+                    "right": 0.93,
+                    "wspace": 0.0,
+                    "hspace": 0.0,
+                    "height_ratios": [1]
+                }
+            ax_dict_phase_wheel = fig.subplot_mosaic(
+                [
+                    ["phase_wheel"],
+                ],
+                gridspec_kw = grid_spec_phase_wheel,
+                subplot_kw={"projection": "polar"}
+            )
 
-        if invert_colours == True:
-            ax_dict_phase_wheel["phase_wheel"].plot(azimuths*np.pi/180.0, [40]*361, color=tick_colour, lw=1)
-            if phase_marker == True:
-                for angle_iter, angle in enumerate(angles):
-                    if probs[angle_iter] > 0.0001:
-                        ax_dict_phase_wheel["phase_wheel"].plot([angle] * 40, np.arange(0, 40, 1), color=tick_colour, lw=2)
-            ax_dict_phase_wheel["phase_wheel"].spines['polar'].set_color(tick_colour)
-        else:
-            ax_dict_phase_wheel["phase_wheel"].plot(azimuths*np.pi/180.0, [40]*361, color=tick_colour, lw=1)
-            if phase_marker == True:
-                for angle_iter, angle in enumerate(angles):
-                    if probs[angle_iter] > 0.0001:
-                        ax_dict_phase_wheel["phase_wheel"].plot([angle] * 40, np.arange(0, 40, 1), color=tick_colour, lw=2)
-        ax_dict_phase_wheel["phase_wheel"].set_yticks([])
+            plt.sca(ax_dict_phase_wheel["phase_wheel"])
+            plt.yticks(fontsize=20)
+            plt.xticks(fontsize=20)
+            #plt.tight_layout()
+
+            # phase wheel
+            cmap = cm.get_cmap('hsv', 256)
+            if invert_colours == True:
+                cmap = invert_cmap(cmap)
+            
+            
+
+            azimuths = np.arange(0, 361, 1)
+            zeniths = np.arange(40, 70, 1)
+            values = azimuths * np.ones((30, 361))
+            ax_dict_phase_wheel["phase_wheel"].pcolormesh(azimuths*np.pi/180.0, zeniths, np.roll(values,180), cmap = cmap)
+            ax_dict_phase_wheel["phase_wheel"].fill_between(azimuths*np.pi/180.0, 40, color = '#FFFFFF')
+
+            if invert_colours == True:
+                ax_dict_phase_wheel["phase_wheel"].plot(azimuths*np.pi/180.0, [40]*361, color=tick_colour, lw=1)
+                if phase_marker == True:
+                    for angle_iter, angle in enumerate(angles):
+                        if probs[angle_iter] > 0.0001:
+                            ax_dict_phase_wheel["phase_wheel"].plot([angle] * 40, np.arange(0, 40, 1), color=tick_colour, lw=2)
+                ax_dict_phase_wheel["phase_wheel"].spines['polar'].set_color(tick_colour)
+            else:
+                ax_dict_phase_wheel["phase_wheel"].plot(azimuths*np.pi/180.0, [40]*361, color=tick_colour, lw=1)
+                if phase_marker == True:
+                    for angle_iter, angle in enumerate(angles):
+                        if probs[angle_iter] > 0.0001:
+                            ax_dict_phase_wheel["phase_wheel"].plot([angle] * 40, np.arange(0, 40, 1), color=tick_colour, lw=2)
+            ax_dict_phase_wheel["phase_wheel"].set_yticks([])
 
 
-        ax_dict_phase_wheel["phase_wheel"].tick_params(axis='x', colors=tick_colour)
-        ax_dict_phase_wheel["phase_wheel"].tick_params(axis='y', colors=tick_colour)
-        fig.text(0.82, 0.465, 'Phase', ha='right', va='bottom', fontsize=20)
+            ax_dict_phase_wheel["phase_wheel"].tick_params(axis='x', colors=tick_colour)
+            ax_dict_phase_wheel["phase_wheel"].tick_params(axis='y', colors=tick_colour)
+            fig.text(0.82, 0.465, 'Phase', ha='right', va='bottom', fontsize=20)
 
-        label_positions = [0, math.pi / 2, math.pi, 3 * math.pi / 2]
-        labels = ['0',r'$\frac{\pi}{2}$', r'$\pi$',r'$\frac{3\pi}{2}$']
-        ax_dict_phase_wheel["phase_wheel"].set_xticks(label_positions, labels)
-        ax_dict_phase_wheel["phase_wheel"].xaxis.set_tick_params(pad = 8)
+            label_positions = [0, math.pi / 2, math.pi, 3 * math.pi / 2]
+            labels = ['0',r'$\frac{\pi}{2}$', r'$\pi$',r'$\frac{3\pi}{2}$']
+            ax_dict_phase_wheel["phase_wheel"].set_xticks(label_positions, labels)
+            ax_dict_phase_wheel["phase_wheel"].xaxis.set_tick_params(pad = 8)
         
         plt.sca(ax_dict_bars["fidelity"])
         plt.yticks(fontsize=20)
@@ -953,6 +971,9 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
     with open(target_folder + '/fidelity_list.json') as json_file:
         fidelity_list = json.load(json_file)
 
+    with open(target_folder + '/meas_probs_list.json') as json_file:
+        meas_probs_list = json.load(json_file)
+
     print("Generating pieces...")
 
     files = glob.glob(target_folder + '/frame_*')
@@ -978,6 +999,10 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
                 angle_vector[j, :] = sound_list[sound_iter][j][3]
         input_probability_vector_list.append(input_probability_vector)
         angle_vector_list.append(angle_vector)
+    
+    meas_prob_vector_list = []
+    for i in range(len(meas_probs_list)):
+        meas_prob_vector_list.append(np.array(meas_probs_list[i]))
 
     accumulated_times = []
     accumulated_times.append(0)
@@ -1016,14 +1041,14 @@ def make_video(qc, name, rhythm, noise_model = None, input_instruments = [list(r
 
                 if frame_iter == 0:
                     interpolated_frame = frame_iter
-                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, interpolated_frame, interpolate = False, save=False, fig=anim_fig, zero_noise = zero_noise)    
+                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, meas_prob_vector_list, interpolated_frame, interpolate = False, save=False, fig=anim_fig, zero_noise = zero_noise)    
                 else:
                     interpolated_frame = frame_iter - 1 + transition_scale
-                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, interpolated_frame, interpolate = True, save=False, fig=anim_fig, zero_noise = zero_noise)
+                    fig = plot_quantum_state(input_probability_vector_list, angle_vector_list, meas_prob_vector_list, interpolated_frame, interpolate = True, save=False, fig=anim_fig, zero_noise = zero_noise)
                 return mplfig_to_npimage(fig)
             clips.append(VideoClip(make_histogram_frame, duration = (rhythm[sound_iter][0] + rhythm[sound_iter][1]) / 480))
         else:
-            plot_quantum_state(input_probability_vector_list, angle_vector_list, sound_iter, save=True, zero_noise = zero_noise)
+            plot_quantum_state(input_probability_vector_list, angle_vector_list, meas_prob_vector_list, sound_iter, save=True, zero_noise = zero_noise)
     
     if smooth_transitions == False:
         clips = []
