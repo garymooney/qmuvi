@@ -9,6 +9,13 @@ qMuVi is a python library that can be used by your [qiskit](https://qiskit.org/)
 
 Quantum computing is notorious for being unintuitive and difficult to imagine. This tool attempts to create a connection between a human observer and the complex workings of quantum computation. By transforming quantum circuits into music videos, it allows you to "hear" and "see" how a quantum state evolves as it is processed by a quantum algorithm.  
 
+**Showcase video:**
+<div align="left">
+      <a href="https://www.youtube.com/watch?v=seersj3W-hg" target="_blank" rel="noopener noreferrer">
+         <img width="700" alt="youtube-dp" src="https://user-images.githubusercontent.com/6459545/186303286-0e0aec10-53e1-4ecd-9380-fe8d8ed9372b.png">
+      </a>
+</div>
+
 # Qiskit Hackathon winning project
 qMuVi was the winning project of the Qiskit Hackathon Melbourne 2022 hosted by [IBM Quantum Network Hub @ the University of Melbourne](https://www.unimelb.edu.au/quantumhub). It has continued to be developed since the competition.  
 
@@ -130,7 +137,7 @@ _**probability_distribution_only:**_ Whether to only plot the final measurement 
 Gets a list of integers corresponding to instruments according to the standard General MIDI (see https://en.wikipedia.org/wiki/General_MIDI)  
 _**instrument_collection_name:**_ the name of a predefined collection (string)  
   
-**Current predefined collections:**  
+**Predefined collections:**  
 'piano': list(range(1,9))  
 'tuned_perc': list(range(9,17))  
 'organ': list(range(17,25))  
