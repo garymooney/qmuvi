@@ -62,4 +62,4 @@ circ.h(3)
 circ.barrier()
 
 time_list = [[60,0]]*8+[[960,0]]+[[240,0]]*4+[[1920,0]]
-qmuvi.make_music_video(circ, "grover_Cmaj", time_list, None, [qmuvi.get_instruments("windband")], invert_colours=False, fps=5, smooth_transitions=True, output_logs=False)
+qmuvi.make_music_video(circ, "grover_Cmaj", time_list, None, [qmuvi.get_instruments("windband")], invert_colours=False, fps=5, smooth_transitions=True, log_to_file=False)
