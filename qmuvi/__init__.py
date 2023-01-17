@@ -109,7 +109,7 @@ def make_music_video(qc, name, rhythm, noise_model=None, input_instruments=[list
         vpr: Propotion of vertical space that the circuit with be scaled to fit. Float (default: 1/3)
         smooth_transitions: Whether to smoothly animate between histogram frames. Significantly increased render time. (default: False) Bool
         phase_marker: Whether to draw lines on the phase wheel indicating phases of the primary pure state.
-        synth: The synth program to use for midi to wav conversion. Expecting either 'vlc' or 'timidity' (default)
+        synth: The synth program to use for midi to wav conversion. Expecting 'timidity' (default)
         log_to_file: Whether to output the synth midi conversion log files. Only works for timitidy atm.
     """
     # all_folder_names = []
@@ -142,10 +142,8 @@ def make_music_video(qc, name, rhythm, noise_model=None, input_instruments=[list
               synth + "' (expecting 'timidity'), defaulting to timidity...")
         musical_processing.convert_midi_to_wav_timidity(
             output_manager, timeout=8, log_to_file=log_to_file)
-    # elif synth.lower() == "vlc":
-    #    musical_processing.convert_midi_to_wav_vlc(f'{output_filename_no_ext}', wait_time = 8)
     # else:
-    #    print("Error: unrecognised midi to wav conversion synth '" + synth + "' (expecting 'timidity' or 'vlc'), defaulting to timidity...")
+    #    print("Error: unrecognised midi to wav conversion synth '" + synth + "' (expecting 'timidity'), defaulting to timidity...")
     #    musical_processing.convert_midi_to_wav_timidity(f'{output_filename_no_ext}', wait_time = 8, log_to_file=log_to_file)
     
     print("Done converting .mid to .wav using TiMidity++")

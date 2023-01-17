@@ -176,7 +176,7 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeo
 
                 # Join the path to the binary file
                 binary_path = os.path.join(
-                    package_path, 'bin', 'windows', 'TiMidity-2.15.0-w32', 'timidity.exe')
+                    package_path, '..', 'third-party', 'binaries', 'TiMidity-2.15.0', 'windows', 'timidity.exe')
             else:
                 # Assume the binary is in the PATH on other platforms (installable on MacOS)
                 binary_path = 'timidity'
@@ -315,93 +315,3 @@ def convert_files_mid_to_wav_timidity_threading(files, options_string, timidity_
             f"ERROR: Thread timed out ({timeout}s) during timidity mid to wav conversion for the only file {files[0]}")
 
     return output_wav_files
-
-# def convert_midi_to_mp3_vlc(midi_filename_no_ext, wait_time = 3):
-#    """ Uses headless VLC to convert a midi file to mp3 in the working directory.
-#    Args:
-#        midi_filename_no_ext: the name of the midi file in the working dir.
-#        wait_time: The amount of time to wait after the VLC process has started. Used to make sure the process is finished before continuing execution.
-#    """
-#
-#    string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --sout-keep --sout "#transcode{acodec=mp3,ab=256}:std{access=file,mux=dummy,dst=./' + midi_filename_no_ext + '.mp3}"'
-#    command_string = f"{string}"
-#
-#    def run_vlc():
-#        import os
-#        #print(string)
-#        directories = os.system(command_string)
-#
-#    import threading
-#    t = threading.Thread(target=run_vlc,name="vlc",args=())
-#    t.daemon = True
-#    t.start()
-#
-#    import time
-#    print("Converting " + midi_filename_no_ext + ".mid midi to " + midi_filename_no_ext + ".mp3...")
-#    time.sleep(wait_time)
-#
-# def convert_midi_to_wav_vlc(midi_filename_no_ext, wait_time = 3, separate_audio_files = True, output_combined_audio = True):
-#    """ Uses headless VLC to convert a midi file to wav in the working directory.
-#    Args:
-#        midi_filename_no_ext: the name of the midi file in the working dir.
-#        wait_time: The amount of time to wait after the VLC process has started. Used to make sure the process is finished before continuing execution.
-#    """
-#
-#    string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --synth-polyphony="65535" --sout-keep --sout "#transcode{acodec=s16l,channels=2}:std{access=file,mux=wav,dst=./' + midi_filename_no_ext + '.wav}"'
-#    command_string = f"{string}"
-#
-#    import os
-#
-#
-#    def run_vlc(midi_filename_no_ext):
-#        import os
-#
-#        string = 'vlc ' + midi_filename_no_ext + '.mid -I dummy --no-sout-video --sout-audio --no-sout-rtp-sap --no-sout-standard-sap --ttl=1 --synth-polyphony="65535" --sout-keep --sout "#transcode{acodec=s16l,channels=2}:std{access=file,mux=wav,dst=./' + midi_filename_no_ext + '.wav}"'
-#        command_string = f"{string}"
-#
-#        os.system(command_string)
-#
-#    import threading
-#
-#    if separate_audio_files == True:
-#        try:
-#            wav_files = glob.glob(midi_filename_no_ext + '-*.wav')
-#            for file in wav_files:
-#                os.remove(file)
-#        except:
-#            pass
-#
-#        files = glob.glob("./" + midi_filename_no_ext + '-*.mid')
-#    else:
-#        files = glob.glob("./" + midi_filename_no_ext + '.mid')
-#
-#    filenames = []
-#    for file in files:
-#        filename = file.replace("\\", "/")
-#        filename = os.path.splitext(filename)[0]
-#        filenames.append(filename)
-#        t = threading.Thread(target=lambda : run_vlc(filename),name="vlc convert",args=())
-#        t.daemon = True
-#        t.start()
-#
-#    import time
-#    print("Converting " + str(filenames) + " midi files to .wav using VLC...")
-#    time.sleep(wait_time)
-#    if output_combined_audio == True:
-#        if separate_audio_files == True:
-#            import moviepy.editor as mpy
-#            from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
-#            files = glob.glob(midi_filename_no_ext + '-*.wav')
-#            audio_clips = []
-#            audio_file_clips = []
-#            for file in files:
-#                filename = file.replace("\\", "/")
-#                audio_file_clip = mpy.AudioFileClip(filename, nbytes=4, fps=44100)
-#                audio_file_clips.append(audio_file_clip)
-#                audio_array = audio_file_clip.to_soundarray(nbytes=4)
-#                total_time = audio_file_clip.duration
-#                audio_array_clip = AudioArrayClip(audio_array[0:int(44100 * total_time)], fps=44100)
-#                audio_clips.append(audio_array_clip)
-#
-#            composed_audio_clip = CompositeAudioClip(audio_file_clips)
-#            composed_audio_clip.write_audiofile(midi_filename_no_ext + ".wav",codec='pcm_s16le', fps=44100)
