@@ -334,7 +334,7 @@ def make_music_midi(quantum_circuit, output_manager, rhythm, noise_model=None, i
     else:
         for track in tracks:
             mid.tracks.append(track)
-        mid.save(output_manager.default_name + '.mid')
+        mid.save(f'{output_manager.get_default_file_pathname()}.mid')
 
         return mid
 
