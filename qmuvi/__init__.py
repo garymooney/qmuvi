@@ -20,6 +20,7 @@ from qiskit.providers.aer.noise import (
     thermal_relaxation_error,
 )
 
+__version__ = "0.1.0"
 
 def get_instruments(instruments_name):
     '''
@@ -327,16 +328,15 @@ def make_music_midi(quantum_circuit, output_manager, rhythm, noise_model=None, i
             pass
         for i, track in enumerate(tracks):
             mid_files[i].tracks.append(track)
-            output_manager.save_midi(mid_files[i], filename=f"{output_manager.default_name}-{i}")
+            mid_files[i].save(output_manager.get_path(f"{output_manager.default_name}-{i}.mid"))
 
         return mid_files
     else:
         for track in tracks:
             mid.tracks.append(track)
-        output_manager.save_midi(mid)
+        mid.save(output_manager.default_name + '.mid')
 
         return mid
-
 
 def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model=None, input_instruments=[list(range(81, 89))], note_map=note_map_chromatic_middle_c, invert_colours=False, fps=60, vpr=None, smooth_transitions=True, phase_marker=True, separate_audio_files=True, probability_distribution_only=False):
     """ Only renders the video, assuming the relevant circuit sample data is available in the output_manager data diretory.
@@ -355,8 +355,8 @@ def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model
         phase_marker: Whether to draw lines on the phase wheel indicating phases of the primary pure state.
     """
     import matplotlib
-    import matplotlib.pylab as plt
-    from matplotlib.pylab import cm
+    import matplotlib.pyplot as plt
+    from matplotlib.pyplot import cm
     import moviepy.editor as mpy
     from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
     from moviepy.editor import ImageClip, concatenate, clips_array
@@ -393,17 +393,13 @@ def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model
             current_circuit.append(node.op, node.qargs, node.cargs)
     circuit_list.append(current_circuit)
     empty_circuit = QuantumCircuit(len(dag.qubits))
-    empty_circuit.draw(
-        filename=os.path.join(output_manager.data_dir, 'partial_circ_empty.png'), output="mpl", fold=-1)
+    empty_circuit.draw(filename=output_manager.get_path('partial_circ_empty.png'), output="mpl", fold=-1)
     barrier_circuit = QuantumCircuit(len(dag.qubits))
     barrier_circuit.barrier()
-    barrier_circuit.draw(
-        filename=os.path.join(output_manager.data_dir, 'partial_circ_barrier.png'), output="mpl", fold=-1)
+    barrier_circuit.draw(filename=output_manager.get_path('partial_circ_barrier.png'), output="mpl", fold=-1)
     for i, partial_circ in enumerate(circuit_list):
-        partial_circ.draw(
-            filename=os.path.join(output_manager.data_dir, f'partial_circ_{i}.png'), output="mpl", fold=-1)
-    qc.draw(filename=os.path.join(output_manager.data_dir, 'circuit.png'),
-            output="mpl", fold=circuit_layers_per_line)
+        partial_circ.draw(filename=output_manager.get_path(f'partial_circ_{i}.png'), output="mpl", fold=-1)
+    qc.draw(filename=output_manager.get_path(f'circuit.png'), output="mpl", fold=circuit_layers_per_line)
     cmap_jet = cm.get_cmap('jet')
     cmap_coolwarm = cm.get_cmap('coolwarm')
     cmap_rainbow = cm.get_cmap('rainbow')
@@ -568,8 +564,7 @@ def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model
         fig.text((grid_spec["right"] - grid_spec["left"])/2 +
                  grid_spec["left"], 0.035, 'Quantum states', ha='center', fontsize=20)
         if save:
-            filename = os.path.join(output_manager.data_dir, 'frame_' + str(plot_number) + '.png')
-            plt.savefig(filename)
+            plt.savefig(output_manager.get_path('frame_' + str(plot_number) + '.png'))
             plt.close('all')
         return fig
 
@@ -692,24 +687,21 @@ def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model
         y_tick_labels = [0.0, 0.5, 1.0]
         ax_dict_bars["fidelity"].set_yticks(y_tick_positions)
         ax_dict_bars["fidelity"].set_yticklabels(y_tick_labels)
-        filename = os.path.join(output_manager.data_dir, 'info_panel_' + str(plot_number) + '.png')
-        plt.savefig(filename)
+
+        plt.savefig(output_manager.get_path(f'info_panel_{plot_number}.png'))
         plt.close('all')
         return None
-    import json
-    with open(os.path.join(output_manager.data_dir, 'sounds_list.json')) as json_file:
-        sound_list = json.load(json_file)
-    with open(os.path.join(output_manager.data_dir, 'rhythm.json')) as json_file:
-        rhythm = json.load(json_file)
-    with open(os.path.join(output_manager.data_dir, 'fidelity_list.json')) as json_file:
-        fidelity_list = json.load(json_file)
-    with open(os.path.join(output_manager.data_dir, 'meas_probs_list.json')) as json_file:
-        meas_probs_list = json.load(json_file)
+    
+    sound_list = output_manager.load_json('sounds_list.json')
+    rhythm = output_manager.load_json('rhythm.json')
+    fidelity_list = output_manager.load_json('fidelity_list.json')
+    meas_probs_list = output_manager.load_json('meas_probs_list.json')
+    
     print("Generating pieces...")
-    files = glob.glob(os.path.join(output_manager.data_dir, 'frame_') + '*')
+    files = output_manager.glob('frame_*')
     for file in files:
         os.remove(file)
-    files = glob.glob(os.path.join(output_manager.data_dir, 'info_panel_') + '*')
+    files = output_manager.glob('info_panel_*')
     for file in files:
         os.remove(file)
     num_frames = len(sound_list)
@@ -778,7 +770,7 @@ def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model
     if smooth_transitions == False:
         clips = []
         total_time = 0
-        files = glob.glob(os.path.join(output_manager.data_dir, 'frame_') + '*')
+        files = output_manager.glob('frame_*')
         file_tuples = []
         for file in files:
             file = file.replace("\\", "/")
@@ -797,7 +789,7 @@ def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model
         total_time = 0
         for times in rhythm:
             total_time += (times[0] + times[1]) / 480.0
-    files = glob.glob(os.path.join(output_manager.data_dir, 'info_panel_') + '*')
+    files = output_manager.glob('info_panel_*')
     file_tuples = []
     for file in files:
         file = file.replace("\\", "/")
@@ -825,16 +817,14 @@ def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model
     positions_x = []
     accumulated_width = 0
     barrier_image_width = 0
-    image_barrier_clip = ImageClip(
-        os.path.join(output_manager.data_dir, 'partial_circ_barrier.png')).set_duration(video.duration)
+    image_barrier_clip = ImageClip(output_manager.get_path('partial_circ_barrier.png')).set_duration(video.duration)
     if image_barrier_clip.size[0] > 156:
         image_barrier_clip = crop.crop(
             image_barrier_clip, x1=133, x2=image_barrier_clip.size[0]-23)
     image_barrier_clip = image_barrier_clip.resize(height=1080 - video.size[1])
     barrier_image_width = image_barrier_clip.size[0]
     # create image clip same size as barrier.
-    image_empty_clip = ImageClip(
-        os.path.join(output_manager.data_dir, 'partial_circ_empty.png')).set_duration(video.duration)
+    image_empty_clip = ImageClip(output_manager.get_path('partial_circ_empty.png')).set_duration(video.duration)
     if image_empty_clip.size[0] > 156:
         image_empty_clip = crop.crop(
             image_empty_clip, x1=133, x2=image_empty_clip.size[0]-23)
@@ -843,8 +833,7 @@ def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model
         [[image_empty_clip, image_empty_clip, image_empty_clip]], bg_color=[0xFF, 0xFF, 0xFF])
     image_empty_clip_array = crop.crop(
         image_empty_clip_array, x1=0, x2=barrier_image_width)
-    image_empty_clip = ImageClip(
-        os.path.join(output_manager.data_dir, 'partial_circ_barrier.png')).set_duration(video.duration)
+    image_empty_clip = ImageClip(output_manager.get_path('partial_circ_barrier.png')).set_duration(video.duration)
     if image_empty_clip.size[0] > 156:
         image_empty_clip = crop.crop(
             image_empty_clip, x1=133, x2=image_empty_clip.size[0]-23)
@@ -875,8 +864,7 @@ def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model
         newsize=(int(0.5 * barrier_only_clip.size[0]), int(barrier_only_clip.size[1])))
     # image_empty_clip_array = CompositeVideoClip([image_empty_clip_array, barrier_only_clip.set_position(("center", int((vertical_shrink/2.0) * height) + barrier_start_y))], use_bgclip=True)
     for i, partial_circ in enumerate(circuit_list):
-        new_image_clip = ImageClip(
-            os.path.join(output_manager.data_dir, f'partial_circ_{i}.png')).set_duration(video.duration)
+        new_image_clip = ImageClip(output_manager.get_path(f'partial_circ_{i}.png')).set_duration(video.duration)
         if new_image_clip.size[0] > 156:
             new_image_clip = crop.crop(
                 new_image_clip, x1=133, x2=new_image_clip.size[0]-23)
@@ -954,7 +942,7 @@ def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model
     clip_arr = clips_array([[circ_clip_arr], [video]], bg_color=bg_color)
     video_final = clip_arr
     if separate_audio_files == True:
-        files = glob.glob(output_manager.get_default_file_pathname() + '-*.wav')
+        files = output_manager.glob(f'{output_manager.default_name}-*.wav')
         audio_clips = []
         audio_file_clips = []
         for file in files:
@@ -976,7 +964,7 @@ def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model
         video_final = clip_arr.set_audio(composed_audio_clip)
         # video_final = video_final.fx(afx.audio_normalize)
     else:
-        files = glob.glob(output_manager.get_default_file_pathname() + '.wav')
+        files = output_manager.glob(f'{output_manager.default_name}.wav')
         if len(files) > 0:
             print("loading sound file " + str(files[0]) + "...")
             audio_clip = mpy.AudioFileClip(files[0], nbytes=4, fps=44100)
@@ -1049,10 +1037,9 @@ def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model
         frame[top+3: bottom, right-3: right] = lerp_colour
         return frame
     video_final = video_final.fl(draw_needle)
-    video_final.save_frame(os.path.join(output_manager.data_dir, 'save_frame_0.png'), t=0.0)
-    video_final.save_frame(os.path.join(output_manager.data_dir, 'save_frame_1.png'), t=video_final.duration - 1)
-    video_final.save_frame(
-        os.path.join(output_manager.data_dir, 'save_frame_fading.png'), t=1.0 - highlight_fade_time / 2.0)
+    video_final.save_frame(output_manager.get_path('save_frame_0.png'), t=0.0)
+    video_final.save_frame(output_manager.get_path('save_frame_1.png'), t=video_final.duration - 1)
+    video_final.save_frame(output_manager.get_path('save_frame_fading.png'), t=1.0 - highlight_fade_time / 2.0)
     # def supersample(clip, d, nframes):
     #    """ Replaces each frame at time t by the mean of `nframes` equally spaced frames
     #    taken in the interval [t-d, t+d]. This results in motion blur.

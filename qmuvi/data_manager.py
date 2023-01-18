@@ -64,13 +64,6 @@ class DataManager:
         with open(filepath, 'r') as f:
             return f.read()
 
-    def save_midi(self, mid, filename: str=None):
-        if filename is not None:
-            filename = os.path.splitext(filename)[0] + ".mid"
-        else:
-            filename = self.default_name + ".mid"
-        mid.save(os.path.join(self.data_dir, filename))
-
     def create_folder(self, folder_name: str) -> None:
         """Create a new folder with the given name in the data directory (appends to data_dir)."""
         folder_path = os.path.join(self.data_dir, folder_name)
@@ -95,6 +88,10 @@ class DataManager:
     def get_default_file_pathname(self):
         """Return the default file pathname (with no extension) for the data directory."""
         return os.path.join(self.data_dir, self.default_name)
+
+    def get_path(self, filename: str):
+        """ Return the full path to the given filename in the data directory. """
+        return os.path.join(self.data_dir, filename)
 
 def extract_natural_number_from_string_end(s: str, zero_if_none = False) -> int:
     if s is None or len(s) == 0:

@@ -1,11 +1,11 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "qmuvi"
 version = "0.1.0"
-description = "A small example package"
+description = "A quantum music video generation tool"
 readme = "README.md"
 authors = [
   { name="Gary Mooney", email="mooneyg@unimelb.edu.au" },
@@ -13,8 +13,9 @@ authors = [
 ]
 requires-python = ">=3.7"
 classifiers = [
+    "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)",
     "Operating System :: OS Independent",
 ]
 dependencies = [
@@ -25,11 +26,11 @@ dependencies = [
     "pylatexenc",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "pytest"
+]
+
 [project.urls]
 "Homepage" = "https://github.com/garymooney/qmuvi"
 "Bug Tracker" = "https://github.com/garymooney/qmuvi/issues"
-
-[project.optional-dependencies]
-test = [
-  "pytest"
-]
