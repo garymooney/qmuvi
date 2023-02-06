@@ -1,8 +1,9 @@
 # Methods relating to the generation of music from sampled density matrices
-# Path: qmuvi\simulation.py
+# Path: qmuvi\musical_processing.py
 
 import qmuvi.quantum_simulation as quantum_simulation
 import qmuvi.data_manager as data_manager
+import qmuvi
 
 import os
 import glob
@@ -10,6 +11,39 @@ import time
 import numpy as np
 import logging
 import threading
+from typing import Any, AnyStr, List, Tuple, Union, Optional, Mapping
+from mido import Message, MetaMessage, MidiFile, MidiTrack, bpm2tempo
+
+def note_map_chromatic_middle_c(n):
+    return n + 60
+
+
+def note_map_c_major(n):
+    C_MAJ = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24, 26, 28, 29, 31, 33, 35, 36, 38, 40, 41, 43, 45, 47, 48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65,
+             67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84, 86, 88, 89, 91, 93, 95, 96, 98, 100, 101, 103, 105, 107, 108, 110, 112, 113, 115, 117, 119, 120, 122, 124, 125, 127]
+    CURR_MODE = C_MAJ
+    note = 60+n
+    # Shifting
+    if CURR_MODE and note < CURR_MODE[0]:
+        note = CURR_MODE[0]
+    else:
+        while (CURR_MODE and note not in CURR_MODE):
+            note -= 1
+    return note
+
+
+def note_map_f_minor(n):
+    F_MIN = [5, 7, 8, 10, 12, 13, 15, 17, 19, 20, 22, 24, 25, 27, 29, 31, 32, 34, 36, 37, 39, 41, 43, 44, 46, 48,  49, 51, 53, 55, 56, 58, 60, 61, 63, 65, 67,
+             68, 70, 72, 74, 75, 77, 79, 80, 82, 84, 86, 87, 89, 91, 92, 94, 96, 97, 99, 101, 103, 104, 106, 108, 109, 111, 113, 115, 116, 118, 120, 121, 123, 125, 127]
+    CURR_MODE = F_MIN
+    note = 60+n
+    # Shifting
+    if CURR_MODE and note < CURR_MODE[0]:
+        note = CURR_MODE[0]
+    else:
+        while (CURR_MODE and note not in CURR_MODE):
+            note -= 1
+    return note
 
 
 def get_sound_data_from_density_matrix(density_matrix, default_pure_state_global_phasors, eps=1E-8):
@@ -19,12 +53,13 @@ def get_sound_data_from_density_matrix(density_matrix, default_pure_state_global
         default_pure_state_global_phasors: a dictionary of default global phasors for each pure state in the density matrix. 
             Used to keep the global phase consistent during eigendecompositions of different density matrices
         eps: a small probability threshold. Used to filter out pure states and some basis states with negligible probability
-    Returns: a list of sound data for (prob > eps) pure states in the form of tuples, each tuple containing:
-        - the probability of the pure state
-        - a dictionary of (probability, angle) pairs for each (prob > eps) basis state in the pure state, 
-            keys are indices of basis states in the statevector
-        - a list of all basis state probabilities in the pure state
-        - a list of all basis state angles in the pure state
+    Returns: a list of sound data for pure states (under the condition pure_state_prob > eps) in the form of tuples, each tuple containing:
+        (
+         pure_state_prob: float, 
+         pure_state_info: Dict[int basis_state_number, Tuple[float basis_state_prob, float basis_state_angle]], # where (basis_state_prob > eps)
+         all_basis_state_probs: List[float basis_state_prob], 
+         all_basis_state_angles: List[float basis_state_angle]
+        )
     '''
 
     sound_data = []
@@ -215,6 +250,12 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, log_t
 
     convert_files_mid_to_wav_timidity_threading(
         files, options_string, timidity_convert_subprocess, timeout=8)
+    
+    files = output_manager.glob(output_manager.default_name + '-*.wav')
+    if len(files) > 1:
+        print("Combining tracks into a single .wav file...")
+        mix_wav_files(files, output_manager)
+        print("Done combining tracks into a single .wav file")
 
 
 def mix_wav_files(files, output_manager: data_manager.DataManager):
@@ -315,3 +356,194 @@ def convert_files_mid_to_wav_timidity_threading(files, options_string, timidity_
             f"ERROR: Thread timed out ({timeout}s) during timidity mid to wav conversion for the only file {files[0]}")
 
     return output_wav_files
+
+def generate_midi_from_data(output_manager: data_manager.DataManager,
+                            phase_instruments: List[List[int]] = [list(range(81, 89))], 
+                            note_map: Mapping[int, int] = note_map_chromatic_middle_c
+                           ):
+    """ Uses the state properties stored in the data files to create a song as a midi file (.mid).
+    Args:
+        output_manager: The DataManager object for the output folder.
+        phase_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections) (defaults to 'synth_lead').
+            Computational basis state phase determines which instrument from the collection is used.
+        note_map: Converts state number to a note number where 60 is middle C. Mapping[int -> int]
+    """
+
+    sounds_list = output_manager.load_json(filename="sounds_list.json")
+    rhythm = output_manager.load_json(filename="rhythm.json")
+
+    # format loaded data
+    for sound_index in range(len(sounds_list)):
+        for pure_state_info_index in range(len(sounds_list[sound_index])):
+            # pure_state_prob: float
+            sounds_list[sound_index][pure_state_info_index][0] = float(sounds_list[sound_index][pure_state_info_index][0])
+            # pure_state_info: Dict[int basis_state_number, Tuple[float basis_state_prob, float basis_state_angle]], # where (basis_state_prob > eps)
+            pure_state_info = {}
+            for basis_state_number in sounds_list[sound_index][pure_state_info_index][1].keys():
+                pure_state_info[int(basis_state_number)] = (float(sounds_list[sound_index][pure_state_info_index][1][basis_state_number][0]), float(sounds_list[sound_index][pure_state_info_index][1][basis_state_number][1]))
+            sounds_list[sound_index][pure_state_info_index][1] = pure_state_info
+            # all_basis_state_probs: List[float basis_state_prob]
+            for basis_state_index in range(len(sounds_list[sound_index][pure_state_info_index][2])):
+                sounds_list[sound_index][pure_state_info_index][2][basis_state_index] = float(sounds_list[sound_index][pure_state_info_index][2][basis_state_index])
+            # all_basis_state_angles: List[float basis_state_angle]
+            for basis_state_index in range(len(sounds_list[sound_index][pure_state_info_index][3])):
+                sounds_list[sound_index][pure_state_info_index][3][basis_state_index] = float(sounds_list[sound_index][pure_state_info_index][3][basis_state_index])
+
+    for rhythm_index in range(len(rhythm)):
+        rhythm[rhythm_index] = (int(rhythm[rhythm_index][0]), int(rhythm[rhythm_index][1]))
+
+
+    track_count = 8
+    mid_files = []
+    tracks = []
+    for i in range(track_count):
+        mid_files.append(MidiFile())
+        tracks.append(MidiTrack())
+
+    # if less than the the track_count number of instruments are provided, then the last instrument will be used for the remaining tracks
+    phase_instruments_by_track = []
+    for instrument_index in range(track_count):
+        if instrument_index < len(phase_instruments):
+            phase_instruments_by_track.append(phase_instruments[instrument_index])
+        else:
+            phase_instruments_by_track.append(phase_instruments[-1])
+
+    for track in tracks:
+        track.append(
+                     MetaMessage('set_tempo', 
+                                 tempo=bpm2tempo(60)
+                                )
+                    )
+
+    # not sure where these numbers come from, might be from the GeneralMidi specification.
+    available_channels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 15]
+    largest_track_instruments_count = max([len(instruments) for instruments in phase_instruments_by_track])
+    channels = [available_channels[instrument_index % len(available_channels)] for instrument_index in range(largest_track_instruments_count)]
+    for rhythm_index, sound in enumerate(sounds_list):
+        active_notes = []
+        # TODO: check if this is redundant (already done above)
+        sorted_pure_state_infos = sorted(sound, key=lambda a: a[0], reverse=True)
+        # the largest probability of the pure states in the sampled state
+        largest_chord_prob = sorted_pure_state_infos[0][0]
+
+        # start playing the notes with the correct velocity and instrument for each track
+        for track_number, track in enumerate(tracks):
+            channel = 0
+
+            # if there are no more pure states to add to the track, then add a rest
+            if track_number >= len(sorted_pure_state_infos):
+                track.append(
+                             Message('note_on', 
+                                     channel=channel,
+                                     note=0, 
+                                     velocity=0, 
+                                     time=0
+                                    )
+                            )
+                active_notes.append((track_number, 0, channel))
+                continue
+
+            # chord is Dict[int basis_state_number, Tuple[float basis_state_prob, float basis_state_angle]]
+            chord_prob, pure_state_info, _, _ = sorted_pure_state_infos[track_number]
+            largest_note_prob = max([pure_state_info[basis_state_number][0] for basis_state_number in pure_state_info.keys()])
+
+            for basis_state_number in pure_state_info.keys():
+                note_number = note_map(basis_state_number)
+                note_prob, note_angle = pure_state_info[basis_state_number]
+                note_velocity = (note_prob / largest_note_prob) * (chord_prob / largest_chord_prob)
+                
+                # converts the velocity from a float [0, 1] to an int [0, 127]
+                velocity_128 = int(128*(note_velocity))
+                # handle the special case where note_velocity >= 1
+                if velocity_128 > 127:
+                    velocity_128 = 127
+
+                track_phase_instruments = phase_instruments_by_track[track_number]
+                
+                # bound the angle between 0 and 2pi taking into consideration the periodic nature of the phase
+                note_angle_bounded = (note_angle + np.pi / len(track_phase_instruments)) % (2*np.pi)
+                # convert the angle to a fraction of 2pi, resulting in a value in the range [0, 1)
+                note_angle_fraction = note_angle_bounded / (2*np.pi)
+                instrument_index = int(note_angle_fraction * len(track_phase_instruments))
+
+                instrument = track_phase_instruments[instrument_index]
+                channel = channels[instrument_index]
+                # Set the instrument for the track
+                track.append(
+                             Message('program_change', 
+                                     channel=channel, 
+                                     program=instrument, 
+                                     time=0
+                                    )
+                            )
+                # start playing the note_number with the given velocity, the note stops playing when the 'note_off' message is sent 
+                track.append(
+                             Message('note_on', 
+                                     channel=channel, 
+                                     note=note_number, 
+                                     velocity=velocity_128, 
+                                     time=0
+                                    )
+                            )
+                active_notes.append((track_number, note_number, channel))
+
+        # move the tracks forward in time according to the rhythm
+        # TODO: Check if this assumes that sound notes cannot be 0, if so, then modify the approach to allow for 0 notes
+        for track_number, track in enumerate(tracks):
+            channel = 0
+            track.append(
+                         Message('note_on', 
+                                 channel=channel,
+                                 note=0, 
+                                 velocity=0, 
+                                 time=rhythm[rhythm_index][0]
+                                )
+                        )
+            track.append(
+                         Message('note_off', 
+                                 channel=channel,
+                                 note=0, 
+                                 velocity=0, 
+                                 time=0
+                                )
+                        )
+
+        # turn off all of the notes for this sound
+        for track_number, note_number, channel in active_notes:
+            track = tracks[track_number]
+            track.append(
+                         Message('note_off', 
+                                 channel=channel,
+                                 note=note_number, 
+                                 velocity=0, 
+                                 time=0
+                                )
+                        )
+
+        # Add a rest, specified by the rhythm, to each track
+        for track_number, track in enumerate(tracks):
+            channel = 0
+            track.append(
+                         Message('note_on', 
+                                 channel=channel,
+                                 note=0, 
+                                 velocity=0, 
+                                 time=rhythm[rhythm_index][1]
+                                )
+                        )
+            track.append(
+                         Message('note_off', 
+                                 channel=channel,
+                                 note=0, 
+                                 velocity=0, 
+                                 time=0
+                                )
+                        )
+
+    output_manager.remove_files(output_manager.default_name + '-*.mid')
+
+    for track_number, track in enumerate(tracks):
+        mid_files[track_number].tracks.append(track)
+        mid_files[track_number].save(output_manager.get_path(f"{output_manager.default_name}-{track_number}.mid"))
+
+    return mid_files
