@@ -69,11 +69,10 @@ def get_sound_data_from_density_matrix(density_matrix, default_pure_state_global
     return sound_data
 
 
-def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeout=8, log_to_file=False):
+def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, log_to_file=False):
     """ Converts a list of midi files to wav files using the Timidity program
     Args:
         files: A list of midi files to convert
-        timeout: The amount of time to wait for the Timidity threads to complete before terminating
         log_to_file: Whether to log the output of the Timidity process to a file
     """
 
@@ -215,7 +214,7 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeo
             log.info(thread_results[thread_index].stderr.decode())
 
     convert_files_mid_to_wav_timidity_threading(
-        files, options_string, timidity_convert_subprocess, timeout=timeout)
+        files, options_string, timidity_convert_subprocess, timeout=8)
 
 
 def mix_wav_files(files, output_manager: data_manager.DataManager):
@@ -241,6 +240,7 @@ def mix_wav_files(files, output_manager: data_manager.DataManager):
 
 
 def convert_files_mid_to_wav_timidity_threading(files, options_string, timidity_convert_method, timeout=8):
+    
     output_wav_files = []
 
     base_filenames = [os.path.splitext(

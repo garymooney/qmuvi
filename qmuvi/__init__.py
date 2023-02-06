@@ -10,6 +10,7 @@ import warnings
 import numpy as np
 import glob
 import math
+from typing import Any, AnyStr, List, Tuple, Union, Optional
 from mido import Message, MetaMessage, MidiFile, MidiTrack, bpm2tempo
 from qiskit import QuantumCircuit, transpile
 from qiskit.converters import circuit_to_dag
@@ -95,7 +96,7 @@ def note_map_f_minor(n):
     return note
 
 
-def make_music_video(qc, name, rhythm, noise_model=None, input_instruments=[list(range(81, 89))], note_map=note_map_chromatic_middle_c, invert_colours=False, fps=60, vpr=None, smooth_transitions=True, phase_marker=True, synth="timidity", log_to_file=False, probability_distribution_only=False):
+def make_music_video(qc, name, rhythm, noise_model=None, input_instruments=[list(range(81, 89))], note_map=note_map_chromatic_middle_c, invert_colours=False, fps=60, vpr=None, smooth_transitions=True, phase_marker=True, log_to_file=False, probability_distribution_only=False):
     """ Simulates the quantum circuit (with provided errors) and samples the state at every inserted barrier time step and converts the state info to a music video file (.avi).
     Args:
         qc: The qiskit QuantumCircuit.
@@ -110,43 +111,18 @@ def make_music_video(qc, name, rhythm, noise_model=None, input_instruments=[list
         vpr: Propotion of vertical space that the circuit with be scaled to fit. Float (default: 1/3)
         smooth_transitions: Whether to smoothly animate between histogram frames. Significantly increased render time. (default: False) Bool
         phase_marker: Whether to draw lines on the phase wheel indicating phases of the primary pure state.
-        synth: The synth program to use for midi to wav conversion. Expecting 'timidity' (default)
-        log_to_file: Whether to output the synth midi conversion log files. Only works for timitidy atm.
+        log_to_file: Whether to output the timidity synth midi conversion log files.
     """
-    # all_folder_names = []
-    # for entry in os.listdir(os.getcwd()):
-    #    d = os.path.join(os.getcwd(), entry)
-    #    if os.path.isdir(d):
-    #        all_folder_names.append(entry)
-    folder_names = [dir for dir in glob.glob(os.path.join(
-        os.getcwd(), name + "-output*")) if os.path.isdir(dir)]
-
-    if len(folder_names) == 0:
-        output_folder_name = name + "-output"
-    else:
-        folder_ending_numbers = [extract_natural_number_from_string_end(
-            folder, zero_if_none=True) for folder in folder_names]
-        output_folder_name = name + "-output-" + \
-            str(max(folder_ending_numbers) + 1)
-
-    output_path = os.path.join(os.getcwd(), output_folder_name)
+    
+    output_path = data_manager.get_new_folder_path(name + "-output")
     output_manager = data_manager.DataManager(output_path, default_name=name)
 
     make_music_midi(qc, output_manager, rhythm, noise_model, input_instruments=input_instruments,
-                    note_map=note_map, separate_audio_files=True)
+                    note_map=note_map)
 
-    if synth.lower() == "timidity":
-        musical_processing.convert_midi_to_wav_timidity(
-            output_manager, timeout=8, log_to_file=log_to_file)
-    else:
-        print("Warning: unrecognised midi to wav conversion synth '" +
-              synth + "' (expecting 'timidity'), defaulting to timidity...")
-        musical_processing.convert_midi_to_wav_timidity(
-            output_manager, timeout=8, log_to_file=log_to_file)
-    # else:
-    #    print("Error: unrecognised midi to wav conversion synth '" + synth + "' (expecting 'timidity'), defaulting to timidity...")
-    #    musical_processing.convert_midi_to_wav_timidity(f'{output_filename_no_ext}', wait_time = 8, log_to_file=log_to_file)
-    
+    musical_processing.convert_midi_to_wav_timidity(
+            output_manager, log_to_file=log_to_file)
+
     print("Done converting .mid to .wav using TiMidity++")
     files = output_manager.glob(output_manager.default_name + '-*.wav')
     if len(files) > 1:
@@ -165,17 +141,17 @@ def make_music_video(qc, name, rhythm, noise_model=None, input_instruments=[list
                vpr=vpr,
                smooth_transitions=smooth_transitions,
                phase_marker=phase_marker,
-               separate_audio_files=True,
                probability_distribution_only=probability_distribution_only
                )
 
 
-def make_music_midi(quantum_circuit, output_manager, rhythm, noise_model=None, input_instruments=[list(range(81, 89))], note_map=note_map_chromatic_middle_c, separate_audio_files=True):
+def make_music_midi(quantum_circuit, output_manager, rhythm: Optional[List[Tuple[int, int]]] = None, noise_model=None, input_instruments: List[List[int]] =[list(range(81, 89))], note_map=note_map_chromatic_middle_c):
     """ Simulates the quantum circuit (with provided errors) and samples the state at every inserted barrier time step and converts the state info to a midi file.
     Args:
         qc: The qiskit QuantumCircuit.
         output_manager: The DataManager object for the output folder.
-        rhythm: The sound length and post-rest times in units of ticks (480 ticks is 1 second) List[Tuple[int soundLength, int soundRest]]
+        rhythm: A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second). 
+            If None, then each sound length and rest time will be set to (240, 0)
         single_qubit_error: Amount of depolarisation error to add to each single-qubit gate.
         two_qubit_error: Amount of depolarisation error to add to each CNOT gate.
         input_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections) (defaults to 'synth_lead').
@@ -187,31 +163,40 @@ def make_music_midi(quantum_circuit, output_manager, rhythm, noise_model=None, i
         noise_model = NoiseModel()
     density_matrices_pure = quantum_simulation.sample_circuit_barriers(
         quantum_circuit)
-    density_matrices_noise = quantum_simulation.sample_circuit_barriers(
+    density_matrices_noisy = quantum_simulation.sample_circuit_barriers(
         quantum_circuit, noise_model)
 
     # calculate the fidelity of each of the sampled quantum states
-    fidelity_list = [qi.state_fidelity(dm_noise, density_matrices_pure[i])
-                     for i, dm_noise in enumerate(density_matrices_noise)]
-    sounds_list = []
-
+    fidelity_list = [qi.state_fidelity(dm_noisy, density_matrices_pure[i])
+                     for i, dm_noisy in enumerate(density_matrices_noisy)]
+    
     # used to keep the phase of the pure states consistent among each of the sampled states
-    global_phasors = np.ones(density_matrices_noise[0].shape[0], dtype=complex)
+    global_phasors = np.ones(density_matrices_noisy[0].shape[0], dtype=complex)
 
-    measurement_probabilities_samples = []
-    for rho in density_matrices_noise:
+    # generate the sound data for each sampled state
+    sounds_list = []
+    for rho in density_matrices_noisy:
         sound_data = musical_processing.get_sound_data_from_density_matrix(
             rho, global_phasors)
         sounds_list.append(sound_data)
-        # get the measurement probabilities for each basis state
-        measurement_probabilities = [0] * rho.shape[0]
+
+    # gather the probabilities for each sampled state
+    measurement_probabilities_samples = []
+    for rho in density_matrices_noisy:
+        # get the measurement probabilities from each basis state
+        measurement_probabilities = []
         for i in range(rho.shape[0]):
-            measurement_probabilities[i] = rho[i, i].real
+            measurement_probabilities.append(rho[i, i].real)
         measurement_probabilities_samples.append(measurement_probabilities)
 
     # sort the sounds by probability
     for i, sound in enumerate(sounds_list):
+        # the first index of sound is the probability of the pure state in the 
+        # linear combination making up the density matrix
         sounds_list[i] = sorted(sound, key=lambda a: a[0], reverse=True)
+
+    if rhythm == None:
+        rhythm = [(240, 0)] * len(sounds_list)
 
     output_manager.save_json(sounds_list, filename="sounds_list.json")
     output_manager.save_json(fidelity_list, filename="fidelity_list.json")
@@ -219,20 +204,17 @@ def make_music_midi(quantum_circuit, output_manager, rhythm, noise_model=None, i
         measurement_probabilities_samples, filename="meas_probs_list.json")
     output_manager.save_json(rhythm, filename="rhythm.json")
 
-    if separate_audio_files == True:
-        mid_files = [MidiFile(), MidiFile(), MidiFile(), MidiFile(),
-                     MidiFile(), MidiFile(), MidiFile(), MidiFile()]
-    else:
-        mid = MidiFile()
-
     numtracks = 8
-    tracks = [MidiTrack(), MidiTrack(), MidiTrack(), MidiTrack(),
-              MidiTrack(), MidiTrack(), MidiTrack(), MidiTrack()]
+    mid_files = []
+    tracks = []
+    for i in range(numtracks):
+        mid_files.append(MidiFile())
+        tracks.append(MidiTrack())
 
     # track_instruments = ['piano','bass','brass','ensemble','organ','pipe','reed','strings']
     track_instruments = []
     # input_instruments = ['ensemble']*8
-    for intr in range(8):
+    for intr in range(numtracks):
         if intr < len(input_instruments):
             track_instruments.append(input_instruments[intr])
         else:
@@ -248,10 +230,7 @@ def make_music_midi(quantum_circuit, output_manager, rhythm, noise_model=None, i
         sorted_chords = sorted(sound, key=lambda a: a[0], reverse=True)
         max_chord_prob = sorted_chords[0][0]
         for trackno in range(numtracks):
-            if separate_audio_files == True:
-                channel = 0
-            else:
-                channel = trackno
+            channel = 0
             track = tracks[trackno]
             if trackno >= len(sorted_chords):
                 track.append(Message('note_on', channel=channel,
@@ -283,9 +262,8 @@ def make_music_midi(quantum_circuit, output_manager, rhythm, noise_model=None, i
                 # print("angle:", angle)
                 # print("phase", phase)
                 # instrument = 1
-                if separate_audio_files == True:
-                    channel = available_channels[instrument_index % len(
-                        available_channels)]
+                channel = available_channels[instrument_index % len(
+                    available_channels)]
                 track.append(Message('program_change',
                              channel=channel, program=instrument, time=0))
                 # track.append(Message('control_change', channel=trackno, control=8, value=phase, time=0))
@@ -295,10 +273,7 @@ def make_music_midi(quantum_circuit, output_manager, rhythm, noise_model=None, i
                     (trackno, notes_by_basis_state_index, channel))
 
         for trackno, track in enumerate(tracks):
-            if separate_audio_files == True:
-                channel = 0
-            else:
-                channel = trackno
+            channel = 0
             track.append(Message('note_on', channel=channel,
                          note=0, velocity=0, time=rhythm[t_i][0]))
             track.append(Message('note_off', channel=channel,
@@ -310,35 +285,21 @@ def make_music_midi(quantum_circuit, output_manager, rhythm, noise_model=None, i
                          note=notes_by_basis_state_index, velocity=0, time=0))
 
         for trackno, track in enumerate(tracks):
-            if separate_audio_files == True:
-                channel = 0
-            else:
-                channel = trackno
+            channel = 0
             track.append(Message('note_on', channel=channel,
                          note=0, velocity=0, time=rhythm[t_i][1]))
             track.append(Message('note_off', channel=channel,
                          note=0, velocity=0, time=0))
 
-    if separate_audio_files == True:
-        try:
-            files = output_manager.glob(output_manager.default_name + '-*.mid')
-            for file in files:
-                os.remove(file)
-        except:
-            pass
-        for i, track in enumerate(tracks):
-            mid_files[i].tracks.append(track)
-            mid_files[i].save(output_manager.get_path(f"{output_manager.default_name}-{i}.mid"))
+    output_manager.remove_files(output_manager.default_name + '-*.mid')
 
-        return mid_files
-    else:
-        for track in tracks:
-            mid.tracks.append(track)
-        mid.save(f'{output_manager.get_default_file_pathname()}.mid')
+    for i, track in enumerate(tracks):
+        mid_files[i].tracks.append(track)
+        mid_files[i].save(output_manager.get_path(f"{output_manager.default_name}-{i}.mid"))
 
-        return mid
+    return mid_files
 
-def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model=None, input_instruments=[list(range(81, 89))], note_map=note_map_chromatic_middle_c, invert_colours=False, fps=60, vpr=None, smooth_transitions=True, phase_marker=True, separate_audio_files=True, probability_distribution_only=False):
+def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model=None, input_instruments=[list(range(81, 89))], note_map=note_map_chromatic_middle_c, invert_colours=False, fps=60, vpr=None, smooth_transitions=True, phase_marker=True, probability_distribution_only=False):
     """ Only renders the video, assuming the relevant circuit sample data is available in the output_manager data diretory.
     Args:
         qc: The qiskit QuantumCircuit.
@@ -941,43 +902,29 @@ def make_video(qc, output_manager: data_manager.DataManager, rhythm, noise_model
     # clip_arr = clips_array([[circuit_video.resize(circuit_rescale)], [video]], bg_color=bg_color)
     clip_arr = clips_array([[circ_clip_arr], [video]], bg_color=bg_color)
     video_final = clip_arr
-    if separate_audio_files == True:
-        files = output_manager.glob(f'{output_manager.default_name}-*.wav')
-        audio_clips = []
-        audio_file_clips = []
-        for file in files:
-            filename = file.replace("\\", "/")
-            audio_file_clip = mpy.AudioFileClip(filename, nbytes=4, fps=44100)
-            audio_file_clips.append(audio_file_clip)
-            audio_array = audio_file_clip.to_soundarray(nbytes=4)
-            total_time = audio_file_clip.duration
-            audio_array_clip = AudioArrayClip(
-                audio_array[0:int(44100 * total_time)], fps=44100)
-            audio_clips.append(audio_array_clip)
-        composed_audio_clip = CompositeAudioClip(audio_file_clips)
-        video_duration = video_final.duration
-        target_duration = max(video_duration, composed_audio_clip.duration)
-        video_final = video_final.set_duration(target_duration)
-        video_final = freeze.freeze(
-            video_final, t=video_duration, freeze_duration=target_duration-video_duration)
-        video_final = video_final.set_duration(target_duration)
-        video_final = clip_arr.set_audio(composed_audio_clip)
-        # video_final = video_final.fx(afx.audio_normalize)
-    else:
-        files = output_manager.glob(f'{output_manager.default_name}.wav')
-        if len(files) > 0:
-            print("loading sound file " + str(files[0]) + "...")
-            audio_clip = mpy.AudioFileClip(files[0], nbytes=4, fps=44100)
-            arr = audio_clip.to_soundarray(nbytes=4)
-            total_time = audio_clip.duration
-            audio_clip_new = AudioArrayClip(
-                arr[0:int(44100 * total_time)], fps=44100)
-            video_final_duration = video_final.duration
-            video_final = video_final.set_duration(audio_clip_new.duration)
-            video_final = freeze.freeze(video_final, t=video_final_duration,
-                                        freeze_duration=audio_clip_new.duration-video_final_duration)
-            video_final = video_final.set_duration(video_final.duration)
-            video_final = clip_arr.set_audio(audio_clip_new)
+
+    files = output_manager.glob(f'{output_manager.default_name}-*.wav')
+    audio_clips = []
+    audio_file_clips = []
+    for file in files:
+        filename = file.replace("\\", "/")
+        audio_file_clip = mpy.AudioFileClip(filename, nbytes=4, fps=44100)
+        audio_file_clips.append(audio_file_clip)
+        audio_array = audio_file_clip.to_soundarray(nbytes=4)
+        total_time = audio_file_clip.duration
+        audio_array_clip = AudioArrayClip(
+            audio_array[0:int(44100 * total_time)], fps=44100)
+        audio_clips.append(audio_array_clip)
+    composed_audio_clip = CompositeAudioClip(audio_file_clips)
+    video_duration = video_final.duration
+    target_duration = max(video_duration, composed_audio_clip.duration)
+    video_final = video_final.set_duration(target_duration)
+    video_final = freeze.freeze(
+        video_final, t=video_duration, freeze_duration=target_duration-video_duration)
+    video_final = video_final.set_duration(target_duration)
+    video_final = clip_arr.set_audio(composed_audio_clip)
+    
+
     video_final = crop.crop(video_final, x1=int(
         clip_arr.size[0]/2-circ_clip_target_width/2), x2=int(clip_arr.size[0]/2+circ_clip_target_width/2))
     if video_final.size[1] > 1080:
