@@ -114,22 +114,20 @@ def generate_qmuvi(quantum_circuit: QuantumCircuit,
                                                            )
     # convert midi files to a wav file
     musical_processing.convert_midi_to_wav_timidity(output_manager, 
-                                                    log_to_file=log_to_file
+                                                    log_to_file = log_to_file
                                                     )
-    # generate a video from the data and the wav file
-    generate_qmuvi_video(quantum_circuit,
-               output_manager,
-               rhythm,
-               noise_model,
-               phase_instruments,
-               note_map=note_map,
-               invert_colours=invert_colours,
-               fps=fps,
-               vpr=vpr,
-               smooth_transitions=smooth_transitions,
-               phase_marker=phase_marker,
-               probability_distribution_only=probability_distribution_only
-               )
+    # generate video from data
+    video_generation.generate_video_from_data(quantum_circuit, 
+                                              output_manager = output_manager, 
+                                              rhythm = rhythm, 
+                                              phase_instruments = phase_instruments, 
+                                              invert_colours = invert_colours, 
+                                              fps = fps, 
+                                              vpr = vpr, 
+                                              smooth_transitions = smooth_transitions, 
+                                              phase_marker = phase_marker, 
+                                              probability_distribution_only = probability_distribution_only
+                                              )
 
 def generate_qmuvi_data(quantum_circuit: QuantumCircuit, 
                         output_manager: data_manager.DataManager,
@@ -233,14 +231,14 @@ def generate_qmuvi_music(quantum_circuit: QuantumCircuit,
                                                     )
 
 
-def generate_qmuvi_video(quantum_circuit, output_manager: data_manager.DataManager, rhythm, noise_model=None, input_instruments=[list(range(81, 89))], note_map=note_map_chromatic_middle_c, invert_colours=False, fps=60, vpr=None, smooth_transitions=True, phase_marker=True, probability_distribution_only=False):
+def generate_qmuvi_video(quantum_circuit, output_manager: data_manager.DataManager, rhythm, noise_model=None, phase_instruments=[list(range(81, 89))], note_map=note_map_chromatic_middle_c, invert_colours=False, fps=60, vpr=None, smooth_transitions=True, phase_marker=True, probability_distribution_only=False):
     """ Samples the quantum circuit at every barrier and uses the state properties to create a silent video (.mp4). No music is generated using this method.
     Args:
         quantum_circuit: The qiskit QuantumCircuit.
         output_manager: The data manager to use for saving the video and all of its pieces.
         rhythm: The sound length and post-rest times in units of ticks (480 ticks is 1 second) List[Tuple[int soundLength, int soundRest]]
         noise_model: A qiskit NoiseModel. If None then no noise will be used in the simulations.
-        input_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections).
+        phase_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections).
             Computational basis state phase determines which instrument from the collection is used. List[List[int intrument_index]]
         note_map: Converts state number to a note number where 60 is middle C. Map[int -> int]
         invert_colours: Whether to render the video in dark mode. (default: False) Bool
@@ -259,9 +257,7 @@ def generate_qmuvi_video(quantum_circuit, output_manager: data_manager.DataManag
     video_generation.generate_video_from_data(quantum_circuit, 
                                               output_manager = output_manager, 
                                               rhythm = rhythm, 
-                                              noise_model = noise_model, 
-                                              input_instruments = input_instruments, 
-                                              note_map = note_map, 
+                                              phase_instruments = phase_instruments, 
                                               invert_colours = invert_colours, 
                                               fps = fps, 
                                               vpr = vpr, 
