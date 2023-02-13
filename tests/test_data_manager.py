@@ -37,3 +37,13 @@ def test_extract_natural_number_from_string_end():
     s = "hello"
     expected = 0
     assert extract_natural_number_from_string_end(s, True) == expected
+
+    # Test case with a windows path
+    s = "C:\\Users\\user\\Documents\\test\\test-1"
+    expected = 1
+    assert extract_natural_number_from_string_end(s) == expected
+
+    # Test case with a linux path
+    s = "/usr/bin/bc6.4_5"
+    expected = 5
+    assert extract_natural_number_from_string_end(s) == expected

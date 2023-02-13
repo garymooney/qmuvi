@@ -75,7 +75,6 @@ def generate_qmuvi(quantum_circuit: QuantumCircuit,
                fps: int = 60, 
                vpr: float = None, 
                smooth_transitions: bool = True, 
-               phase_marker: bool = True, 
                log_to_file: bool = False, 
                probability_distribution_only: bool = False
               ):
@@ -93,7 +92,6 @@ def generate_qmuvi(quantum_circuit: QuantumCircuit,
         fps: The frames per second of the output video. (default: 60) Int
         vpr: Propotion of vertical space that the circuit with be scaled to fit. Float (default: 1/3)
         smooth_transitions: Whether to smoothly animate between histogram frames. Significantly increased render time. (default: False) Bool
-        phase_marker: Whether to draw lines on the phase wheel indicating phases of the primary pure state.
         log_to_file: Whether to output the timidity synth midi conversion log files.
         probability_distribution_only: Whether to only render the probability distribution in the video.
     """
@@ -125,7 +123,6 @@ def generate_qmuvi(quantum_circuit: QuantumCircuit,
                                               fps = fps, 
                                               vpr = vpr, 
                                               smooth_transitions = smooth_transitions, 
-                                              phase_marker = phase_marker, 
                                               probability_distribution_only = probability_distribution_only
                                               )
 

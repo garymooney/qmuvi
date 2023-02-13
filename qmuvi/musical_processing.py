@@ -76,27 +76,23 @@ def get_sound_data_from_density_matrix(density_matrix, default_pure_state_global
         notes_by_basis_state_index = {}
         pure_statevector = mixture_statevectors[:, pure_state_index]
         zero_state_amplitude = complex(pure_statevector[0])
-        zero_state_probability = (
-            zero_state_amplitude * np.conj(zero_state_amplitude)).real
+        zero_state_probability = (zero_state_amplitude * np.conj(zero_state_amplitude)).real
         if zero_state_probability > eps:
             pure_global_phasor = np.conj(zero_state_amplitude)
             default_pure_state_global_phasors[pure_state_index] = pure_global_phasor
         else:
             pure_global_phasor = default_pure_state_global_phasors[pure_state_index]
 
-        # get the angles for each of the amplitudes
-        basis_state_phase_angles = list(
-            np.angle(pure_statevector * pure_global_phasor))
+        # get the angles for each of the amplitudes (-pi, pi]
+        basis_state_phase_angles = list(np.angle(pure_statevector * pure_global_phasor))
         basis_state_probabilities = []
         # get the (probability, angle) pair for the basis states in the statevector
         for basis_state_index, basis_state_amplitude in enumerate(pure_statevector):
-            basis_state_probability = (
-                complex(basis_state_amplitude) * np.conj(complex(basis_state_amplitude))).real
+            basis_state_probability = (complex(basis_state_amplitude) * np.conj(complex(basis_state_amplitude))).real
             basis_state_probabilities.append(basis_state_probability)
             if basis_state_probability > eps:
                 angle = basis_state_phase_angles[basis_state_index]
-                notes_by_basis_state_index[basis_state_index] = (
-                    basis_state_probability, angle)
+                notes_by_basis_state_index[basis_state_index] = (basis_state_probability, angle)
 
         pure_state_sound_data = (pure_state_probability, notes_by_basis_state_index,
                                  basis_state_probabilities, basis_state_phase_angles)
