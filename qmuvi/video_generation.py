@@ -229,6 +229,10 @@ def _plot_stat_bars(fig,
 
     return plot_mosaic_stat_bars_dict
 
+def convert_fig_pixels_to_inches(pixels):
+    dpi = plt.rcParams['figure.dpi']
+    return pixels / dpi
+
 def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit, 
                              output_manager: data_manager.DataManager, 
                              rhythm: List[Tuple[int, int]], 
@@ -306,12 +310,12 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
     
     # an empty circuit is used to create space in the circuit
     empty_circuit = QuantumCircuit(qubit_count)
-    empty_circuit.draw(filename=output_manager.get_path('partial_circ_empty.png'), output="mpl", fold=-1)
+    empty_circuit_fig = empty_circuit.draw(filename=output_manager.get_path('partial_circ_empty.png'), output="mpl", fold=-1)
 
     # a barrier circuit is inserted between partial circuits
     barrier_circuit = QuantumCircuit(qubit_count)
     barrier_circuit.barrier()
-    barrier_circuit.draw(filename=output_manager.get_path('partial_circ_barrier.png'), output="mpl", fold=-1)
+    barrier_fig = barrier_circuit.draw(filename=output_manager.get_path('partial_circ_barrier.png'), output="mpl", fold=-1)
     
     # Fidelity colour bar
     cmap_fidelity = matplotlib.colors.LinearSegmentedColormap.from_list("", ["red", "violet", "blue"])
@@ -321,6 +325,9 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
     cmap_phase = cm.get_cmap('hsv')
     # Matplotlib plot ticks
     tick_colour = [0.4, 0.4, 0.4, 1.0]
+
+    bg_color = [0xFF, 0xFF, 0xFF]
+    bg_color_inverted = [0x00, 0x00, 0x00]
 
     if invert_colours == True:
         cmap_fidelity = invert_cmap(cmap_fidelity)
@@ -538,7 +545,18 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
         phase_angles_0 = list(pure_phase_angles[0, :])
 
         c_gray = [0.6, 0.6, 0.6, 1]
-        fig = plt.figure(figsize = (4, (1 - vpr(qubit_count)) * 13.5))
+        
+        target_video_height_pixels = 1080
+        dpi = plt.rcParams['figure.dpi']
+        target_empty_circuit_height_pixels = target_video_height_pixels * (1 - vpr(qubit_count))
+        fig_height_inches = (1 - vpr(qubit_count)) * 13.5
+        fig_height_pixels = fig_height_inches * dpi
+        scale = target_empty_circuit_height_pixels / fig_height_pixels
+        
+        scaled_dpi = dpi * scale
+
+        target_video_height_in_inches = convert_fig_pixels_to_inches(1080)
+        fig = plt.figure(figsize = (4, (1 - vpr(qubit_count)) * 13.5), dpi = scaled_dpi)
 
         if draw_phase_wheel == True:
             plot_mosaic_phase_wheel_dict = _plot_phase_wheel(fig, 
@@ -595,7 +613,18 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
                        )
 
         # histograms
-        anim_fig = plt.figure(figsize=(20, (1 - vpr(qubit_count)) * 13.5))
+        target_video_height_pixels = 1080
+        dpi = plt.rcParams['figure.dpi']
+        target_empty_circuit_height_pixels = target_video_height_pixels * (1 - vpr(qubit_count))
+        fig_height_inches = (1 - vpr(qubit_count)) * 13.5
+        fig_height_pixels = fig_height_inches * dpi
+        scale = target_empty_circuit_height_pixels / fig_height_pixels
+        
+        scaled_dpi = dpi * scale
+
+        target_video_height_in_inches = convert_fig_pixels_to_inches(1080)
+        anim_fig = plt.figure(figsize=(20, (1 - vpr(qubit_count)) * 13.5), dpi = scaled_dpi)
+
         if smooth_transitions == True:
 
             def make_plot_frame(time_since_frame, sound_index_temp=sound_index):
@@ -648,7 +677,7 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
                                           )
 
             frame_image = mplfig_to_npimage(frame_fig)
-            plot_clips.append(ImageClip(frame_image, duration=(rhythm[sound_index][0] + rhythm[sound_index][1]) / 480))
+            plot_clips.append(ImageClip(frame_image).set_duration((rhythm[sound_index][0] + rhythm[sound_index][1]) / 480))
     
     # calculate the accumulated time for each sampled state in the animation from the rhythm
     accumulated_times = []
@@ -664,77 +693,55 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
     # sort in ascending order of frame number in filename, e.g. info_panel_0, info_panel_1, ...
     paths.sort(key=lambda x: data_manager.extract_natural_number_from_string_end(os.path.splitext(x)[0]))
 
+    # create info panel clips and stack them to the right of the plot clips
     for file_index, file in enumerate(paths):
-        frame_time = accumulated_times[file_index + 1]
-        plot_clips[file_index] = clips_array([[plot_clips[file_index], ImageClip(file).set_duration(frame_time).resize(height = plot_clips[file_index].size[1])]], 
-                                       bg_color=[0xFF, 0xFF, 0xFF])
+        frame_time = (rhythm[file_index][0] + rhythm[file_index][1]) / 480.0
+        info_panel_clip = ImageClip(file).set_duration(frame_time).resize(height = plot_clips[file_index].size[1])
+        
+        plot_clips[file_index] = clips_array([[plot_clips[file_index], info_panel_clip]], bg_color=bg_color)
 
-    video = concatenate(plot_clips, method="compose")
-    video = video.resize(width=1920)
-    bg_color = [0xFF, 0xFF, 0xFF]
-    bg_color_inverse = [0x00, 0x00, 0x00]
+    plot_info_clip = concatenate(plot_clips, method="compose")
+
+    # for target height 1080 pixels, the plot_info_clip should now be 1920 x 720 pixels
     if invert_colours == True:
-        video = invert_colors.invert_colors(video)
-        bg_color = [0x00, 0x00, 0x00]
-        bg_color_inverse = [0xFF, 0xFF, 0xFF]
+        plot_info_clip = invert_colors.invert_colors(plot_info_clip)
+
+    video_duration = plot_info_clip.duration
+    plot_info_clip_height = plot_info_clip.size[1]
+
     partial_circ_image_clips = []
     positions_x = []
     accumulated_width = 0
-    barrier_image_width = 0
-    # TODO: video is not being rendered properly anymore. Barrier and empty are the wrong vertical sizes and the circuit 
-    # ends way too early. Maybe rhythm is wrong? or there is double counting somewhere, like file count or something.
-    image_barrier_clip = ImageClip(output_manager.get_path('partial_circ_barrier.png')).set_duration(video.duration)
+
+    image_barrier_clip = ImageClip(output_manager.get_path('partial_circ_barrier.png')).set_duration(video_duration)
+
+    # crop the horizontal white space from the sides of the barrier image
     if image_barrier_clip.size[0] > 156:
-        image_barrier_clip = crop.crop(
-            image_barrier_clip, x1=133, x2=image_barrier_clip.size[0]-23)
-    image_barrier_clip = image_barrier_clip.resize(height=1080 - video.size[1])
+        image_barrier_clip = crop.crop(image_barrier_clip, x1=133, x2=image_barrier_clip.size[0]-23)
+    image_barrier_clip = image_barrier_clip.resize(height=1080 - plot_info_clip_height)
+
     barrier_image_width = image_barrier_clip.size[0]
-    # create image clip same size as barrier.
-    image_empty_clip = ImageClip(output_manager.get_path('partial_circ_empty.png')).set_duration(video.duration)
+    barrier_image_height = image_barrier_clip.size[1]
+    barrier_start_y = int(43.0 * barrier_image_height / 454.0)
+    barrier_end_y = int(25.0 * barrier_image_height / 454.0)
+
+    image_empty_clip = ImageClip(output_manager.get_path('partial_circ_empty.png')).set_duration(video_duration)
+    
+    # crop the horizontal white space from the sides of the empty circuit image
     if image_empty_clip.size[0] > 156:
         image_empty_clip = crop.crop(
             image_empty_clip, x1=133, x2=image_empty_clip.size[0]-23)
-    image_empty_clip = image_empty_clip.resize(height=1080 - video.size[1])
-    image_empty_clip_array = clips_array(
-        [[image_empty_clip, image_empty_clip, image_empty_clip]], bg_color=[0xFF, 0xFF, 0xFF])
-    image_empty_clip_array = crop.crop(
-        image_empty_clip_array, x1=0, x2=barrier_image_width)
-    image_empty_clip = ImageClip(output_manager.get_path('partial_circ_barrier.png')).set_duration(video.duration)
-    if image_empty_clip.size[0] > 156:
-        image_empty_clip = crop.crop(
-            image_empty_clip, x1=133, x2=image_empty_clip.size[0]-23)
-    barrier_only_clip = crop.crop(image_empty_clip, x1=35, x2=72)
-    barrier_only_clip = barrier_only_clip.margin(
-        left=35, right=72, color=[0xFF, 0xFF, 0xFF])
-    barrier_only_clip = barrier_only_clip.resize(height=1080 - video.size[1])
-    barrier_only_clip_mask = barrier_only_clip.to_mask()
-    barrier_only_clip_mask = barrier_only_clip_mask.fl_image(
-        lambda pic: filter_colour_round_with_threshold(pic, threshold=0.9, colour_dark=0.0, colour_light=1.0))
-    barrier_only_clip_mask = invert_colors.invert_colors(
-        barrier_only_clip_mask)
-    # barrier_only_clip.save_frame("./barrier_only_clip.png", t=0)
-    # barrier_only_clip = barrier_only_clip.fl_image( lambda pic: filter_color_multiply(pic, [0, 0, 255]))
-    barrier_only_clip = barrier_only_clip.fl_image(
-        lambda pic: filter_blend_colour(pic, [255, 255, 255], 0.3))
-    # might be able to remove this line
-    barrier_only_clip = barrier_only_clip.add_mask()
-    barrier_only_clip = barrier_only_clip.set_mask(barrier_only_clip_mask)
-    vertical_shrink = 0.05
-    clip_height = barrier_only_clip.size[1]
-    barrier_start_y = 43
-    barrier_end_y = 25
-    height = clip_height - barrier_start_y - barrier_end_y
-    barrier_only_clip = crop.crop(barrier_only_clip, y1=int(
-        (vertical_shrink/2.0) * height) + barrier_start_y, y2=int((1.0 - vertical_shrink/2.0) * height) + barrier_start_y)
-    barrier_only_clip = barrier_only_clip.resize(
-        newsize=(int(0.5 * barrier_only_clip.size[0]), int(barrier_only_clip.size[1])))
-    # image_empty_clip_array = Compospartial_iteVideoClip([image_empty_clip_array, barrier_only_clip.set_position(("center", int((vertical_shrink/2.0) * height) + barrier_start_y))], use_bgclip=True)
+    image_empty_clip = image_empty_clip.resize(height=1080 - plot_info_clip_height)
+
+    image_empty_clip_array = clips_array([[image_empty_clip, image_empty_clip]], bg_color=bg_color)
+    image_empty_clip_array = crop.crop(image_empty_clip_array, x1=0, x2=barrier_image_width)
+
     for i, partial_circ in enumerate(partial_circuit_list):
-        new_image_clip = ImageClip(output_manager.get_path(f'partial_circ_{i}.png')).set_duration(video.duration)
+        new_image_clip = ImageClip(output_manager.get_path(f'partial_circ_{i}.png')).set_duration(video_duration)
         if new_image_clip.size[0] > 156:
             new_image_clip = crop.crop(
                 new_image_clip, x1=133, x2=new_image_clip.size[0]-23)
-        new_image_clip = new_image_clip.resize(height=1080 - video.size[1])
+        new_image_clip = new_image_clip.resize(height=1080 - plot_info_clip_height)
         if i != len(partial_circuit_list)-1:
             accumulated_width += new_image_clip.size[0] + barrier_image_width
         else:
@@ -747,36 +754,38 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
         if i != len(partial_circ_image_clips)-1:
             all_clips.append(image_empty_clip_array)
     circ_clip_arr = clips_array(
-        [[x for x in all_clips]], bg_color=[0xFF, 0xFF, 0xFF])
+        [[x for x in all_clips]], bg_color=bg_color)
     circ_clip_arr.fps = fps
     composited_with_barrier_clips = []
     composited_with_barrier_clips.append(circ_clip_arr)
     note_accumulated_info = []  # accumulated time, note length, note rest
     accumulated_time = 0
     for iter in range(len(rhythm)):
-        # new_barrier_clip = image_barrier_clip.set_start(accumulated_time).set_end(min(video.duration, accumulated_time + 1 / 4.0)).set_position((positions_x[iter]-barrier_image_width, 0))
+        # new_barrier_clip = image_barrier_clip.set_start(accumulated_time).set_end(min(video_duration, accumulated_time + 1 / 4.0)).set_position((positions_x[iter]-barrier_image_width, 0))
         note_length = rhythm[iter][0] / 480.0
         new_barrier_clip = image_barrier_clip.set_start(0).set_end(min(
-            accumulated_time, video.duration)).set_position((int(positions_x[iter]-barrier_image_width), 0))
+            accumulated_time, video_duration)).set_position((int(positions_x[iter]-barrier_image_width), 0))
         note_accumulated_info.append(
             (accumulated_time, rhythm[iter][0] / 480.0, rhythm[iter][1] / 480.0))
         accumulated_time += (rhythm[iter][0] + rhythm[iter][1]) / 480.0
         # new_barrier_clip.add_mask()
         # new_barrier_clip = new_barrier_clip.crossfadeout(note_length)
         composited_with_barrier_clips.append(new_barrier_clip)
-    video_duration = video.duration
-    video_size = video.size
+    video_duration = video_duration
+    video_size = plot_info_clip.size
     circ_clip_arr = CompositeVideoClip(composited_with_barrier_clips)
-    circ_clip_arr = circ_clip_arr.resize(height=1080 - video.size[1])
-    vertical_scale = 1080 / float(video.size[1] + circ_clip_arr.size[1])
+    circ_clip_arr = circ_clip_arr.resize(height=1080 - plot_info_clip_height)
+    vertical_scale = 1080 / float(plot_info_clip_height + circ_clip_arr.size[1])
     circ_clip_target_width = int(1920 / vertical_scale)
     clip_orig_x = circ_clip_arr.size[0]
-    circ_clip_arr = circ_clip_arr.margin(
-        left=circ_clip_target_width, right=circ_clip_target_width, color=[0xFF, 0xFF, 0xFF])
+    circ_clip_arr = circ_clip_arr.margin(left=circ_clip_target_width, right=circ_clip_target_width, color=bg_color)
     # circ_clip_arr = crop.crop(circ_clip_arr, x1 = -clip_orig_x, x2 = 2 * clip_orig_x)
     # circ_clip_arr.save_frame("contatenated_circ.png", t = 0.1)
     h = circ_clip_arr.h
     w = circ_clip_target_width
+
+    print("video_duration:", video_duration)
+    print("circ_clip_arr.duration:", circ_clip_arr.duration)
 
     def f(gf, t):
         x_start = w/2
@@ -785,9 +794,13 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
         prev_accumulated_time = 0
         for iter in range(len(rhythm)):
             accumulated_time += (rhythm[iter][0] + rhythm[iter][1]) / 480.0
-            if t < accumulated_time:
+            if t <= accumulated_time:
                 break
             prev_accumulated_time = accumulated_time
+
+        if accumulated_time > video_duration or t > video_duration:
+            print("ERROR: clip duration is longer than the total time specified by the rhythm: accumulated_time:", accumulated_time, "video_duration:", video_duration, "t:", t)
+        
         target_iter = iter
         prev_iter = iter - 1
         prev_time = prev_accumulated_time
@@ -797,15 +810,24 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
         else:
             target_pos = positions_x[iter+1]
         prev_pos = positions_x[iter] - barrier_image_width / 2
-        x = int(x_start + (prev_pos + (target_pos - prev_pos)
-                * (t - prev_time)/(target_time - prev_time)))
+
+        if target_time == prev_time:
+            print("ERROR: clip duration is longer than the total time specified by the rhythm")
+            print("rhythm:", rhythm)
+            print("accumulated_time:", accumulated_time)
+            print("prev_accumulated_time:", prev_accumulated_time)
+            print("video_duration:", video_duration)
+            print("t:", t)
+            print("target_iter:", target_iter)
+        x = int(x_start + (prev_pos + (target_pos - prev_pos) * (t - prev_time) / (target_time - prev_time)))
         y = 0
         return gf(t)[y:y+h, x:x+w]
+
     circ_clip_arr = circ_clip_arr.fl(f, apply_to="mask")
     if invert_colours == True:
         circ_clip_arr = invert_colors.invert_colors(circ_clip_arr)
     # clip_arr = clips_array([[circuit_video.resize(circuit_rescale)], [video]], bg_color=bg_color)
-    clip_arr = clips_array([[circ_clip_arr], [video]], bg_color=bg_color)
+    clip_arr = clips_array([[circ_clip_arr], [plot_info_clip]], bg_color=bg_color)
     video_final = clip_arr
 
     files = output_manager.glob(f'{output_manager.default_name}-*.wav')
@@ -873,7 +895,7 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
         time_to_start_fade = 0.0  # highlight_time - highlight_fade_time
         time_to_stop_fade = highlight_time
         highlight_fade_time = current_note_info[1]
-        # blend_colour(bg_color_inverse, [127, 127, 127], 0.8)
+        
         idle_colour = [127, 127, 127]
         lerp_time = (time_since_note_played - time_to_start_fade) / highlight_fade_time
         scale = (2.0 * (1 - fidelity) - 1.0)  # -1 to 1
