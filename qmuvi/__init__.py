@@ -77,23 +77,37 @@ def generate_qmuvi(quantum_circuit: QuantumCircuit,
                smooth_transitions: bool = True, 
                log_to_file: bool = False, 
                probability_distribution_only: bool = False
-              ):
-    """ Samples the quantum circuit at every barrier and uses the state properties to create a music video (.mp4).
-    Args:
-        quantum_circuit: The qiskit QuantumCircuit.
-        name: The name of the qMuVi
-        noise_model: A qiskit NoiseModel. If None then no noise will be used in the simulations.
-        rhythm: A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second). 
+              ) -> None:
+    """Samples the quantum circuit at every barrier and uses the state properties to create a music video (.mp4).
+    
+    Parameters
+    ----------
+        quantum_circuit
+            The qiskit QuantumCircuit.
+        name
+            The name of the qMuVi
+        noise_model
+            A qiskit NoiseModel. If None then no noise will be used in the simulations.
+        rhythm
+            A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second). 
             If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0)
-        phase_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections) (defaults to 'synth_lead').
+        phase_instruments
+            The collections of instruments for each pure state in the mixed state (up to 8 collections) (defaults to 'synth_lead').
             Computational basis state phase determines which instrument from the collection is used.
-        note_map: Converts state number to a note number where 60 is middle C. Mapping[int -> int]
-        invert_colours: Whether to render the video in dark mode. (default: False) Bool
-        fps: The frames per second of the output video. (default: 60) Int
-        vpr: Propotion of vertical space that the circuit with be scaled to fit. Float (default: 1/3)
-        smooth_transitions: Whether to smoothly animate between histogram frames. Significantly increased render time. (default: False) Bool
-        log_to_file: Whether to output the timidity synth midi conversion log files.
-        probability_distribution_only: Whether to only render the probability distribution in the video.
+        note_map
+            Converts state number to a note number where 60 is middle C. Mapping[int -> int]
+        invert_colours
+            Whether to render the video in dark mode. (default: False) Bool
+        fps
+            The frames per second of the output video. (default: 60) Int
+        vpr
+            Propotion of vertical space that the circuit with be scaled to fit. Float (default: 1/3)
+        smooth_transitions
+            Whether to smoothly animate between histogram frames. Significantly increased render time. (default: False) Bool
+        log_to_file
+            Whether to output the timidity synth midi conversion log files.
+        probability_distribution_only
+            Whether to only render the probability distribution in the video.
     """
 
     output_path = data_manager.get_new_folder_path(qmuvi_name + "-output")
@@ -131,12 +145,18 @@ def generate_qmuvi_data(quantum_circuit: QuantumCircuit,
                         noise_model: NoiseModel = None, 
                         rhythm: Optional[List[Tuple[int, int]]] = None
                        ):
-    """ Samples the quantum circuit at every barrier and generates data from the state properties.
-    Args:
-        quantum_circuit: The qiskit QuantumCircuit.
-        output_manager: The DataManager object for the output folder.
-        noise_model: A qiskit NoiseModel. If None then no noise will be used in the simulations.
-        rhythm: A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second). 
+    """Samples the quantum circuit at every barrier and generates data from the state properties.
+    
+    Parameters
+    ----------
+        quantum_circuit
+            The qiskit QuantumCircuit.
+        output_manager
+            The DataManager object for the output folder.
+        noise_model
+            A qiskit NoiseModel. If None then no noise will be used in the simulations.
+        rhythm
+            A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second). 
             If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0)
     """
     if noise_model == None:
@@ -200,15 +220,23 @@ def generate_qmuvi_music(quantum_circuit: QuantumCircuit,
                         note_map: Mapping[int, int] = note_map_chromatic_middle_c
                        ):
     """ Samples the quantum circuit at every barrier and uses the state properties to create a song (.wav).
-    Args:
-        quantum_circuit: The qiskit QuantumCircuit.
-        output_manager: The DataManager object for the output folder.
-        noise_model: A qiskit NoiseModel. If None then no noise will be used in the simulations.
-        rhythm: A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second). 
+    
+    Parameters
+    ----------
+        quantum_circuit
+            The qiskit QuantumCircuit.
+        output_manager
+            The DataManager object for the output folder.
+        noise_model
+            A qiskit NoiseModel. If None then no noise will be used in the simulations.
+        rhythm
+            A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second). 
             If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0)
-        phase_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections) (defaults to 'synth_lead').
+        phase_instruments
+            The collections of instruments for each pure state in the mixed state (up to 8 collections) (defaults to 'synth_lead').
             Computational basis state phase determines which instrument from the collection is used.
-        note_map: Converts state number to a note number where 60 is middle C. Mapping[int -> int]
+        note_map
+            Converts state number to a note number where 60 is middle C. Mapping[int -> int]
     """
 
     # generate data from quantum circuit
@@ -230,19 +258,32 @@ def generate_qmuvi_music(quantum_circuit: QuantumCircuit,
 
 def generate_qmuvi_video(quantum_circuit, output_manager: data_manager.DataManager, rhythm, noise_model=None, phase_instruments=[list(range(81, 89))], note_map=note_map_chromatic_middle_c, invert_colours=False, fps=60, vpr=None, smooth_transitions=True, phase_marker=True, probability_distribution_only=False):
     """ Samples the quantum circuit at every barrier and uses the state properties to create a silent video (.mp4). No music is generated using this method.
-    Args:
-        quantum_circuit: The qiskit QuantumCircuit.
-        output_manager: The data manager to use for saving the video and all of its pieces.
-        rhythm: The sound length and post-rest times in units of ticks (480 ticks is 1 second) List[Tuple[int soundLength, int soundRest]]
-        noise_model: A qiskit NoiseModel. If None then no noise will be used in the simulations.
-        phase_instruments: The collections of instruments for each pure state in the mixed state (up to 8 collections).
+    
+    Parameters
+    ----------
+        quantum_circuit
+            The qiskit QuantumCircuit.
+        output_manager
+            The data manager to use for saving the video and all of its pieces.
+        rhythm
+            The sound length and post-rest times in units of ticks (480 ticks is 1 second) List[Tuple[int soundLength, int soundRest]]
+        noise_model
+             qiskit NoiseModel. If None then no noise will be used in the simulations.
+        phase_instruments
+            The collections of instruments for each pure state in the mixed state (up to 8 collections).
             Computational basis state phase determines which instrument from the collection is used. List[List[int intrument_index]]
-        note_map: Converts state number to a note number where 60 is middle C. Map[int -> int]
-        invert_colours: Whether to render the video in dark mode. (default: False) Bool
-        fps: The frames per second of the output video. (default: 60) Int
-        vpr: Propotion of vertical space that the circuit with be scaled to fit. Float (default: 1/3)
-        smooth_transitions: Whether to smoothly animate between histogram frames. Significantly increased render time. (default: False) Bool
-        phase_marker: Whether to draw lines on the phase wheel indicating phases of the primary pure state.
+        note_map
+            Converts state number to a note number where 60 is middle C. Map[int -> int]
+        invert_colours
+            Whether to render the video in dark mode. (default: False) Bool
+        fps
+            The frames per second of the output video. (default: 60) Int
+        vpr
+            Propotion of vertical space that the circuit with be scaled to fit. Float (default: 1/3)
+        smooth_transitions
+            Whether to smoothly animate between histogram frames. Significantly increased render time. (default: False) Bool
+        phase_marker
+            Whether to draw lines on the phase wheel indicating phases of the primary pure state.
     """
     # generate data from quantum circuit
     generate_qmuvi_data(quantum_circuit, 

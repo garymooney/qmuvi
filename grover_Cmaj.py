@@ -64,8 +64,8 @@ qmuvi.generate_qmuvi(circ,
                      noise_model = None, 
                      rhythm = time_list, 
                      phase_instruments = [qmuvi.get_instruments("windband")], 
-                     invert_colours = False, 
+                     invert_colours = True, 
                      fps =  10, 
-                     smooth_transitions = False, 
+                     smooth_transitions = True, 
                      log_to_file = False
                      )
