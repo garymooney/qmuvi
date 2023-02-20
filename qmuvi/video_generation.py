@@ -6,7 +6,7 @@ import os
 import math
 import collections.abc
 import numpy as np
-from typing import Any, AnyStr, List, Tuple, Union, Optional, Mapping, Iterable, Dict
+from typing import Any, AnyStr, List, Tuple, Union, Optional, Mapping, Iterable, Dict, Callable
 import qiskit
 from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag
@@ -26,6 +26,38 @@ from moviepy.video.io.bindings import mplfig_to_npimage
 import re
 
 Colour = Iterable[Union[int, float]]
+
+def convert_colour_to_uint8(colour: Colour) -> Colour:
+    """Converts a colour to the uint8 format used by matplotlib.
+
+    Parameters
+    ----------
+        colour
+            The colour to convert. This can be an iterable of ints or floats.
+
+    Returns
+    -------
+        The converted colour, represented as an iterable of uint8s.
+    """
+    if isinstance(colour[0], int):
+        return colour
+    return [int(c * 255) for c in colour]
+
+def convert_colour_to_float(colour: Colour) -> Colour:
+    """Converts a colour to the float range [0, 1] used by matplotlib.
+
+    Parameters
+    ----------
+        colour
+            The colour to convert. This can be an iterable of ints or floats.
+
+    Returns
+    -------
+        The converted colour, represented as an iterable of floats.
+    """
+    if isinstance(colour[0], float):
+        return colour
+    return [c / 255.0 for c in colour]
 
 def filter_blend_colours(image: Iterable[Iterable[Colour]], 
                          colour: Colour, 
@@ -213,7 +245,7 @@ def invert_cmap(cmap: matplotlib.colors.Colormap) -> matplotlib.colors.ListedCol
 
     Parameters
     ----------
-        cmap : matplotlib.colors.Colormap
+        cmap
             The colormap to invert.
 
     Returns
@@ -234,7 +266,7 @@ def reverse_cmap(cmap: matplotlib.colors.Colormap) -> matplotlib.colors.ListedCo
 
     Parameters
     ----------
-        cmap : matplotlib.colors.Colormap
+        cmap
             The colormap to reverse.
 
     Returns
@@ -253,191 +285,9 @@ def reverse_cmap(cmap: matplotlib.colors.Colormap) -> matplotlib.colors.ListedCo
         reversed_i -= 1
     return ListedColormap(newcolors)
 
-def _plot_phase_wheel(fig: matplotlib.figure.Figure, 
-                     probabilities: List[float],
-                     phase_angles: List[float],
-                     cmap_phase: matplotlib.colors.Colormap, 
-                     tick_colour: Colour, 
-                     invert_colours: bool
-                     ) -> Dict[str, matplotlib.axes.Axes]:
-    """Plots a phase wheel with line indicators on it for the given phase_angles and returns a dictionary of the axes.
-
-    This method plots a phase wheel with line indicators on it for the given phase_angles. The phase wheel is a polar
-    plot with the total probability of each phase as the radial axis and the phase angle as the angular axis. The line
-    indicators are plotted as a series of lines that extend from the centre of the plot to the outer edge of the plot
-    at the given phase angle. The line indicators are coloured according to the angle of the phase.
-
-    Parameters
-    ----------
-        fig
-            a matplotlib figure object.
-        probabilities
-            a list of floats representing the probability of basis state.
-        phase_angles
-            a list of floats representing the phase phase angle of basis state.
-        cmap_phase
-            a matplotlib colormap object representing the colour map to use for the phase wheel.
-        tick_colour
-            the colour of the tick labels.
-        invert_colours
-            whether to invert the colours of the phase wheel.
-    
-    Returns
-    -------
-        A dictionary mapping the labels to the matplotlib Axes objects generated for the phase wheel. The order of
-        the axes is left-to-right and top-to-bottom of their position in the total layout.
-    """
-
-    fig_gridspec_phase_wheel = {
-            "bottom": 0.12,
-            "top": 0.44,
-            "left": 0.01,
-            "right": 0.93,
-            "wspace": 0.0,
-            "hspace": 0.0,
-            "height_ratios": [1]
-        }
-    plot_mosaic_phase_wheel_dict = fig.subplot_mosaic(
-        [
-            ["phase_wheel"],
-        ],
-        gridspec_kw = fig_gridspec_phase_wheel,
-        subplot_kw={"projection": "polar"}
-    )
-    
-    plt.sca(plot_mosaic_phase_wheel_dict["phase_wheel"])
-    plt.yticks(fontsize=20)
-    plt.xticks(fontsize=20)
-    
-    azimuths = np.arange(0, 361, 1)
-    values = azimuths * np.ones((30, 361))
-    azimuths = azimuths * np.pi / 180.0
-    zeniths = np.arange(40, 70, 1)
-    plot_mosaic_phase_wheel_dict["phase_wheel"].pcolormesh(azimuths, 
-                                                           zeniths, 
-                                                           np.roll(values, 180), 
-                                                           cmap=cmap_phase
-                                                           )
-    plot_mosaic_phase_wheel_dict["phase_wheel"].fill_between(azimuths, 40, color = '#FFFFFF')
-    
-    plot_mosaic_phase_wheel_dict["phase_wheel"].plot(azimuths, [40] * 361, color=tick_colour, lw=1)
-
-    
-    # Plot the phase angle indicators.
-    # Need to bin the angles to determine the total probability of each bin, then plot the lines with the correct length.
-    angles_bin = list(range(360))
-    phase_angle_probabilities = {}
-    for angle in angles_bin:
-        phase_angle_probabilities[angle] = 0
-        
-        for angle_iter, phase_angle in enumerate(phase_angles):
-            converted_angle = int((360 * (phase_angle + np.pi) / (2 * np.pi) + 0.5) % 360)
-            if angle == converted_angle:
-                phase_angle_probabilities[angle] += probabilities[angle_iter]
-
-    for angle_iter, phase_angle in enumerate(phase_angles):
-        if probabilities[angle_iter] > 0.0001:
-            colour_value = (phase_angle + np.pi) / (2 * np.pi)
-            converted_angle = int((360 * (phase_angle + np.pi) / (2 * np.pi) + 0.5) % 360)
-            length = phase_angle_probabilities[converted_angle]
-            plot_mosaic_phase_wheel_dict["phase_wheel"].plot([phase_angle] * 40, length * np.arange(0, 40, 1), color=cmap_phase(colour_value), lw=2)
-    
-    if invert_colours == True:
-        plot_mosaic_phase_wheel_dict["phase_wheel"].spines['polar'].set_color(tick_colour)
-    
-    plot_mosaic_phase_wheel_dict["phase_wheel"].set_yticks([])
-    plot_mosaic_phase_wheel_dict["phase_wheel"].tick_params(axis='x', colors=tick_colour)
-    plot_mosaic_phase_wheel_dict["phase_wheel"].tick_params(axis='y', colors=tick_colour)
-    fig.text(0.82, 0.465, 'Phase', ha='right', va='bottom', fontsize=20)
-    
-    label_positions = [0, math.pi / 2, math.pi, 3 * math.pi / 2]
-    labels = ['0',r'$\frac{\pi}{2}$', r'$\pi$',r'$\frac{3\pi}{2}$']
-    plot_mosaic_phase_wheel_dict["phase_wheel"].set_xticks(label_positions, labels)
-    plot_mosaic_phase_wheel_dict["phase_wheel"].xaxis.set_tick_params(pad = 8)
-
-    return plot_mosaic_phase_wheel_dict
-
-def _plot_stat_bars(fig: matplotlib.figure.Figure, 
-                   fidelity: float, 
-                   cmap_fidelity: matplotlib.colors.Colormap, 
-                   c_gray: Colour, 
-                   tick_colour: Colour, 
-                   invert_colours: bool
-                   ) -> Dict[str, matplotlib.axes.Axes]:
-    """Plots a fidelity bar and returns a dictionary of the axes.
-
-    Parameters
-    ----------
-        fig
-            The figure to add the bar to.
-        fidelity
-            The fidelity value to plot.
-        cmap_fidelity
-            The colormap to use for the fidelity bar.
-        c_gray
-            The color of the fidelity line.
-        tick_colour
-            The color of the ticks.
-        invert_colours
-            Whether or not to invert the colors of the plot.
-
-    Returns
-    -------
-        A dictionary mapping the labels to the matplotlib Axes objects generated for the fidelity bar. The order of
-        the axes is left-to-right and top-to-bottom of their position in the total layout.
-    """
-
-    fig_gridspec_stat_bars = {
-            "bottom": (0.95 - 0.08)/2 + 0.08 + 0.02,
-            "top": 0.95,
-            "left": 0.01,
-            "right": 0.93,
-            "wspace": 0.0,
-            "hspace": 0.0,
-            "height_ratios": [1]
-        }
-    plot_mosaic_stat_bars_dict = fig.subplot_mosaic(
-        [
-            ["fidelity"]
-        ],
-        gridspec_kw = fig_gridspec_stat_bars,
-    )
-    
-    plt.sca(plot_mosaic_stat_bars_dict["fidelity"])
-    plt.yticks(fontsize=20)
-    plt.xticks(fontsize=20) 
-    
-    plot_mosaic_stat_bars_dict["fidelity"].imshow(np.array(list(reversed([[val] * 6 for val in reversed(np.linspace(0,1,100))]))), cmap=cmap_fidelity, interpolation='bicubic')
-    
-    line_y = fig_gridspec_stat_bars["bottom"] + (fig_gridspec_stat_bars["top"] - fig_gridspec_stat_bars["bottom"]) * fidelity
-    line_middle_x = fig_gridspec_stat_bars["left"] + (fig_gridspec_stat_bars["right"] - fig_gridspec_stat_bars["left"]) / 2
-    line = Line2D([line_middle_x - 0.035, line_middle_x + 0.035], [line_y, line_y], lw=4, color=c_gray, alpha=1)
-    line.set_clip_on(False)
-    fig.add_artist(line)
-    plot_mosaic_stat_bars_dict["fidelity"].tick_params(axis='x', colors=tick_colour)
-    plot_mosaic_stat_bars_dict["fidelity"].tick_params(axis='y', colors=tick_colour)
-    if invert_colours == True:
-        plot_mosaic_stat_bars_dict["fidelity"].spines['bottom'].set_color(tick_colour)
-        plot_mosaic_stat_bars_dict["fidelity"].spines['top'].set_color(tick_colour)
-        plot_mosaic_stat_bars_dict["fidelity"].spines['left'].set_color(tick_colour)
-        plot_mosaic_stat_bars_dict["fidelity"].spines['right'].set_color(tick_colour)
-        for t in plot_mosaic_stat_bars_dict["fidelity"].xaxis.get_ticklines(): t.set_color(tick_colour)
-        for t in plot_mosaic_stat_bars_dict["fidelity"].yaxis.get_ticklines(): t.set_color(tick_colour)
-    
-    fig.text(0.82, 0.945, 'Fidelity', ha='right', va='center', fontsize=20)
-    fig.text(0.82, 0.905, format(fidelity, '.2f'), ha='right', va='center', fontsize=20)
-    
-    plot_mosaic_stat_bars_dict["fidelity"].xaxis.set_visible(False)
-    plot_mosaic_stat_bars_dict["fidelity"].set_ylim((0,99))
-    y_tick_positions = [0, 50, 99]
-    y_tick_labels = [0.0, 0.5, 1.0]
-    plot_mosaic_stat_bars_dict["fidelity"].set_yticks(y_tick_positions)
-    plot_mosaic_stat_bars_dict["fidelity"].set_yticklabels(y_tick_labels)
-
-    return plot_mosaic_stat_bars_dict
 
 def convert_fig_pixels_to_inches(pixels: float) -> float:
-    """Converts a size in pixels to inches.
+    """Converts a size in pixels to inches based on the dpi setting in matplotlib.
 
     This function takes a float representing a size in pixels and returns a float representing the equivalent size in
     inches, based on the current dpi (dots per inch) setting for matplotlib figures.
@@ -454,17 +304,18 @@ def convert_fig_pixels_to_inches(pixels: float) -> float:
     dpi = plt.rcParams['figure.dpi']
     return pixels / dpi
 
+
 def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit, 
                              output_manager: data_manager.DataManager, 
-                             rhythm: List[Tuple[int, int]], 
+                             rhythm: Optional[List[Tuple[int, int]]], 
                              phase_instruments: List[List[int]] = [list(range(81, 89))], 
                              invert_colours: bool = False, 
                              fps: int = 60, 
-                             vpr: Optional[float] = None, 
+                             vpr: Optional[Union[float, Callable[[int], float]]] = 1.0 / 3.0, 
                              smooth_transitions: bool = True, 
                              probability_distribution_only: bool = False
                              ) -> None:
-    """ Samples the quantum circuit at every barrier and uses the state properties to create a video (.mp4). The qMuVi data and wav file must already be generated.
+    """Uses generated qMuVi data and wav file to generate a video (.mp4).
 
     Parameters
     ----------
@@ -473,26 +324,33 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
         output_manager
             The data manager to use for saving the video and all of its pieces.
         rhythm
-            The sound length and post-rest times in units of ticks (480 ticks is 1 second) List[Tuple[int soundLength, int soundRest]]
+            A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second). 
+            If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0)
         phase_instruments
             The collections of instruments for each pure state in the mixed state (up to 8 collections).
-            Computational basis state phase determines which instrument from the collection is used. List[List[int intrument_index]]
+            Computational basis state phase determines which instrument from the collection is used.
         invert_colours
-            Whether to render the video in dark mode. (default: False) Bool
+            Whether to render the video in dark mode.
         fps
-            The frames per second of the output video. (default: 60) Int
+            The frames per second of the output video. 
         vpr
-            Propotion of vertical space that the circuit will occupy. Float (default: 1/3)
+            Propotion of vertical space that the circuit will occupy. Can be a float or a function that maps qubit_count (int) to float.
         smooth_transitions
-            Whether to smoothly animate between histogram frames. Significantly increased render time. (default: False) Bool
+            Whether to animate the plots by interpolating between qMuVi data samples. Significantly increases render time.
         probability_distribution_only
-            Whether to only plot the basis state probabilities. (default: False) Bool
+            Whether to only plot the basis state probabilities.
     """
 
     if vpr == None:
-        def vpr(n): return 1/3
-    else:
-        def vpr(n): return vpr
+        vpr = lambda n: 1.0 / 3.0
+    elif isinstance(vpr, float):
+        vpr_temp = vpr
+        vpr = lambda n: vpr_temp
+    elif not callable(vpr):
+        raise TypeError('vpr must be a float, None or a Callable[[int], float]')
+
+    if rhythm == None:
+        rhythm = [(240, 0)] * len(sounds_list)
 
     sounds_list = output_manager.load_json('sounds_list.json')
     fidelity_list = output_manager.load_json('fidelity_list.json')
@@ -558,6 +416,8 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
     # Matplotlib plot ticks
     tick_colour = [0.4, 0.4, 0.4, 1.0]
 
+    fidelity_line_colour = [0.6, 0.6, 0.6, 1.0]
+
     bg_color = [0xFF, 0xFF, 0xFF]
     bg_color_inverted = [0x00, 0x00, 0x00]
 
@@ -566,249 +426,7 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
         cmap_phase = invert_cmap(cmap_phase)
         # Note: cmap_needle does not need to be inverted since needle is not part of the image that is inverted
 
-    def plot_quantum_state(pure_probabilities_list: List[np.ndarray], 
-                           pure_phase_angles_list: List[np.ndarray], 
-                           measured_probabilities_list: List[np.ndarray], 
-                           sampled_state_number: Union[int, float], 
-                           interpolate: bool = False, 
-                           fig: Optional[matplotlib.figure.Figure] = None, 
-                           zero_noise: bool = False, 
-                           probability_distribution_only: bool = probability_distribution_only
-                           ):
-        '''
-        Args:
-            pure_probabilities_list: a list containing a 2d array for each sampled state, where the array contains probabilities indexed by pure state number and basis state number
-            pure_phase_angles_list: a list containing a 2d array for each sampled state, where the array contains phase angles indexed by pure state number and basis state number
-            measured_probabilities_list: a list containing a 1d array for each sampled state, where the array contains measurement probabilities indexed by basis state number
-            sampled_state_number: the index of the sampled state to be plotted. If interpolate is True, then this can be a decimal fraction
-            interpolate: whether to interpolate plot numbers
-            fig: an already created figure
-            zero_noise: whether to only plot the data for the single pure state (no noise)
-            probability_distribution_only: whether to only plot the basis-state probability distribution
-        '''
-        if fig == None:
-            fig = plt.figure(figsize=(20, (1 - vpr(qubit_count)) * 13.5))
-        
-        if interpolate == True:
-            base_state_count = pure_probabilities_list[0].shape[1]
-            
-            # create new vectors that lerp between the sampled states with respect to sampled_state_number
-            pure_probabilities_start = pure_probabilities_list[math.floor(sampled_state_number)]
-            pure_probabilities_end = pure_probabilities_list[math.ceil(sampled_state_number)]
-            pure_probabilities = np.zeros((pure_probabilities_start.shape[0], base_state_count))
-            for i in range(pure_probabilities_start.shape[0]):
-                pure_probabilities[i, :] = lerp(
-                    pure_probabilities_start[i, :], pure_probabilities_end[i, :], sampled_state_number - math.floor(sampled_state_number))
-
-            pure_phase_angles_start = pure_phase_angles_list[math.floor(sampled_state_number)]
-            pure_phase_angles_end = pure_phase_angles_list[math.ceil(sampled_state_number)]
-            pure_phase_angles = np.zeros((pure_phase_angles_start.shape[0], base_state_count))
-            for i in range(pure_phase_angles.shape[0]):
-                pure_phase_angles[i, :] = lerp(pure_phase_angles_start[i, :], pure_phase_angles_end[i, :], sampled_state_number - math.floor(sampled_state_number))
-            measured_probabilities_start = measured_probabilities_list[math.floor(sampled_state_number)]
-            measured_probabilities_end = measured_probabilities_list[math.ceil(sampled_state_number)]
-            measured_probabilities = lerp(measured_probabilities_start[:], measured_probabilities_end[:], sampled_state_number - math.floor(sampled_state_number))
-
-            # avoid animating the phases when the probability's start or end point is zero
-            for i in range(pure_phase_angles.shape[0]):
-                for j in range(pure_phase_angles.shape[1]):
-                    if pure_probabilities_start[i, j] <= 0.0001 and pure_probabilities_end[i, j] > 0:
-                        pure_phase_angles[i, j] = pure_phase_angles_end[i, j]
-                    if pure_probabilities_start[i, j] > 0 and pure_probabilities_end[i, j] <= 0.0001:
-                        pure_phase_angles[i, j] = pure_phase_angles_start[i, j]
-        else:
-            pure_probabilities = pure_probabilities_list[sampled_state_number]
-            pure_phase_angles = pure_phase_angles_list[sampled_state_number]
-            measured_probabilities = measured_probabilities_list[sampled_state_number]
-            base_state_count = pure_probabilities.shape[1]
-        
-        # A list of plot names where their index in the list corresponds to which pure state they are plotting
-        plot_pure_state_list = None
-        # A dictionary of plot names where the key is the plot name and the value is a matplotlib Axes object with a set position and size within the figure
-        plot_mosaic_dict = None
-        # specify the plot mosaic layout
-        if probability_distribution_only:
-            # only plot the basis-state probability distribution. No phases or noise-induced pure states.
-            fig_gridspec = {
-                "bottom": 0.1,
-                "top": 0.95,
-                "left": 0.07,
-                "right": 0.99,
-                "wspace": 0.05,
-                "hspace": 0.09,
-            }
-            plot_mosaic_dict = fig.subplot_mosaic(
-                [
-                    ["meas_probs", "meas_probs", "meas_probs", "meas_probs"],
-                    ["meas_probs", "meas_probs", "meas_probs", "meas_probs"],
-                ],
-                gridspec_kw=fig_gridspec,
-            )
-        else:
-            if zero_noise:
-                # only plot the first and only (when no noise) pure state probability distribution.
-                fig_gridspec = {
-                    "bottom": 0.1,
-                    "top": 0.95,
-                    "left": 0.07,
-                    "right": 0.99,
-                    "wspace": 0.05,
-                    "hspace": 0.09,
-                }
-                plot_mosaic_dict = fig.subplot_mosaic(
-                    [
-                        ["pure_state:0", "pure_state:0", "pure_state:0", "pure_state:0"],
-                        ["pure_state:0", "pure_state:0", "pure_state:0", "pure_state:0"],
-                    ],
-                    gridspec_kw=fig_gridspec,
-                )
-            else:
-                # Plot the probability distributions of the pure states in the mixed state
-                fig_gridspec = {
-                    "bottom": 0.08,
-                    "top": 0.95,
-                    "left": 0.07,
-                    "right": 0.99,
-                    "wspace": 0.05,
-                    "hspace": 0.09,
-                }
-                plot_mosaic_dict = fig.subplot_mosaic(
-                    [
-                        ["pure_state:1", "pure_state:0", "pure_state:0", "pure_state:2"],
-                        ["pure_state:3", "pure_state:4", "pure_state:5", "pure_state:6"],
-                    ],
-                    gridspec_kw=fig_gridspec,
-                )
-        
-        num_qubits = (base_state_count - 1).bit_length()
-        x_values = [x for x in range(base_state_count)]
-        for plot_name, plot_axes in plot_mosaic_dict.items():
-
-            pure_state_index = None
-            if plot_name.split(":")[0] == "pure_state":
-                pure_state_index = int(plot_name.split(":")[1])
-
-            if plot_name == "meas_probs":
-                y_values = measured_probabilities
-            elif pure_state_index != None:
-                y_values = pure_probabilities[pure_state_index, :]
-            else:
-                print("ERROR: plot_name not recognised: " + plot_name)
-                exit(1)
-
-            bar_list = plot_mosaic_dict[plot_name].bar(x_values, y_values, width=0.5)
-            
-            # set colour of the bars based on the phase
-            if pure_state_index != None:
-                for i, phase_angle in enumerate(pure_phase_angles[pure_state_index, :]):
-                    # Map phase angles from (-pi/2, pi/2] to (0, 1]
-                    colour_value = (phase_angle + np.pi) / (2 * np.pi)
-                    bar_list[i].set_color(cmap_phase(colour_value))
-
-            plot_mosaic_dict[plot_name].set_xlim((-0.5, base_state_count - 1 + 0.5))
-            plot_mosaic_dict[plot_name].set_ylim([0, np.max(y_values)])
-            plot_mosaic_dict[plot_name].tick_params(axis='x', colors=tick_colour)
-            plot_mosaic_dict[plot_name].tick_params(axis='y', colors=tick_colour)
-            plot_mosaic_dict[plot_name].tick_params(axis='y', labelsize=20)
-            plot_mosaic_dict[plot_name].axes.xaxis.set_visible(False)
-            plot_mosaic_dict[plot_name].axes.yaxis.set_visible(False)
-
-            if (zero_noise and pure_state_index == 0) or plot_name == "meas_probs":
-                plot_mosaic_dict[plot_name].axes.yaxis.set_visible(True)
-
-            if pure_state_index == 1 or pure_state_index == 3:
-                plot_mosaic_dict[plot_name].axes.yaxis.set_visible(True)
-
-            # Set the x ticks and tick labels for important subplots
-            if pure_state_index == 0 or plot_name == "meas_probs":
-                # if there are too many qubits to fit all of the x ticks, then only draw a limited number
-                if (zero_noise and num_qubits > 4) \
-                        or ((not zero_noise) and num_qubits > 3) \
-                        or (plot_name == "meas_probs" and num_qubits > 4):
-                    x_ticks = [0]
-                    x_ticks.append(int(base_state_count / 4.0))
-                    x_ticks.append(int(2.0 * base_state_count / 4.0))
-                    x_ticks.append(int(3.0 * base_state_count / 4.0))
-                    x_ticks.append(int(base_state_count - 1))
-                else:
-                    x_ticks = list(range(base_state_count))
-                
-                # basis states are labelled in binary
-                x_tick_labels = [bin(x)[2:].zfill(num_qubits)[::-1] for x in x_ticks]
-                
-                plot_mosaic_dict[plot_name].axes.xaxis.set_visible(True)
-                plot_mosaic_dict[plot_name].set_xticks(x_ticks)
-                plot_mosaic_dict[plot_name].set_xticklabels(x_tick_labels)
-                plot_mosaic_dict[plot_name].tick_params(axis='x', labelsize=14)
-
-        # Add axis labels
-        fig.text(0.01, 
-                 (fig_gridspec["top"] - fig_gridspec["bottom"])/2 + fig_gridspec["bottom"],
-                 'Probability', 
-                 va='center', 
-                 rotation='vertical', 
-                 fontsize=20
-                )
-        fig.text((fig_gridspec["right"] - fig_gridspec["left"])/2 + fig_gridspec["left"], 
-                 0.035, 
-                 'Quantum states', 
-                 ha='center', 
-                 fontsize=20
-                )
-        return fig
-
-    def plot_info_panel(sampled_state_number, 
-                        fidelity, 
-                        pure_probabilities, 
-                        pure_phase_angles, 
-                        draw_phase_wheel = not probability_distribution_only
-                        ):
-        """ Plot the information panel corresponding to the given sampled state number and save it as a .png
-        Args:
-            sampled_state_number: Used to save the plotted info panel
-            fidelity: The fidelity of the state
-            pure_probabilities: a 2d array, where the array contains probabilities indexed by pure state number and basis state number (pure_state_numbers x basis_state_numbers)
-            pure_phase_angles: a 2d array, where the array contains phase angles indexed by pure state number and basis state number (pure_state_numbers x basis_state_numbers)
-            draw_phase_wheel: If True, only plot the phase wheel
-        """
-        probabilities_0 = list(pure_probabilities[0, :])
-        phase_angles_0 = list(pure_phase_angles[0, :])
-
-        c_gray = [0.6, 0.6, 0.6, 1]
-        
-        target_video_height_pixels = 1080
-        dpi = plt.rcParams['figure.dpi']
-        target_empty_circuit_height_pixels = target_video_height_pixels * (1 - vpr(qubit_count))
-        fig_height_inches = (1 - vpr(qubit_count)) * 13.5
-        fig_height_pixels = fig_height_inches * dpi
-        scale = target_empty_circuit_height_pixels / fig_height_pixels
-        
-        scaled_dpi = dpi * scale
-
-        target_video_height_in_inches = convert_fig_pixels_to_inches(1080)
-        fig = plt.figure(figsize = (4, (1 - vpr(qubit_count)) * 13.5), dpi = scaled_dpi)
-
-        if draw_phase_wheel == True:
-            plot_mosaic_phase_wheel_dict = _plot_phase_wheel(fig, 
-                                                             probabilities_0,
-                                                             phase_angles_0,
-                                                             cmap_phase, 
-                                                             tick_colour, 
-                                                             invert_colours
-                                                            )
-        plot_mosaic_stat_bars_dict = _plot_stat_bars(fig, 
-                                                     fidelity,
-                                                     cmap_fidelity,  
-                                                     c_gray, 
-                                                     tick_colour, 
-                                                     invert_colours
-                                                    )
-
-        plt.savefig(output_manager.get_path(f'info_panel_{sampled_state_number}.png'))
-        plt.close('all')
-        return None
-    
-    print("Generating pieces...")
+    print("Preparing pieces for video generation...")
 
     # format probability and angle data for plotting
     pure_probabilities_list = []
@@ -836,11 +454,21 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
     plot_clips = []
     for sound_index, sound_data in enumerate(sounds_list):
         # plot and save the info panel image
-        plot_info_panel(sound_index, 
-                        fidelity_list[sound_index], 
-                        pure_probabilities_list[sound_index], 
-                        pure_phase_angles_list[sound_index]
-                       )
+        _plot_info_panel(output_manager,
+                         None,
+                         pure_probabilities_list[sound_index], 
+                         pure_phase_angles_list[sound_index], 
+                         fidelity_list[sound_index], 
+                         sound_index,
+                         qubit_count, 
+                         cmap_phase, 
+                         cmap_fidelity,
+                         tick_colour, 
+                         fidelity_line_colour,
+                         invert_colours,  
+                         vpr,
+                         not probability_distribution_only
+                        )
 
         # histograms
         target_video_height_pixels = 1080
@@ -882,14 +510,19 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
                     interpolated_frame = sound_index_temp - 1 + transition_scale
                     interpolate = True
 
-                anim_fig = plot_quantum_state(pure_probabilities_list, 
-                                              pure_phase_angles_list, 
-                                              measured_probabilities_list,
-                                              interpolated_frame, 
-                                              interpolate = interpolate, 
-                                              fig = anim_fig, 
-                                              zero_noise = zero_noise
-                                             )
+                anim_fig = _plot_quantum_state(anim_fig,
+                                               pure_probabilities_list, 
+                                               pure_phase_angles_list, 
+                                               measured_probabilities_list,
+                                               interpolated_frame,
+                                               qubit_count,
+                                               interpolate, 
+                                               cmap_phase,
+                                               tick_colour,
+                                               vpr,
+                                               zero_noise,
+                                               probability_distribution_only
+                                              )
                 return mplfig_to_npimage(anim_fig)
 
             plot_clips.append(VideoClip(make_plot_frame, duration=(rhythm[sound_index][0] + rhythm[sound_index][1]) / 480))
@@ -898,15 +531,21 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
             plt.cla()
             plt.clf()
 
-            frame_fig = plot_quantum_state(pure_probabilities_list, 
-                                           pure_phase_angles_list, 
-                                           measured_probabilities_list, 
-                                           sound_index,
-                                           fig = anim_fig, 
-                                           zero_noise = zero_noise
-                                          )
+            anim_fig = _plot_quantum_state(anim_fig,
+                                            pure_probabilities_list, 
+                                            pure_phase_angles_list, 
+                                            measured_probabilities_list, 
+                                            sound_index,
+                                            qubit_count,
+                                            False,
+                                            cmap_phase,
+                                            tick_colour,
+                                            vpr,
+                                            zero_noise,
+                                            probability_distribution_only
+                                           )
 
-            frame_image = mplfig_to_npimage(frame_fig)
+            frame_image = mplfig_to_npimage(anim_fig)
             plot_clips.append(ImageClip(frame_image).set_duration((rhythm[sound_index][0] + rhythm[sound_index][1]) / 480))
     
     # calculate the accumulated time for each sampled state in the animation from the rhythm
@@ -1014,11 +653,19 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
     # TODO: change pan effect so that position is changed similar to 
     # clip.set_position(lambda t: ('center', 50+t) ) https://zulko.github.io/moviepy/getting_started/compositing.html
     # This is so that the full extended margin video above doesn't needs to be rendered and a time and frame effect doesn't need to be applied, which can be slow.
-    def circuit_clip_animate_pan(gf: Mapping[float, np.ndarray], t: float) -> np.ndarray:
-        """ 
-        Args:
-            gf: the clips get_frame method that returns the frame of the clip at time t
-            t: the time in seconds
+    def circuit_clip_animate_pan_effect(gf: Callable[[float], np.ndarray], t: float) -> np.ndarray:
+        """Animates the circuit clip panning to the rhythm.
+        
+        Parameters
+        ----------
+            gf
+                the clips get_frame method that returns the frame of the clip at time t.
+            t
+                the time in seconds.
+
+        Returns
+        -------
+            the frame of the clip at time t.
         """
         x_start = output_width / 2
         time_fraction = t / video_duration
@@ -1042,7 +689,7 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
         y = 0
         return gf(t)[y : y + circuit_anim_height, x : x + output_width]
 
-    full_circuit_animated_clip = full_circuit_with_barriers_clip.fl(circuit_clip_animate_pan, apply_to="mask")
+    full_circuit_animated_clip = full_circuit_with_barriers_clip.fl(circuit_clip_animate_pan_effect, apply_to="mask")
     if invert_colours == True:
         full_circuit_animated_clip = invert_colors.invert_colors(full_circuit_animated_clip)
 
@@ -1070,8 +717,20 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
     highlight_time = 1.0 / 8.0
     highlight_fade_time = 1.0 / 16.0
 
-    def draw_needle(get_frame, t):
-        """Draw a rectangle in the frame on top of the circuit animated clip"""
+    def draw_needle_effect(get_frame, t) -> np.ndarray:
+        """Draw a rectangle in the frame on top of the circuit animated clip.
+        
+        Parameters
+        ----------
+            get_frame
+                the clips get_frame method that returns the frame of the clip at time t.
+            t
+                the time in seconds.
+
+        Returns
+        -------
+            the frame of the clip at time t.
+        """
         # change (top, bottom, left, right) to the coordinates
         top = 1
         # make the gap between the bottom and the barrier the same as the gap between the top and the barrier. 
@@ -1106,9 +765,525 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
 
         return frame
 
-    video_final = video_final.fl(draw_needle)
+    video_final = video_final.fl(draw_needle_effect)
 
     # preset options (speed vs filesize): ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo
     video_final.write_videofile(output_manager.get_default_file_pathname() + '.mp4', preset='ultrafast', fps=fps, codec='mpeg4', audio_fps=44100,
                                 audio_codec='libmp3lame', audio_bitrate="3000k", audio_nbytes=4, ffmpeg_params=["-b:v", "12000K", "-b:a", "3000k"])
 
+
+def _plot_phase_wheel(fig: matplotlib.figure.Figure, 
+                      probabilities: List[float],
+                      phase_angles: List[float],
+                      cmap_phase: matplotlib.colors.Colormap, 
+                      tick_colour: Colour, 
+                      invert_colours: bool
+                      ) -> Dict[str, matplotlib.axes.Axes]:
+    """Plots a phase wheel with line indicators on it for the given phase_angles and returns a dictionary of the axes.
+
+    This method plots a phase wheel with line indicators on it for the given phase_angles. The phase wheel is a polar
+    plot with the total probability of each phase as the radial axis and the phase angle as the angular axis. The line
+    indicators are plotted as a series of lines that extend from the centre of the plot to the outer edge of the plot
+    at the given phase angle. The line indicators are coloured according to the angle of the phase.
+
+    Parameters
+    ----------
+        fig
+            a matplotlib figure object.
+        probabilities
+            a list of floats representing the probability of basis state.
+        phase_angles
+            a list of floats representing the phase angle of basis state.
+        cmap_phase
+            a matplotlib colormap object representing the colour map to use for the phase wheel.
+        tick_colour
+            the colour of the tick labels.
+        invert_colours
+            whether to invert the colours of the phase wheel.
+    
+    Returns
+    -------
+        A dictionary mapping the labels to the matplotlib Axes objects generated for the phase wheel. The order of
+        the axes is left-to-right and top-to-bottom of their position in the total layout.
+    """
+
+    fig_gridspec_phase_wheel = {
+            "bottom": 0.12,
+            "top": 0.44,
+            "left": 0.01,
+            "right": 0.93,
+            "wspace": 0.0,
+            "hspace": 0.0,
+            "height_ratios": [1]
+        }
+    plot_mosaic_phase_wheel_dict = fig.subplot_mosaic(
+        [
+            ["phase_wheel"],
+        ],
+        gridspec_kw = fig_gridspec_phase_wheel,
+        subplot_kw={"projection": "polar"}
+    )
+    
+    plt.sca(plot_mosaic_phase_wheel_dict["phase_wheel"])
+    plt.yticks(fontsize=20)
+    plt.xticks(fontsize=20)
+    
+    azimuths = np.arange(0, 361, 1)
+    values = azimuths * np.ones((30, 361))
+    azimuths = azimuths * np.pi / 180.0
+    zeniths = np.arange(40, 70, 1)
+    plot_mosaic_phase_wheel_dict["phase_wheel"].pcolormesh(azimuths, 
+                                                           zeniths, 
+                                                           np.roll(values, 180), 
+                                                           cmap=cmap_phase
+                                                           )
+    plot_mosaic_phase_wheel_dict["phase_wheel"].fill_between(azimuths, 40, color = '#FFFFFF')
+    
+    plot_mosaic_phase_wheel_dict["phase_wheel"].plot(azimuths, [40] * 361, color=tick_colour, lw=1)
+
+    
+    # Plot the phase angle indicators.
+    # Need to bin the angles to determine the total probability of each bin, then plot the lines with the correct length.
+    angle_bin_count = 180
+    angles_bin = list(range(angle_bin_count))
+    phase_angle_probabilities = {}
+    for angle in angles_bin:
+        phase_angle_probabilities[angle] = 0
+        
+        for angle_iter, phase_angle in enumerate(phase_angles):
+            converted_angle = round((angle_bin_count * (phase_angle + np.pi) / (2 * np.pi))) % angle_bin_count
+            if angle == converted_angle:
+                phase_angle_probabilities[angle] += probabilities[angle_iter]
+
+    highest_probability = max(phase_angle_probabilities.values())
+    for angle_iter, phase_angle in enumerate(phase_angles):
+        if probabilities[angle_iter] > 0.0001:
+            colour_value = (phase_angle + np.pi) / (2 * np.pi)
+            converted_angle = round((angle_bin_count * (phase_angle + np.pi) / (2 * np.pi))) % angle_bin_count
+            length = phase_angle_probabilities[converted_angle] / highest_probability
+            plot_mosaic_phase_wheel_dict["phase_wheel"].plot([phase_angle] * 40, length * np.arange(0, 40, 1), color=cmap_phase(colour_value), lw=2)
+    
+    if invert_colours == True:
+        plot_mosaic_phase_wheel_dict["phase_wheel"].spines['polar'].set_color(tick_colour)
+    
+    plot_mosaic_phase_wheel_dict["phase_wheel"].set_yticks([])
+    plot_mosaic_phase_wheel_dict["phase_wheel"].tick_params(axis='x', colors=tick_colour)
+    plot_mosaic_phase_wheel_dict["phase_wheel"].tick_params(axis='y', colors=tick_colour)
+    fig.text(0.82, 0.465, 'Phase', ha='right', va='bottom', fontsize=20)
+    
+    label_positions = [0, math.pi / 2, math.pi, 3 * math.pi / 2]
+    labels = ['0',r'$\frac{\pi}{2}$', r'$\pi$',r'$\frac{3\pi}{2}$']
+    plot_mosaic_phase_wheel_dict["phase_wheel"].set_xticks(label_positions, labels)
+    plot_mosaic_phase_wheel_dict["phase_wheel"].xaxis.set_tick_params(pad = 8)
+
+    return plot_mosaic_phase_wheel_dict
+
+def _plot_stat_bars(fig: matplotlib.figure.Figure, 
+                    fidelity: float, 
+                    cmap_fidelity: matplotlib.colors.Colormap, 
+                    c_gray: Colour, 
+                    tick_colour: Colour, 
+                    invert_colours: bool
+                    ) -> Dict[str, matplotlib.axes.Axes]:
+    """Plots a fidelity bar and returns a dictionary of the axes.
+
+    Parameters
+    ----------
+        fig
+            The figure to add the bar to.
+        fidelity
+            The fidelity value to plot.
+        cmap_fidelity
+            The colormap to use for the fidelity bar.
+        c_gray
+            The color of the fidelity line.
+        tick_colour
+            The color of the ticks.
+        invert_colours
+            Whether or not to invert the colors of the plot.
+
+    Returns
+    -------
+        A dictionary mapping the labels to the matplotlib Axes objects generated for the fidelity bar. The order of
+        the axes is left-to-right and top-to-bottom of their position in the total layout.
+    """
+
+    fig_gridspec_stat_bars = {
+            "bottom": (0.95 - 0.08)/2 + 0.08 + 0.02,
+            "top": 0.95,
+            "left": 0.01,
+            "right": 0.93,
+            "wspace": 0.0,
+            "hspace": 0.0,
+            "height_ratios": [1]
+        }
+    plot_mosaic_stat_bars_dict = fig.subplot_mosaic(
+        [
+            ["fidelity"]
+        ],
+        gridspec_kw = fig_gridspec_stat_bars,
+    )
+    
+    plt.sca(plot_mosaic_stat_bars_dict["fidelity"])
+    plt.yticks(fontsize=20)
+    plt.xticks(fontsize=20) 
+    
+    plot_mosaic_stat_bars_dict["fidelity"].imshow(np.array(list(reversed([[val] * 6 for val in reversed(np.linspace(0,1,100))]))), cmap=cmap_fidelity, interpolation='bicubic')
+    
+    line_y = fig_gridspec_stat_bars["bottom"] + (fig_gridspec_stat_bars["top"] - fig_gridspec_stat_bars["bottom"]) * fidelity
+    line_middle_x = fig_gridspec_stat_bars["left"] + (fig_gridspec_stat_bars["right"] - fig_gridspec_stat_bars["left"]) / 2
+    line = Line2D([line_middle_x - 0.035, line_middle_x + 0.035], [line_y, line_y], lw=4, color=c_gray, alpha=1)
+    line.set_clip_on(False)
+    fig.add_artist(line)
+    plot_mosaic_stat_bars_dict["fidelity"].tick_params(axis='x', colors=tick_colour)
+    plot_mosaic_stat_bars_dict["fidelity"].tick_params(axis='y', colors=tick_colour)
+    if invert_colours == True:
+        plot_mosaic_stat_bars_dict["fidelity"].spines['bottom'].set_color(tick_colour)
+        plot_mosaic_stat_bars_dict["fidelity"].spines['top'].set_color(tick_colour)
+        plot_mosaic_stat_bars_dict["fidelity"].spines['left'].set_color(tick_colour)
+        plot_mosaic_stat_bars_dict["fidelity"].spines['right'].set_color(tick_colour)
+        for t in plot_mosaic_stat_bars_dict["fidelity"].xaxis.get_ticklines(): t.set_color(tick_colour)
+        for t in plot_mosaic_stat_bars_dict["fidelity"].yaxis.get_ticklines(): t.set_color(tick_colour)
+    
+    fig.text(0.82, 0.945, 'Fidelity', ha='right', va='center', fontsize=20)
+    fig.text(0.82, 0.905, format(fidelity, '.2f'), ha='right', va='center', fontsize=20)
+    
+    plot_mosaic_stat_bars_dict["fidelity"].xaxis.set_visible(False)
+    plot_mosaic_stat_bars_dict["fidelity"].set_ylim((0,99))
+    y_tick_positions = [0, 50, 99]
+    y_tick_labels = [0.0, 0.5, 1.0]
+    plot_mosaic_stat_bars_dict["fidelity"].set_yticks(y_tick_positions)
+    plot_mosaic_stat_bars_dict["fidelity"].set_yticklabels(y_tick_labels)
+
+    return plot_mosaic_stat_bars_dict
+
+
+def _plot_quantum_state(fig: Optional[matplotlib.figure.Figure], 
+                        pure_probabilities_list: List[np.ndarray], 
+                        pure_phase_angles_list: List[np.ndarray], 
+                        measured_probabilities_list: List[np.ndarray], 
+                        sampled_state_number: Union[int, float], 
+                        qubit_count: int,
+                        interpolate: bool, 
+                        cmap_phase: matplotlib.colors.Colormap,
+                        tick_colour: Colour,
+                        vpr: Optional[Union[float, Callable[[int], float]]],
+                        zero_noise: bool, 
+                        probability_distribution_only: bool
+                       ) -> matplotlib.figure.Figure:
+    """Plots the quantum state for given probability and phase distributions.
+
+    Parameters
+    ----------
+        fig
+            The figure to plot the quantum state on. If None, a new figure is created.
+        pure_probabilities_list
+            A list containing a 2d array for each sampled state, where the array contains probabilities indexed by pure state number and basis state number.
+        pure_phase_angles_list
+            A list containing a 2d array for each sampled state, where the array contains phase angles indexed by pure state number and basis state number.
+        measured_probabilities_list
+            A list containing a 1d array for each sampled state, where the array contains measurement probabilities indexed by basis state number.
+        sampled_state_number
+            The index of the sampled state to be plotted. If interpolate is True, then this can be a decimal fraction.
+        qubit_count
+            The number of qubits in the quantum state.
+        interpolate
+            Whether to interpolate `sampled_state_number`.
+        cmap_phase
+            A colourmap for the phase angle colours in the phase wheel. The colourmap should map normalised phase angles [0,1] to colours.
+        tick_colour
+            The color of the tick marks.
+        vpr
+            Propotion of vertical space that the circuit will occupy. Can be a float or a function that maps qubit_count (int) to float.
+        zero_noise
+            Whether to only plot the data for the single pure state (no noise).
+        probability_distribution_only
+            Whether to only plot the basis-state probability distribution.
+
+    Returns
+    -------
+        The figure containing the plot of the quantum state.
+    """
+    if vpr == None:
+        vpr = lambda n: 1.0 / 3.0
+    elif isinstance(vpr, float):
+        vpr_temp = vpr
+        vpr = lambda n: vpr_temp
+    elif not callable(vpr):
+        raise TypeError("vpr must be a float, None or a Callable[[int], float].")
+
+    if fig == None:
+        fig = plt.figure(figsize = (20, (1 - vpr(qubit_count)) * 13.5))
+
+    tick_colour = convert_colour_to_float(tick_colour)
+    
+    if interpolate == True:
+        base_state_count = pure_probabilities_list[0].shape[1]
+    
+        # create new vectors that lerp between the sampled states with respect to sampled_state_number
+        pure_probabilities_start = pure_probabilities_list[math.floor(sampled_state_number)]
+        pure_probabilities_end = pure_probabilities_list[math.ceil(sampled_state_number)]
+        pure_probabilities = np.zeros((pure_probabilities_start.shape[0], base_state_count))
+        for i in range(pure_probabilities_start.shape[0]):
+            pure_probabilities[i, :] = lerp(
+                pure_probabilities_start[i, :], pure_probabilities_end[i, :], sampled_state_number - math.floor(sampled_state_number))
+    
+        pure_phase_angles_start = pure_phase_angles_list[math.floor(sampled_state_number)]
+        pure_phase_angles_end = pure_phase_angles_list[math.ceil(sampled_state_number)]
+        pure_phase_angles = np.zeros((pure_phase_angles_start.shape[0], base_state_count))
+        for i in range(pure_phase_angles.shape[0]):
+            pure_phase_angles[i, :] = lerp(pure_phase_angles_start[i, :], pure_phase_angles_end[i, :], sampled_state_number - math.floor(sampled_state_number))
+        measured_probabilities_start = measured_probabilities_list[math.floor(sampled_state_number)]
+        measured_probabilities_end = measured_probabilities_list[math.ceil(sampled_state_number)]
+        measured_probabilities = lerp(measured_probabilities_start[:], measured_probabilities_end[:], sampled_state_number - math.floor(sampled_state_number))
+    
+        # avoid animating the phases when the probability's start or end point is zero
+        for i in range(pure_phase_angles.shape[0]):
+            for j in range(pure_phase_angles.shape[1]):
+                if pure_probabilities_start[i, j] <= 0.0001 and pure_probabilities_end[i, j] > 0:
+                    pure_phase_angles[i, j] = pure_phase_angles_end[i, j]
+                if pure_probabilities_start[i, j] > 0 and pure_probabilities_end[i, j] <= 0.0001:
+                    pure_phase_angles[i, j] = pure_phase_angles_start[i, j]
+    else:
+        pure_probabilities = pure_probabilities_list[sampled_state_number]
+        pure_phase_angles = pure_phase_angles_list[sampled_state_number]
+        measured_probabilities = measured_probabilities_list[sampled_state_number]
+        base_state_count = pure_probabilities.shape[1]
+    
+    # A list of plot names where their index in the list corresponds to which pure state they are plotting
+    plot_pure_state_list = None
+    # A dictionary of plot names where the key is the plot name and the value is a matplotlib Axes object with a set position and size within the figure
+    plot_mosaic_dict = None
+    # specify the plot mosaic layout
+    if probability_distribution_only:
+        # only plot the basis-state probability distribution. No phases or noise-induced pure states.
+        fig_gridspec = {
+            "bottom": 0.1,
+            "top": 0.95,
+            "left": 0.07,
+            "right": 0.99,
+            "wspace": 0.05,
+            "hspace": 0.09,
+        }
+        plot_mosaic_dict = fig.subplot_mosaic(
+            [
+                ["meas_probs", "meas_probs", "meas_probs", "meas_probs"],
+                ["meas_probs", "meas_probs", "meas_probs", "meas_probs"],
+            ],
+            gridspec_kw=fig_gridspec,
+        )
+    else:
+        if zero_noise:
+            # only plot the first and only (when no noise) pure state probability distribution.
+            fig_gridspec = {
+                "bottom": 0.1,
+                "top": 0.95,
+                "left": 0.07,
+                "right": 0.99,
+                "wspace": 0.05,
+                "hspace": 0.09,
+            }
+            plot_mosaic_dict = fig.subplot_mosaic(
+                [
+                    ["pure_state:0", "pure_state:0", "pure_state:0", "pure_state:0"],
+                    ["pure_state:0", "pure_state:0", "pure_state:0", "pure_state:0"],
+                ],
+                gridspec_kw=fig_gridspec,
+            )
+        else:
+            # Plot the probability distributions of the pure states in the mixed state
+            fig_gridspec = {
+                "bottom": 0.08,
+                "top": 0.95,
+                "left": 0.07,
+                "right": 0.99,
+                "wspace": 0.05,
+                "hspace": 0.09,
+            }
+            plot_mosaic_dict = fig.subplot_mosaic(
+                [
+                    ["pure_state:1", "pure_state:0", "pure_state:0", "pure_state:2"],
+                    ["pure_state:3", "pure_state:4", "pure_state:5", "pure_state:6"],
+                ],
+                gridspec_kw=fig_gridspec,
+            )
+    
+    num_qubits = (base_state_count - 1).bit_length()
+    x_values = [x for x in range(base_state_count)]
+    for plot_name, plot_axes in plot_mosaic_dict.items():
+    
+        pure_state_index = None
+        if plot_name.split(":")[0] == "pure_state":
+            pure_state_index = int(plot_name.split(":")[1])
+    
+        if plot_name == "meas_probs":
+            y_values = measured_probabilities
+        elif pure_state_index != None:
+            if pure_state_index < pure_probabilities.shape[0]:
+                y_values = pure_probabilities[pure_state_index, :]
+            else:
+                y_values = np.zeros(base_state_count)
+        else:
+            print("ERROR: plot_name not recognised: " + plot_name)
+            exit(1)
+    
+        bar_list = plot_mosaic_dict[plot_name].bar(x_values, y_values, width=0.5)
+    
+        # set colour of the bars based on the phase
+        if pure_state_index != None:
+            if pure_state_index < pure_probabilities.shape[0]:
+                for i, phase_angle in enumerate(pure_phase_angles[pure_state_index, :]):
+                    # Map phase angles from (-pi/2, pi/2] to (0, 1]
+                    colour_value = (phase_angle + np.pi) / (2 * np.pi)
+                    bar_list[i].set_color(cmap_phase(colour_value))
+    
+        plot_mosaic_dict[plot_name].set_xlim((-0.5, base_state_count - 1 + 0.5))
+        plot_mosaic_dict[plot_name].set_ylim([0, np.max(y_values)])
+        plot_mosaic_dict[plot_name].tick_params(axis='x', colors=tick_colour)
+        plot_mosaic_dict[plot_name].tick_params(axis='y', colors=tick_colour)
+        plot_mosaic_dict[plot_name].tick_params(axis='y', labelsize=20)
+        plot_mosaic_dict[plot_name].axes.xaxis.set_visible(False)
+        plot_mosaic_dict[plot_name].axes.yaxis.set_visible(False)
+    
+        if (zero_noise and pure_state_index == 0) or plot_name == "meas_probs":
+            plot_mosaic_dict[plot_name].axes.yaxis.set_visible(True)
+    
+        if pure_state_index == 1 or pure_state_index == 3:
+            plot_mosaic_dict[plot_name].axes.yaxis.set_visible(True)
+    
+        # Set the x ticks and tick labels for important subplots
+        if pure_state_index == 0 or plot_name == "meas_probs":
+            # if there are too many qubits to fit all of the x ticks, then only draw a limited number
+            if (zero_noise and num_qubits > 4) \
+                    or ((not zero_noise) and num_qubits > 3) \
+                    or (plot_name == "meas_probs" and num_qubits > 4):
+                x_ticks = [0]
+                x_ticks.append(int(base_state_count / 4.0))
+                x_ticks.append(int(2.0 * base_state_count / 4.0))
+                x_ticks.append(int(3.0 * base_state_count / 4.0))
+                x_ticks.append(int(base_state_count - 1))
+            else:
+                x_ticks = list(range(base_state_count))
+    
+            # basis states are labelled in binary
+            x_tick_labels = [bin(x)[2:].zfill(num_qubits)[::-1] for x in x_ticks]
+    
+            plot_mosaic_dict[plot_name].axes.xaxis.set_visible(True)
+            plot_mosaic_dict[plot_name].set_xticks(x_ticks)
+            plot_mosaic_dict[plot_name].set_xticklabels(x_tick_labels)
+            plot_mosaic_dict[plot_name].tick_params(axis='x', labelsize=14)
+    
+    # Add axis labels
+    fig.text(0.01, 
+                (fig_gridspec["top"] - fig_gridspec["bottom"])/2 + fig_gridspec["bottom"],
+                'Probability', 
+                va='center', 
+                rotation='vertical', 
+                fontsize=20
+            )
+    fig.text((fig_gridspec["right"] - fig_gridspec["left"])/2 + fig_gridspec["left"], 
+                0.035, 
+                'Quantum states', 
+                ha='center', 
+                fontsize=20
+            )
+    return fig
+
+def _plot_info_panel(output_manager: data_manager.DataManager,
+                     fig : Optional[matplotlib.figure.Figure],
+                     pure_probabilities: np.ndarray, 
+                     pure_phase_angles: np.ndarray, 
+                     fidelity: float, 
+                     sampled_state_number: int,
+                     qubit_count: int, 
+                     cmap_phase: matplotlib.colors.Colormap, 
+                     cmap_fidelity: matplotlib.colors.Colormap,
+                     tick_colour: Colour, 
+                     fidelity_line_colour: Colour,
+                     invert_colours: bool,  
+                     vpr: Optional[Union[float, Callable[[int], float]]],
+                     draw_phase_wheel: bool
+                     ) -> matplotlib.figure.Figure:
+    """Plot the information panel corresponding to the given sampled state number and save it as a .png.
+
+    Parameters
+    ----------
+        output_manager
+            Instance of DataManager for saving the figure.
+        fig
+            Matplotlib Figure instance to plot on. If None, a new figure is created.
+        pure_probabilities
+            A 2d array for the sampled state, where the array contains probabilities indexed by pure state number and basis state number.
+        pure_phase_angles
+            A 2d array for the sampled state, where the array contains phse angles indexed by pure state number and basis state number.
+        fidelity
+            The fidelity of the sampled state relative to the noiseless state.
+        sampled_state_number
+            The index number of the sampled state to be used when saving image to file. 
+        qubit_count
+            The number of qubits in the quantum state.
+        cmap_phase
+            A colourmap for the phase angle colours in the phase wheel. The colourmap should map normalised phase angles [0,1] to colours.
+        cmap_fidelity
+            A colourmap for the fidelity bar. The colourmap should map normalised phase angles [0,1] to colours.
+        tick_colour
+            The colour of the tick marks.
+        fidelity_line_colour
+            The colour of the line marker on the fidelity bar.
+        invert_colours
+            Whether the colours are being inverted. Used to ensure that the colours are correct when the colours are inverted.
+        vpr
+            Propotion of vertical space that the circuit will occupy. Can be a float or a function that maps qubit_count (int) to float.
+        draw_phase_wheel
+            If True, only plot the phase wheel.
+
+    Returns
+    -------
+        The figure containing the plot of the quantum state.
+    """
+    if vpr == None:
+        vpr = lambda n: 1.0 / 3.0
+    elif isinstance(vpr, float):
+        vpr_temp = vpr
+        vpr = lambda n: vpr_temp
+    elif not callable(vpr):
+        raise TypeError("vpr must be a float, None or a Callable[[int], float].")
+
+    probabilities_0 = list(pure_probabilities[0, :])
+    phase_angles_0 = list(pure_phase_angles[0, :])
+    tick_colour = convert_colour_to_float(tick_colour)
+    fidelity_line_colour = convert_colour_to_float(fidelity_line_colour)
+    
+    target_video_height_pixels = 1080
+    dpi = plt.rcParams['figure.dpi']
+    target_empty_circuit_height_pixels = target_video_height_pixels * (1 - vpr(qubit_count))
+    fig_height_inches = (1 - vpr(qubit_count)) * 13.5
+    fig_height_pixels = fig_height_inches * dpi
+    scale = target_empty_circuit_height_pixels / fig_height_pixels
+    
+    scaled_dpi = dpi * scale
+    
+    target_video_height_in_inches = convert_fig_pixels_to_inches(1080)
+
+    if fig == None:
+        fig = plt.figure(figsize = (4, (1 - vpr(qubit_count)) * 13.5), dpi = scaled_dpi)
+    
+    if draw_phase_wheel == True:
+        plot_mosaic_phase_wheel_dict = _plot_phase_wheel(fig, 
+                                                            probabilities_0,
+                                                            phase_angles_0,
+                                                            cmap_phase, 
+                                                            tick_colour, 
+                                                            invert_colours
+                                                        )
+    plot_mosaic_stat_bars_dict = _plot_stat_bars(fig, 
+                                                    fidelity,
+                                                    cmap_fidelity,  
+                                                    fidelity_line_colour, 
+                                                    tick_colour, 
+                                                    invert_colours
+                                                )
+    
+    plt.savefig(output_manager.get_path(f'info_panel_{sampled_state_number}.png'))
+    plt.close('all')
+    return fig

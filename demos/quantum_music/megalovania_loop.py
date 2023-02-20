@@ -1,5 +1,5 @@
-import quantum_music
-from quantum_music import make_music_video, get_depolarising_noise
+import qmuvi
+from qmuvi.quantum_simulation import get_simple_noise_model
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -146,4 +146,13 @@ while i < repeats:
 time_list = [(60,0),(60,0),(60,60),(60,120),(60,60),(60,60),(120,0),(60,0),(60,0),(60,0)]*4*repeats
 chromatic_G1 = lambda n: n + 31
 
-make_music_video(circ, "megalovania_loop", time_list, get_depolarising_noise(0.01, 0.02), [[81],[80]], note_map=chromatic_G1, invert_colours=True, fps=24, smooth_transitions=True)
+qmuvi.generate_qmuvi(circ, 
+                     "megalovania_loop", 
+                     noise_model = get_simple_noise_model(0.01, 0.02), 
+                     rhythm = time_list, 
+                     phase_instruments = [[81],[80]], 
+                     note_map = chromatic_G1,
+                     invert_colours = True, 
+                     fps = 24, 
+                     smooth_transitions = True
+                     )

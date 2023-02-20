@@ -1,5 +1,5 @@
-import quantum_music
-from quantum_music import make_music_video, get_instruments, get_depolarising_noise
+import qmuvi
+from qmuvi.quantum_simulation import get_simple_noise_model
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -119,4 +119,12 @@ time_list[len(time_list)-1] = [360,0]
 s = 2
 time_list = [[s*t for t in tt] for tt in time_list]
 
-make_music_video(c, "happy_bday_bassline", time_list, get_depolarising_noise(0.025, 0.045), [[75], get_instruments("pipe"), get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")], invert_colours=False, fps=60, smooth_transitions=True)
+qmuvi.generate_qmuvi(c, 
+                     "happy_bday_bassline", 
+                     noise_model = get_simple_noise_model(0.025, 0.045), 
+                     rhythm = time_list, 
+                     phase_instruments = [[75], get_instruments("pipe"), get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")], 
+                     invert_colours = False, 
+                     fps = 60, 
+                     smooth_transitions = True
+                     )

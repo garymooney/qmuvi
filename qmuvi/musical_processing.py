@@ -18,11 +18,33 @@ import subprocess
 import re
 import sys
 
-def note_map_chromatic_middle_c(n):
+def note_map_chromatic_middle_c(n: int) -> int:
+    """Maps the given integer `n` to a note in the chromatic scale. Starts from middle C.
+
+    Parameters
+    ----------
+    n
+        The integer to be mapped to a note.
+
+    Returns
+    -------
+        The note mapped to from `n`. Returns `n` + 60.
+    """
     return n + 60
 
 
-def note_map_c_major(n):
+def note_map_c_major(n: int) -> int:
+    """Maps the given integer `n` to a note in the C major scale. Starts from middle C.
+
+    Parameters
+    ----------
+    n
+        The integer to be mapped to a note.
+
+    Returns
+    -------
+        The note mapped to from `n`.
+    """
     C_MAJ = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24, 26, 28, 29, 31, 33, 35, 36, 38, 40, 41, 43, 45, 47, 48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65,
              67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84, 86, 88, 89, 91, 93, 95, 96, 98, 100, 101, 103, 105, 107, 108, 110, 112, 113, 115, 117, 119, 120, 122, 124, 125, 127]
     CURR_MODE = C_MAJ
@@ -36,7 +58,18 @@ def note_map_c_major(n):
     return note
 
 
-def note_map_f_minor(n):
+def note_map_f_minor(n: int) -> int:
+    """Maps the given integer `n` to a note in the F minor scale. Starts from middle C.
+
+    Parameters
+    ----------
+    n
+        The integer to be mapped to a note.
+
+    Returns
+    -------
+        The note mapped to from `n`.
+    """
     F_MIN = [5, 7, 8, 10, 12, 13, 15, 17, 19, 20, 22, 24, 25, 27, 29, 31, 32, 34, 36, 37, 39, 41, 43, 44, 46, 48,  49, 51, 53, 55, 56, 58, 60, 61, 63, 65, 67,
              68, 70, 72, 74, 75, 77, 79, 80, 82, 84, 86, 87, 89, 91, 92, 94, 96, 97, 99, 101, 103, 104, 106, 108, 109, 111, 113, 115, 116, 118, 120, 121, 123, 125, 127]
     CURR_MODE = F_MIN
@@ -50,28 +83,31 @@ def note_map_f_minor(n):
     return note
 
 
-def get_sound_data_from_density_matrix(density_matrix, default_pure_state_global_phasors, eps=1E-8):
-    """ Extracts a list of sound data from a density matrix by eigendecomposing it into a mixture of pure states
+def get_sound_data_from_density_matrix(density_matrix: np.ndarray, 
+                                       default_pure_state_global_phasors: Mapping[int, complex], 
+                                       eps: float = 1E-8
+                                       ) -> List[Tuple[float, Dict[int, Tuple[float, float]], List[float], List[float]]]:
+    """Extracts a list of sound data from a density matrix by eigendecomposing it into a mixture of pure states.
     
     Parameters
     ----------
         density_matrix
-            a density matrix in the form of a numpy array
+            A density matrix in the form of a numpy array.
         default_pure_state_global_phasors
-            a dictionary of default global phasors for each pure state in the density matrix. 
-            Used to keep the global phase consistent during eigendecompositions of different density matrices
+            A dictionary of default global phasors for each pure state in the density matrix. 
+            Used to keep the global phase consistent during eigendecompositions of different density matrices.
         eps
-            a small probability threshold. Used to filter out pure states and some basis states with negligible probability
+            A small probability threshold. Used to filter out pure states and some basis states with negligible probability.
     
     Returns
     ------- 
-        a list of sound data for pure states (under the condition pure_state_prob > eps) in the form of tuples, each tuple containing:
+        A list of sound data for pure states (under the condition pure_state_prob > eps) in the form of tuples, each tuple containing:
         (
          pure_state_prob: float, 
          pure_state_info: Dict[int basis_state_number, Tuple[float basis_state_prob, float basis_state_angle]], # where (basis_state_prob > eps)
          all_basis_state_probs: List[float basis_state_prob], 
          all_basis_state_angles: List[float basis_state_angle]
-        )
+        ).
     """
 
     sound_data = []
@@ -115,7 +151,7 @@ def get_sound_data_from_density_matrix(density_matrix, default_pure_state_global
 def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, 
                                  log_to_file: bool = False
                                  ) -> None:
-    """ Converts a MIDI file to a WAV file using the Timidity++ library.
+    """Converts a MIDI file to a WAV file using the Timidity++ library.
 
     This function takes the path to generated MIDI files and uses the Timidity++ library to 
     convert the files to a single WAV file. 
@@ -125,7 +161,7 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager,
         output_manager
             A data manager object for finding the MIDI files and handling the output file.
         log_to_file
-            Whether to log the output of the Timidity process to a file
+            Whether to log the output of the Timidity process to a file.
     
     Returns
     -------
@@ -199,8 +235,8 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager,
 
     def timidity_convert_subprocess(filename: str, 
                                     options_string: str, 
-                                    thread_results: Dict[int, subprocess.CompletedProcess], 
-                                    thread_errors: Dict[int, Any], 
+                                    thread_results: Mapping[int, subprocess.CompletedProcess], 
+                                    thread_errors: Mapping[int, Any], 
                                     thread_index: int
                                     ) -> None:
         try:
@@ -266,9 +302,8 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager,
     
     files = output_manager.glob(output_manager.default_name + '-*.wav')
     if len(files) > 1:
-        print("Combining tracks into a single .wav file...")
+        print("Mixing .wav track files to a single file...")
         mix_wav_files(files, output_manager)
-        print("Done combining tracks into a single .wav file")
 
 
 def mix_wav_files(file_paths: List[str], 
@@ -312,7 +347,7 @@ def mix_wav_files(file_paths: List[str],
         output_filename, codec='pcm_s16le', fps=44100)
 
 
-def convert_files_mid_to_wav_timidity_threading(file_paths: List[str], 
+def convert_files_mid_to_wav_timidity_threading(pathnames: List[str], 
                                                 options_string: str, 
                                                 timidity_convert_method: Callable[[str, str, Dict[int, subprocess.CompletedProcess], Dict[int, Any], int], None],
                                                 timeout: float = 8
@@ -326,7 +361,7 @@ def convert_files_mid_to_wav_timidity_threading(file_paths: List[str],
 
     Parameters
     ----------
-        file_paths
+        pathnames
             A list of file paths to MIDI files that will be converted to WAV format.
         options_string
             An options string to be passed to the TiMidity++ conversion function.
@@ -347,38 +382,35 @@ def convert_files_mid_to_wav_timidity_threading(file_paths: List[str],
     """
     output_wav_files = []
 
-    base_filenames = [os.path.splitext(
-        filename.replace("\\", "/"))[0] for filename in file_paths]
+    base_pathnames = [os.path.splitext(pathname.replace("\\", "/"))[0] for pathname in pathnames]
 
     # instantiate lists that store data from each thread
-    thread_results = [None] * len(file_paths)
-    thread_errors = [None] * len(file_paths)
+    thread_results = [None] * len(pathnames)
+    thread_errors = [None] * len(pathnames)
 
     # start a thread for each file to be converted
     threads = []
-    for file_index, file in enumerate(file_paths):
+    for file_index, file in enumerate(pathnames):
         t = threading.Thread(
             target=timidity_convert_method,
             name=f"timidity-{file_index}",
-            args=((base_filenames[file_index], options_string,
-                  thread_results, thread_errors, file_index))
+            args=((base_pathnames[file_index], 
+                   options_string,
+                   thread_results, 
+                   thread_errors, 
+                   file_index))
         )
         t.daemon = True
         threads.append(t)
         t.start()
 
-    if len(file_paths) > 1:
-        print("Converting tracks " + str(base_filenames) +
-              " to .wav using TiMidity++...")
-    else:
-        print("Converting " + str(base_filenames) +
-              ".mid to .wav using TiMidity++...")
+    print("Converting to .wav files using TiMidity++")
 
     # Wait for all threads to finish, with a timeout
     thread_has_timed_out = False
     for thread_index, t in enumerate(threads):
         t.join(timeout=timeout)
-        base_filename = base_filenames[thread_index]
+        base_filename = base_pathnames[thread_index]
         wav_file = base_filename + ".wav"
         if t.is_alive() and not os.path.isfile(wav_file):
             # thread is still running and .wav file was not created, a conversion timeout has occured
@@ -399,7 +431,7 @@ def convert_files_mid_to_wav_timidity_threading(file_paths: List[str],
 
     # Output any errors that may have occured within the threads
     for thread_index, thread_result in enumerate(thread_results):
-        filename = file_paths[thread_index]
+        filename = pathnames[thread_index]
         if thread_errors[thread_index] != None:
             # an error occured in the thread, show the error
             print(f"Errors in thread {thread_index}:")
@@ -414,15 +446,16 @@ def convert_files_mid_to_wav_timidity_threading(file_paths: List[str],
             print(f"\"{thread_result.stderr.decode().strip()}\"")
             print(f"")
 
-    if len(file_paths) == 1 and thread_has_timed_out == True:
+    if len(pathnames) == 1 and thread_has_timed_out == True:
         raise Exception(
-            f"ERROR: Thread timed out ({timeout}s) during timidity mid to wav conversion for the only file {file_paths[0]}")
+            f"ERROR: Thread timed out ({timeout}s) during timidity mid to wav conversion on the single file {pathnames[0]}")
 
     return output_wav_files
 
 def generate_midi_from_data(output_manager: data_manager.DataManager,
                             phase_instruments: List[List[int]] = [list(range(81, 89))], 
-                            note_map: Mapping[int, int] = note_map_chromatic_middle_c
+                            note_map: Callable[[int], int] = note_map_chromatic_middle_c,
+                            rhythm: Optional[List[Tuple[int, int]]] = None,
                            ) -> List[str]:
     """ Uses the state properties stored in the data files to create a song as a midi file (.mid).
     
@@ -435,14 +468,20 @@ def generate_midi_from_data(output_manager: data_manager.DataManager,
             Computational basis state phase determines which instrument from the collection is used.
         note_map
             Converts state number to a note number where 60 is middle C, by default note_map_chromatic_middle_c.
+        rhythm
+            A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second). 
+            If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0).
 
     Returns
     -------
         A list of file paths to the generated MIDI files.
     """
+    print("Generating MIDI track files...")
 
     sounds_list = output_manager.load_json(filename="sounds_list.json")
-    rhythm = output_manager.load_json(filename="rhythm.json")
+
+    if rhythm == None:
+        rhythm = [(240, 0)] * len(sounds_list)
 
     # format loaded data
     for sound_index in range(len(sounds_list)):

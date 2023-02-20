@@ -1,5 +1,5 @@
-import quantum_music
-from quantum_music import make_music_video, get_instruments
+import qmuvi
+from qmuvi.quantum_simulation import get_simple_noise_model
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -63,4 +63,13 @@ circ.h(3)
 circ.barrier()
 
 time_list = [[60,0]]*8+[[960,0]]+[[240,0]]*4+[[1920,0]]
-make_music_video(circ, "grover_Cmaj", time_list, None, [get_instruments("windband")], invert_colours=False, fps=60, smooth_transitions=True)
+
+qmuvi.generate_qmuvi(circ, 
+                     "grover_Cmaj", 
+                     noise_model = None, 
+                     rhythm = time_list, 
+                     phase_instruments = [qmuvi.get_instruments("windband")], 
+                     invert_colours = False, 
+                     fps = 60, 
+                     smooth_transitions = True
+                     )

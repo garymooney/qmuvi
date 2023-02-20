@@ -8,6 +8,9 @@ from qiskit import QuantumCircuit, transpile
 from qiskit.quantum_info import Statevector, Kraus, SuperOp
 from qiskit import Aer
 
+from typing import List
+import numpy as np
+
 # Import from Qiskit Aer noise module
 from qiskit.providers.aer.noise import (
     NoiseModel,
@@ -20,13 +23,19 @@ from qiskit.providers.aer.noise import (
 
 from qiskit.converters import circuit_to_dag
 
-def generate_simple_noise_model(single_qubit_gater_error, cnot_gate_error):
-    ''' Generates a simple noise model with depolarising errors on single qubit gates and CNOT gates
-    Args:
-        single_qubit_gater_error (float): The depolarising error to be applied to single qubit gates
-        cnot_gate_error (float): The depolarising error to be applied to CNOT gates
-    Returns:
-        noise_model (NoiseModel): The noise model to be applied to the simulation
+def get_simple_noise_model(single_qubit_gater_error: float, cnot_gate_error: float) -> NoiseModel:
+    ''' Generates a simple noise model with depolarising errors on single qubit gates and CNOT gates.
+    
+    Parameters
+    ----------
+        single_qubit_gater_error
+            The depolarising error to be applied to single qubit gates.
+        cnot_gate_error
+            The depolarising error to be applied to CNOT gates.
+
+    Returns
+    -------
+        The noise model to be applied to the simulation.
     '''
     
     noise_model = NoiseModel()
@@ -36,13 +45,19 @@ def generate_simple_noise_model(single_qubit_gater_error, cnot_gate_error):
     noise_model.add_all_qubit_quantum_error(cnot_gate_dep_error, ['cx'])
     return noise_model
 
-def sample_circuit_barriers(quantum_circuit, noise_model = None):
-    ''' Saves the state of the quantum circuit at each barrier in the simulation as a density matrix
-    Args:
-        quantum_circuit (QuantumCircuit): The quantum circuit to be simulated
-        noise_model (NoiseModel): The noise model to be applied to the simulation
-    Returns:
-        density_matrices (list): A list of the sampled density matrices
+def sample_circuit_barriers(quantum_circuit: QuantumCircuit, noise_model: NoiseModel = None) -> List[np.ndarray]:
+    '''Saves the state of the quantum circuit at each barrier in the simulation as a density matrix.
+    
+    Parameters
+    ----------
+        quantum_circuit
+            The quantum circuit to be simulated.
+        noise_model
+            The noise model to be applied to the simulation.
+
+    Returns
+    -------
+        density_matrices: A list of the sampled density matrices as 2d complex numpy arrays.
     '''
 
     if noise_model == None:

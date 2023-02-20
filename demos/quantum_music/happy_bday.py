@@ -1,5 +1,5 @@
-import quantum_music
-from quantum_music import make_music_video, get_instruments
+import qmuvi
+from qmuvi.quantum_simulation import get_simple_noise_model
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -66,4 +66,12 @@ time_list = [[80,0],[40,0],[120,0],[120,0],[120,0],[240,0],
              [80,0],[40,0],[120,0],[120,0],[120,0],[120,0],[120,0],
              [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],]
 
-make_music_video(circ, "happy_bday", time_list, None, [get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")], invert_colours=False, fps=24, smooth_transitions=True)
+qmuvi.generate_qmuvi(circ, 
+                     "happy_bday", 
+                     noise_model = None, 
+                     rhythm = time_list, 
+                     phase_instruments = [get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")], 
+                     invert_colours = False, 
+                     fps = 24, 
+                     smooth_transitions = True
+                     )
