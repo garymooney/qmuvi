@@ -23,26 +23,28 @@ from qiskit.providers.aer.noise import (
 
 from qiskit.converters import circuit_to_dag
 
-def get_simple_noise_model(single_qubit_gater_error: float, cnot_gate_error: float) -> NoiseModel:
-    ''' Generates a simple noise model with depolarising errors on single qubit gates and CNOT gates.
+def get_simple_noise_model(gate_error_rate_1q: float = 0.0, gate_error_rate_cnot: float = 0.0) -> NoiseModel:
+    '''Generates a simple noise model with depolarising errors on single qubit gates and CNOT gates.
     
     Parameters
     ----------
-        single_qubit_gater_error
+        gate_error_rate_1q
             The depolarising error to be applied to single qubit gates.
-        cnot_gate_error
+        gate_error_rate_cnot
             The depolarising error to be applied to CNOT gates.
 
     Returns
     -------
         The noise model to be applied to the simulation.
     '''
-    
     noise_model = NoiseModel()
-    single_qubit_dep_error = depolarizing_error(single_qubit_gater_error, 1)
-    noise_model.add_all_qubit_quantum_error(single_qubit_dep_error, ['u1', 'u2', 'u3'])
-    cnot_gate_dep_error = depolarizing_error(cnot_gate_error, 2)
-    noise_model.add_all_qubit_quantum_error(cnot_gate_dep_error, ['cx'])
+
+    gate_error_1q_depolarising = depolarizing_error(gate_error_rate_1q, 1)
+    noise_model.add_all_qubit_quantum_error(gate_error_1q_depolarising, ['u1', 'u2', 'u3'])
+
+    gate_error_cnot_depolarising = depolarizing_error(gate_error_rate_cnot, 2)
+    noise_model.add_all_qubit_quantum_error(gate_error_cnot_depolarising, ['cx'])
+
     return noise_model
 
 def sample_circuit_barriers(quantum_circuit: QuantumCircuit, noise_model: NoiseModel = None) -> List[np.ndarray]:

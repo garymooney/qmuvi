@@ -1,5 +1,6 @@
 import qmuvi
 from qmuvi.quantum_simulation import get_simple_noise_model
+from qmuvi.musical_processing import note_map_f_minor
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -68,7 +69,8 @@ qmuvi.generate_qmuvi(circ,
                      "grover_Fmin_seven_noisy", 
                      noise_model = get_simple_noise_model(0.01, 0.02), 
                      rhythm = time_list, 
-                     phase_instruments = [qmuvi.get_instruments("windband")], 
+                     instruments = [qmuvi.get_instrument_collection("windband")], 
+                     note_map = note_map_f_minor,
                      invert_colours = False, 
                      fps = 60, 
                      smooth_transitions = True

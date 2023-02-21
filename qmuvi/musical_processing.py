@@ -23,8 +23,8 @@ def note_map_chromatic_middle_c(n: int) -> int:
 
     Parameters
     ----------
-    n
-        The integer to be mapped to a note.
+        n
+            The integer to be mapped to a note.
 
     Returns
     -------
@@ -38,8 +38,8 @@ def note_map_c_major(n: int) -> int:
 
     Parameters
     ----------
-    n
-        The integer to be mapped to a note.
+        n
+            The integer to be mapped to a note.
 
     Returns
     -------
@@ -63,8 +63,8 @@ def note_map_f_minor(n: int) -> int:
 
     Parameters
     ----------
-    n
-        The integer to be mapped to a note.
+        n
+            The integer to be mapped to a note.
 
     Returns
     -------
@@ -82,6 +82,21 @@ def note_map_f_minor(n: int) -> int:
             note -= 1
     return note
 
+def note_map_c_major_arpeggio(n: int) -> int:
+    """Maps the given integer `n` to a note in the C major arpeggio. Starts from middle C.
+
+    Parameters
+    ----------
+        n
+            The integer to be mapped to a note.
+
+    Returns
+    -------
+        The note mapped to from `n`.
+    """
+    if (n + 1) % 3 == 0:
+        return (4 * n - 1) + 60
+    return (4 * n) + 60
 
 def get_sound_data_from_density_matrix(density_matrix: np.ndarray, 
                                        default_pure_state_global_phasors: Mapping[int, complex], 
@@ -453,8 +468,8 @@ def convert_files_mid_to_wav_timidity_threading(pathnames: List[str],
     return output_wav_files
 
 def generate_midi_from_data(output_manager: data_manager.DataManager,
-                            phase_instruments: List[List[int]] = [list(range(81, 89))], 
-                            note_map: Callable[[int], int] = note_map_chromatic_middle_c,
+                            instruments: List[List[int]] = [list(range(81, 89))], 
+                            note_map: Callable[[int], int] = note_map_c_major_arpeggio,
                             rhythm: Optional[List[Tuple[int, int]]] = None,
                            ) -> List[str]:
     """ Uses the state properties stored in the data files to create a song as a midi file (.mid).
@@ -463,11 +478,11 @@ def generate_midi_from_data(output_manager: data_manager.DataManager,
     ----------
         output_manager
             The DataManager object for the output folder.
-        phase_instruments
-            The collections of instruments for each pure state in the mixed state (up to 8 collections), by default [list(range(81, 89))].
+        instruments
+            The collections of instruments for each pure state in the mixed state (up to 8 collections).
             Computational basis state phase determines which instrument from the collection is used.
         note_map
-            Converts state number to a note number where 60 is middle C, by default note_map_chromatic_middle_c.
+            Converts state number to a note number where 60 is middle C.
         rhythm
             A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second). 
             If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0).
@@ -512,12 +527,12 @@ def generate_midi_from_data(output_manager: data_manager.DataManager,
         tracks.append(MidiTrack())
 
     # if less than the the track_count number of instruments are provided, then the last instrument will be used for the remaining tracks
-    phase_instruments_by_track = []
+    instruments_by_track = []
     for instrument_index in range(track_count):
-        if instrument_index < len(phase_instruments):
-            phase_instruments_by_track.append(phase_instruments[instrument_index])
+        if instrument_index < len(instruments):
+            instruments_by_track.append(instruments[instrument_index])
         else:
-            phase_instruments_by_track.append(phase_instruments[-1])
+            instruments_by_track.append(instruments[-1])
 
     for track in tracks:
         track.append(
@@ -528,7 +543,7 @@ def generate_midi_from_data(output_manager: data_manager.DataManager,
 
     # not sure where these numbers come from, might be from the GeneralMidi specification.
     available_channels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 15]
-    largest_track_instruments_count = max([len(instruments) for instruments in phase_instruments_by_track])
+    largest_track_instruments_count = max([len(instrument_list) for instrument_list in instruments_by_track])
     channels = [available_channels[instrument_index % len(available_channels)] for instrument_index in range(largest_track_instruments_count)]
     for rhythm_index, sound in enumerate(sounds_list):
         active_notes = []
@@ -569,15 +584,15 @@ def generate_midi_from_data(output_manager: data_manager.DataManager,
                 if velocity_128 > 127:
                     velocity_128 = 127
 
-                track_phase_instruments = phase_instruments_by_track[track_number]
+                track_instruments = instruments_by_track[track_number]
                 
                 # bound the angle between 0 and 2pi taking into consideration the periodic nature of the phase
-                note_angle_bounded = (note_angle + np.pi / len(track_phase_instruments)) % (2*np.pi)
+                note_angle_bounded = (note_angle + np.pi / len(track_instruments)) % (2*np.pi)
                 # convert the angle to a fraction of 2pi, resulting in a value in the range [0, 1)
                 note_angle_fraction = note_angle_bounded / (2*np.pi)
-                instrument_index = int(note_angle_fraction * len(track_phase_instruments))
+                instrument_index = int(note_angle_fraction * len(track_instruments))
 
-                instrument = track_phase_instruments[instrument_index]
+                instrument = track_instruments[instrument_index]
                 channel = channels[instrument_index]
                 # Set the instrument for the track
                 track.append(

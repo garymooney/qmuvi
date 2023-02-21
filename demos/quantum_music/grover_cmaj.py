@@ -1,5 +1,5 @@
 import qmuvi
-from qmuvi.quantum_simulation import get_simple_noise_model
+from qmuvi.musical_processing import note_map_c_major
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -68,7 +68,8 @@ qmuvi.generate_qmuvi(circ,
                      "grover_Cmaj", 
                      noise_model = None, 
                      rhythm = time_list, 
-                     phase_instruments = [qmuvi.get_instruments("windband")], 
+                     instruments = [qmuvi.get_instrument_collection("windband")], 
+                     note_map = note_map_c_major,
                      invert_colours = False, 
                      fps = 60, 
                      smooth_transitions = True

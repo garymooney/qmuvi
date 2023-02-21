@@ -308,12 +308,11 @@ def convert_fig_pixels_to_inches(pixels: float) -> float:
 def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit, 
                              output_manager: data_manager.DataManager, 
                              rhythm: Optional[List[Tuple[int, int]]], 
-                             phase_instruments: List[List[int]] = [list(range(81, 89))], 
                              invert_colours: bool = False, 
-                             fps: int = 60, 
+                             fps: int = 24, 
                              vpr: Optional[Union[float, Callable[[int], float]]] = 1.0 / 3.0, 
                              smooth_transitions: bool = True, 
-                             probability_distribution_only: bool = False
+                             show_measured_probabilities_only: bool = False
                              ) -> None:
     """Uses generated qMuVi data and wav file to generate a video (.mp4).
 
@@ -326,18 +325,15 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
         rhythm
             A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second). 
             If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0)
-        phase_instruments
-            The collections of instruments for each pure state in the mixed state (up to 8 collections).
-            Computational basis state phase determines which instrument from the collection is used.
         invert_colours
             Whether to render the video in dark mode.
         fps
             The frames per second of the output video. 
         vpr
-            Propotion of vertical space that the circuit will occupy. Can be a float or a function that maps qubit_count (int) to float.
+            Vertical proportion ratio. The propotion of vertical space that the circuit will occupy. Can be a float or a function that maps qubit_count (int) to float.
         smooth_transitions
             Whether to animate the plots by interpolating between qMuVi data samples. Significantly increases render time.
-        probability_distribution_only
+        show_measured_probabilities_only
             Whether to only plot the basis state probabilities.
     """
 
@@ -467,7 +463,7 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
                          fidelity_line_colour,
                          invert_colours,  
                          vpr,
-                         not probability_distribution_only
+                         not show_measured_probabilities_only
                         )
 
         # histograms
@@ -521,7 +517,7 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
                                                tick_colour,
                                                vpr,
                                                zero_noise,
-                                               probability_distribution_only
+                                               show_measured_probabilities_only
                                               )
                 return mplfig_to_npimage(anim_fig)
 
@@ -542,7 +538,7 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
                                             tick_colour,
                                             vpr,
                                             zero_noise,
-                                            probability_distribution_only
+                                            show_measured_probabilities_only
                                            )
 
             frame_image = mplfig_to_npimage(anim_fig)
@@ -969,7 +965,7 @@ def _plot_quantum_state(fig: Optional[matplotlib.figure.Figure],
                         tick_colour: Colour,
                         vpr: Optional[Union[float, Callable[[int], float]]],
                         zero_noise: bool, 
-                        probability_distribution_only: bool
+                        show_measured_probabilities_only: bool
                        ) -> matplotlib.figure.Figure:
     """Plots the quantum state for given probability and phase distributions.
 
@@ -997,7 +993,7 @@ def _plot_quantum_state(fig: Optional[matplotlib.figure.Figure],
             Propotion of vertical space that the circuit will occupy. Can be a float or a function that maps qubit_count (int) to float.
         zero_noise
             Whether to only plot the data for the single pure state (no noise).
-        probability_distribution_only
+        show_measured_probabilities_only
             Whether to only plot the basis-state probability distribution.
 
     Returns
@@ -1055,7 +1051,7 @@ def _plot_quantum_state(fig: Optional[matplotlib.figure.Figure],
     # A dictionary of plot names where the key is the plot name and the value is a matplotlib Axes object with a set position and size within the figure
     plot_mosaic_dict = None
     # specify the plot mosaic layout
-    if probability_distribution_only:
+    if show_measured_probabilities_only:
         # only plot the basis-state probability distribution. No phases or noise-induced pure states.
         fig_gridspec = {
             "bottom": 0.1,
