@@ -26,6 +26,6 @@ qmuvi.generate_qmuvi_music(circ,
                            "example_music_only", 
                            noise_model = get_simple_noise_model(0.02, 0.05), 
                            rhythm = [(120, 60)]*8, 
-                           phase_instruments = [[57], qmuvi.get_instruments('tuned_perc')], 
+                           phase_instruments = [[57], qmuvi.get_instrument_collection('tuned_perc')], 
                            note_map = chromatic_middle_c
                            )

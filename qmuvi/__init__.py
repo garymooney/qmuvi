@@ -2,7 +2,7 @@ from . import video_generation
 from . import musical_processing
 from . import quantum_simulation
 from . import data_manager
-from .musical_processing import note_map_chromatic_middle_c, note_map_c_major, note_map_f_minor
+from .musical_processing import note_map_c_major_arpeggio
 
 import platform
 import sys
@@ -24,8 +24,8 @@ from qiskit.providers.aer.noise import (
 
 __version__ = "0.1.0"
 
-def get_instruments(instruments_name: str) -> List[int]:
-    """Returns a list of instruments from the given instrument name. The instruments are int values corresponding to the General MIDI standard.
+def get_instrument_collection(collection_name: str) -> List[int]:
+    """Returns a list of instruments as ints defined by the General MIDI standard.
 
     Instrument collections:
         'piano': list(range(1,9)),
@@ -48,12 +48,12 @@ def get_instruments(instruments_name: str) -> List[int]:
 
     Parameters
     ----------
-        instruments_name
+        collection_name
             The name of the instrument collection.
 
     Returns
     -------
-        A list of instruments from the given instrument name.
+        A list of instruments from the given instrument collection name.
     """
     instrument_dict = {'piano': list(range(1, 9)),
                        'tuned_perc': list(range(9, 17)),
@@ -72,21 +72,21 @@ def get_instruments(instruments_name: str) -> List[int]:
                        'percussive': list(range(113, 121)),
                        'sound_effects': list(range(120, 128)),
                        'windband': [74, 69, 72, 67, 57, 58, 71, 59]}
-    return instrument_dict[instruments_name]
+    return instrument_dict[collection_name]
 
 # TODO: make rhythm units of seconds with 480 units of precision rather than units of ticks.
 def generate_qmuvi(quantum_circuit: QuantumCircuit, 
                    qmuvi_name: str, 
                    noise_model: Optional[NoiseModel] = None, 
                    rhythm: Optional[List[Tuple[int, int]]] = None, 
-                   phase_instruments: List[List[int]] = [list(range(81, 89))], 
-                   note_map: Callable[[int], int] = note_map_chromatic_middle_c, 
+                   instruments: Union[List[List[int]], List[int]] = [list(range(81, 89))], 
+                   note_map: Callable[[int], int] = note_map_c_major_arpeggio, 
                    invert_colours: bool = False, 
-                   fps: int = 60, 
+                   fps: int = 24, 
                    vpr: Optional[Union[float, Callable[[int], float]]] = 1.0 / 3.0, 
                    smooth_transitions: bool = True, 
                    log_to_file: bool = False, 
-                   probability_distribution_only: bool = False
+                   show_measured_probabilities_only: bool = False
                   ) -> None:
     """Samples the quantum circuit at every barrier and uses the state properties to create a music video (.mp4).
     
@@ -97,15 +97,20 @@ def generate_qmuvi(quantum_circuit: QuantumCircuit,
         name
             The name of the qMuVi.
         noise_model
-            A qiskit NoiseModel. If None then no noise will be used in the simulations.
+            To sample quantum states, qMuVi uses the qiskit AerSimulator to simulate the circuits. A NoiseModel can be 
+            passed to the simulator to include noise in the computations, which is translated to the generated output in 
+            qMuVi. If None, then no noise will be used in the simulations.
         rhythm
-            A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second). 
-            If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0).
-        phase_instruments
+            A is a list of tuples in the form (sound_time, rest_time), one for each qmuvi sampled state in the circuit. 
+            The sound_time is how long the sound will play for and the rest_time is the wait time afterwards 
+            before playing the next sound. Times are in units of ticks  where 480 ticks is 1 second. 
+            If None then each sound will be assigned (240, 0).
+        instruments
             The collections of instruments for each pure state in the mixed state (up to 8 collections) (defaults to 'synth_lead').
             Computational basis state phase determines which instrument from the collection is used.
         note_map
-            Converts state number to a note number where 60 is middle C.
+            A callable object that maps state numbers to note numbers. The note map is used to convert the basis state numbers to 
+            the note number in the MIDI. A note number of 60 is middle C.
         invert_colours
             Whether to render the video in dark mode.
         fps
@@ -116,14 +121,13 @@ def generate_qmuvi(quantum_circuit: QuantumCircuit,
             Whether to smoothly animate between histogram frames. Significantly increased render time.
         log_to_file
             Whether to output the timidity synth midi conversion log files.
-        probability_distribution_only
-            Whether to only render the probability distribution in the video.
+        show_measured_probabilities_only
+            Whether to only show the total basis state measurement probability distribution in the video.
 
     Returns
     -------
         This function does not return a value. The resulting output files are saved in a folder in the current working directory.
     """
-    print("generate_qmuvi")
     if vpr == None:
         vpr = lambda n: 1.0 / 3.0
     elif isinstance(vpr, float):
@@ -131,6 +135,16 @@ def generate_qmuvi(quantum_circuit: QuantumCircuit,
         vpr = lambda n: vpr_temp
     elif not callable(vpr):
         raise TypeError("vpr must be a float, None or a Callable[[int], float].")
+
+    if is_instance(instruments, list) and is_instance(instruments[0], list):
+        if len(instruments) > 8:
+            raise ValueError("The maximum number of instrument collections is 8.")
+    elif is_instance(instruments, list) and is_instance(instruments[0], int):
+        instruments = [instruments]
+    else:
+        raise TypeError("instruments must be a list of lists of ints or a list of ints.")
+
+    
 
     output_path = data_manager.get_unique_pathname(qmuvi_name + "-output", os.getcwd())
     output_manager = data_manager.DataManager(output_path, default_name=qmuvi_name)
@@ -146,7 +160,7 @@ def generate_qmuvi(quantum_circuit: QuantumCircuit,
 
     # generate midi files from data
     mid_files = musical_processing.generate_midi_from_data(output_manager, 
-                                                           phase_instruments = phase_instruments, 
+                                                           instruments = instruments, 
                                                            note_map = note_map,
                                                            rhythm = rhythm
                                                            )
@@ -158,12 +172,11 @@ def generate_qmuvi(quantum_circuit: QuantumCircuit,
     video_generation.generate_video_from_data(quantum_circuit, 
                                               output_manager = output_manager, 
                                               rhythm = rhythm, 
-                                              phase_instruments = phase_instruments, 
                                               invert_colours = invert_colours, 
                                               fps = fps, 
                                               vpr = vpr, 
                                               smooth_transitions = smooth_transitions, 
-                                              probability_distribution_only = probability_distribution_only
+                                              show_measured_probabilities_only = show_measured_probabilities_only
                                               )
 
 def generate_qmuvi_data(quantum_circuit: QuantumCircuit, 
@@ -256,8 +269,8 @@ def generate_qmuvi_music(quantum_circuit: QuantumCircuit,
                         qmuvi_name: str, 
                         noise_model: NoiseModel = None, 
                         rhythm: Optional[List[Tuple[int, int]]] = None, 
-                        phase_instruments: List[List[int]] = [list(range(81, 89))], 
-                        note_map: Callable[[int], int] = note_map_chromatic_middle_c
+                        instruments: List[List[int]] = [list(range(81, 89))], 
+                        note_map: Callable[[int], int] = note_map_c_major_arpeggio
                        ):
     """Samples the quantum circuit at every barrier and uses the state properties to create a song (.wav).
     
@@ -270,15 +283,14 @@ def generate_qmuvi_music(quantum_circuit: QuantumCircuit,
         noise_model
             A qiskit NoiseModel. If None then no noise will be used in the simulations.
         rhythm
-            A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second). 
-            If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0)
-        phase_instruments
+            A list of tuples for the sound and rest times of each played sound in units of ticks (480 ticks is 1 second). 
+            If None, then for each sample, (sound_time, rest_time) = (240, 0)
+        instruments
             The collections of instruments for each pure state in the mixed state (up to 8 collections) (defaults to 'synth_lead').
             Computational basis state phase determines which instrument from the collection is used.
         note_map
             Converts state number to a note number where 60 is middle C.
     """
-
     output_path = data_manager.get_unique_pathname(qmuvi_name + "-output", os.getcwd())
     output_manager = data_manager.DataManager(output_path, default_name=qmuvi_name)
 
@@ -293,7 +305,7 @@ def generate_qmuvi_music(quantum_circuit: QuantumCircuit,
 
     # generate midi files from data
     mid_files = musical_processing.generate_midi_from_data(output_manager, 
-                                                           phase_instruments = phase_instruments, 
+                                                           instruments = instruments, 
                                                            note_map = note_map,
                                                            rhythm = rhythm
                                                            )
@@ -307,14 +319,13 @@ def generate_qmuvi_video(quantum_circuit: QuantumCircuit,
                          output_manager: data_manager.DataManager, 
                          rhythm: Optional[List[Tuple[int, int]]] = None,
                          noise_model: NoiseModel = None, 
-                         phase_instruments: List[List[int]] = [list(range(81, 89))], 
-                         note_map: Callable[[int], int] = note_map_chromatic_middle_c, 
+                         note_map: Callable[[int], int] = note_map_c_major_arpeggio, 
                          invert_colours: bool = False, 
                          fps: int = 60, 
                          vpr: Optional[Union[float, Callable[[int], float]]] = 1.0 / 3.0, 
                          smooth_transitions: bool = True, 
                          phase_marker: bool = True, 
-                         probability_distribution_only: bool = False
+                         show_measured_probabilities_only: bool = False
                          ):
     """Samples the quantum circuit at every barrier and uses the state properties to create a silent video (.mp4). No music is generated using this method.
     
@@ -329,9 +340,6 @@ def generate_qmuvi_video(quantum_circuit: QuantumCircuit,
             If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0).
         noise_model
              qiskit NoiseModel. If None then no noise will be used in the simulations.
-        phase_instruments
-            The collections of instruments for each pure state in the mixed state (up to 8 collections).
-            Computational basis state phase determines which instrument from the collection is used.
         note_map
             Converts state number to a note number where 60 is middle C.
         invert_colours
@@ -345,7 +353,6 @@ def generate_qmuvi_video(quantum_circuit: QuantumCircuit,
         phase_marker
             Whether to draw lines on the phase wheel indicating phases of the primary pure state.
     """
-    print("generate_qmuvi_video")
     if vpr == None:
         vpr = lambda n: 1.0 / 3.0
     elif isinstance(vpr, float):
@@ -367,12 +374,11 @@ def generate_qmuvi_video(quantum_circuit: QuantumCircuit,
     video_generation.generate_video_from_data(quantum_circuit, 
                                               output_manager = output_manager, 
                                               rhythm = rhythm, 
-                                              phase_instruments = phase_instruments, 
                                               invert_colours = invert_colours, 
                                               fps = fps, 
                                               vpr = vpr, 
                                               smooth_transitions = smooth_transitions, 
                                               phase_marker = phase_marker, 
-                                              probability_distribution_only = probability_distribution_only
+                                              show_measured_probabilities_only = show_measured_probabilities_only
                                               )
     

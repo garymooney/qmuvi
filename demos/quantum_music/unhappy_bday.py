@@ -1,5 +1,6 @@
 import qmuvi
 from qmuvi.quantum_simulation import get_simple_noise_model
+from qmuvi.musical_processing import note_map_chromatic_middle_c
 import qiskit
 from qiskit import QuantumCircuit
 
@@ -70,7 +71,8 @@ qmuvi.generate_qmuvi(circ,
                      "unhappy_bday", 
                      noise_model = get_simple_noise_model(0.2, 0.4), 
                      rhythm = time_list, 
-                     phase_instruments = [get_instruments("pipe"), get_instruments("reed"), get_instruments("brass"), get_instruments("organ")], 
+                     instruments = [qmuvi.get_instrument_collection("pipe"), qmuvi.get_instrument_collection("reed"), qmuvi.get_instrument_collection("brass"), qmuvi.get_instrument_collection("organ")], 
+                     note_map = note_map_chromatic_middle_c,
                      invert_colours = False, 
                      fps = 24, 
                      smooth_transitions = True
