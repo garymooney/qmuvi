@@ -268,10 +268,10 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager,
                 file_handler.setFormatter(formatter)
                 log.addHandler(file_handler)
 
+            # Get the absolute path of the package
+            package_path = os.path.dirname(os.path.abspath(__file__))
+            
             if platform.system() == 'Windows':
-                # Get the absolute path of the package
-                package_path = os.path.dirname(os.path.abspath(__file__))
-
                 # Join the path to the binary file
                 binary_path = os.path.join(
                     package_path, '..', 'third-party', 'binaries', 'TiMidity-2.15.0', 'windows', 'timidity.exe')
