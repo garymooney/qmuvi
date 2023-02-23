@@ -270,8 +270,6 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager,
 
             # Get the absolute path of the package
             package_path = os.path.dirname(os.path.abspath(__file__))
-
-            command_string = " ".join(command)
             
             shell = False
             if platform.system() == 'Windows':
@@ -290,8 +288,7 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager,
                 f'{filename}.mid'
             ]
 
-            if platform.system() == 'Windows':
-                command_string = " ".join(command)
+            command_string = " ".join(command)
 
             if log_to_file == True:
                 log.info(f"{platform.system()}")

@@ -478,6 +478,7 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
 
         target_video_height_in_inches = convert_fig_pixels_to_inches(1080)
         anim_fig = plt.figure(figsize=(20, (1 - vpr(qubit_count)) * 13.5), dpi = scaled_dpi)
+        anim_fig.set_dpi(scaled_dpi)
 
         if smooth_transitions == True:
 
@@ -562,9 +563,9 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
     for file_index, file in enumerate(paths):
         frame_time = (rhythm[file_index][0] + rhythm[file_index][1]) / 480.0
         info_panel_clip = ImageClip(file).set_duration(frame_time).resize(height = plot_clips[file_index].size[1])
-        
+        print(plot_clips[file_index].size[1])
         plot_clips[file_index] = clips_array([[plot_clips[file_index], info_panel_clip]], bg_color=bg_color)
-
+    exit()
     plot_info_clip = concatenate(plot_clips, method="compose")
 
     # for target height 1080 pixels, the plot_info_clip should now be 1920 x 720 pixels
@@ -1263,21 +1264,22 @@ def _plot_info_panel(output_manager: data_manager.DataManager,
 
     if fig == None:
         fig = plt.figure(figsize = (4, (1 - vpr(qubit_count)) * 13.5), dpi = scaled_dpi)
+        fig.set_dpi(scaled_dpi)
     
     if draw_phase_wheel == True:
         plot_mosaic_phase_wheel_dict = _plot_phase_wheel(fig, 
-                                                            probabilities_0,
-                                                            phase_angles_0,
-                                                            cmap_phase, 
-                                                            tick_colour, 
-                                                            invert_colours
+                                                         probabilities_0,
+                                                         phase_angles_0,
+                                                         cmap_phase, 
+                                                         tick_colour, 
+                                                         invert_colours
                                                         )
     plot_mosaic_stat_bars_dict = _plot_stat_bars(fig, 
-                                                    fidelity,
-                                                    cmap_fidelity,  
-                                                    fidelity_line_colour, 
-                                                    tick_colour, 
-                                                    invert_colours
+                                                 fidelity,
+                                                 cmap_fidelity,  
+                                                 fidelity_line_colour, 
+                                                 tick_colour, 
+                                                 invert_colours
                                                 )
     
     plt.savefig(output_manager.get_path(f'info_panel_{sampled_state_number}.png'))
