@@ -563,9 +563,9 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
     for file_index, file in enumerate(paths):
         frame_time = (rhythm[file_index][0] + rhythm[file_index][1]) / 480.0
         info_panel_clip = ImageClip(file).set_duration(frame_time).resize(height = plot_clips[file_index].size[1])
-        print(plot_clips[file_index].size[1])
+
         plot_clips[file_index] = clips_array([[plot_clips[file_index], info_panel_clip]], bg_color=bg_color)
-    exit()
+
     plot_info_clip = concatenate(plot_clips, method="compose")
 
     # for target height 1080 pixels, the plot_info_clip should now be 1920 x 720 pixels
