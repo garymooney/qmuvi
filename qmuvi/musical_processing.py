@@ -273,6 +273,7 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager,
 
             command_string = " ".join(command)
             
+            shell = False
             if platform.system() == 'Windows':
                 # Join the path to the binary file
                 binary_path = os.path.join(
@@ -280,6 +281,7 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager,
             else:
                 # Assume the binary is in the PATH on other platforms (installable on MacOS)
                 binary_path = 'timidity'
+                shell = True
 
             command = [
                 binary_path,
@@ -287,7 +289,7 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager,
                 f'-o {filename}.wav',
                 f'{filename}.mid'
             ]
-            
+
             if platform.system() == 'Windows':
                 command_string = " ".join(command)
 
@@ -302,7 +304,7 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager,
                 log.debug(f"executing subprocess command: {command_string}")
 
             thread_results[thread_index] = subprocess.run(
-                command_string, cwd=package_path, capture_output=True, check=True)
+                command_string, cwd=package_path, capture_output=True, check=True, shell=shell)
             
             if log_to_file == True:
                 log.debug(f"completed subprocess")
