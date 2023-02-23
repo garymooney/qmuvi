@@ -136,10 +136,10 @@ def generate_qmuvi(quantum_circuit: QuantumCircuit,
     elif not callable(vpr):
         raise TypeError("vpr must be a float, None or a Callable[[int], float].")
 
-    if is_instance(instruments, list) and is_instance(instruments[0], list):
+    if isinstance(instruments, list) and isinstance(instruments[0], list):
         if len(instruments) > 8:
             raise ValueError("The maximum number of instrument collections is 8.")
-    elif is_instance(instruments, list) and is_instance(instruments[0], int):
+    elif isinstance(instruments, list) and isinstance(instruments[0], int):
         instruments = [instruments]
     else:
         raise TypeError("instruments must be a list of lists of ints or a list of ints.")
