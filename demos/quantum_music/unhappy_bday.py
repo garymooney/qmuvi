@@ -1,8 +1,13 @@
+import qiskit
+from qiskit import QuantumCircuit
+
+# Add the qmuvi path so that we can import qmuvi (if you have installed qmuvi, you can skip this step)
+import sys
+sys.path.append(r"../..")
 import qmuvi
 from qmuvi.quantum_simulation import get_simple_noise_model
 from qmuvi.musical_processing import note_map_chromatic_middle_c
-import qiskit
-from qiskit import QuantumCircuit
+
 
 circ = QuantumCircuit(4)
 

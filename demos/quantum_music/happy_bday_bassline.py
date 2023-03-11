@@ -1,14 +1,19 @@
-import qmuvi
-from qmuvi.quantum_simulation import get_simple_noise_model
-from qmuvi.musical_processing import note_map_chromatic_middle_c
 import qiskit
 from qiskit import QuantumCircuit
 
-repeats = 2
+# Add the qmuvi path so that we can import qmuvi (if you have installed qmuvi, you can skip this step)
+import sys
+sys.path.append(r"../..")
+import qmuvi
+from qmuvi.quantum_simulation import get_simple_noise_model
+from qmuvi.musical_processing import note_map_chromatic_middle_c
+
+
+loop_repeats = 2
 
 c = QuantumCircuit(5)
 
-for i in range(repeats):
+for i in range(loop_repeats):
     if i==0:
         c.x(2)
         c.x(3)
@@ -110,12 +115,12 @@ for i in range(repeats):
         c.x(0)
 
 
-time_list = [[80,0],[40,0],[120,0],[120,0],[120,0],[240,0],
-             [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],
-             [80,0],[40,0],[120,0],[120,0],[120,0],[120,0],[120,0],
-             [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],]*repeats
+time_list = [[80, 0], [40, 0], [120, 0], [120, 0], [120, 0], [240, 0],
+             [80, 0], [40, 0], [120, 0], [120, 0], [120, 0], [240, 0],
+             [80, 0], [40, 0], [120, 0], [120, 0], [120, 0], [120, 0], [120, 0],
+             [80, 0], [40, 0], [120, 0], [120, 0], [120, 0], [240, 0]] * loop_repeats
 
-time_list[len(time_list)-1] = [360,0]
+time_list[len(time_list)-1] = [360, 0]
 # slow down by factor s
 s = 2
 time_list = [[s*t for t in tt] for tt in time_list]
@@ -127,6 +132,6 @@ qmuvi.generate_qmuvi(c,
                      instruments = [[75], qmuvi.get_instrument_collection("pipe"), qmuvi.get_instrument_collection("pipe"), qmuvi.get_instrument_collection("reed"), qmuvi.get_instrument_collection("brass"), qmuvi.get_instrument_collection("organ")], 
                      note_map = note_map_chromatic_middle_c,
                      invert_colours = False, 
-                     fps = 60, 
+                     fps = 24, 
                      smooth_transitions = True
                      )

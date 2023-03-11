@@ -1,18 +1,24 @@
-import qmuvi
-from qmuvi.quantum_simulation import get_simple_noise_model
 import qiskit
 from qiskit import QuantumCircuit
 
-repeats = 8
+# Add the qmuvi path so that we can import qmuvi (if you have installed qmuvi, you can skip this step)
+import sys
+sys.path.append(r"../..")
+import qmuvi
+from qmuvi.quantum_simulation import get_simple_noise_model
+
+
+loop_repeats = 8
 
 circ = QuantumCircuit(5)
+
 circ.x(0)
 circ.x(1)
 circ.x(2)
 circ.h(4)
 circ.cx(4,2)
 i = 0
-while i < repeats:
+while i < loop_repeats:
     i += 1
     circ.barrier()
     circ.barrier()
@@ -143,7 +149,7 @@ while i < repeats:
         circ.cx(4,0)
 
 
-time_list = [(60,0),(60,0),(60,60),(60,120),(60,60),(60,60),(120,0),(60,0),(60,0),(60,0)]*4*repeats
+time_list = [(60,0),(60,0),(60,60),(60,120),(60,60),(60,60),(120,0),(60,0),(60,0),(60,0)] * 4 * loop_repeats
 chromatic_G1 = lambda n: n + 31
 
 qmuvi.generate_qmuvi(circ, 

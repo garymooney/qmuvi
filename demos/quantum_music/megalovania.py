@@ -1,9 +1,15 @@
-import qmuvi
-from qmuvi.quantum_simulation import get_simple_noise_model
 import qiskit
 from qiskit import QuantumCircuit
 
+# Add the qmuvi path so that we can import qmuvi (if you have installed qmuvi, you can skip this step)
+import sys
+sys.path.append(r"../..")
+import qmuvi
+from qmuvi.quantum_simulation import get_simple_noise_model
+
+
 circ = QuantumCircuit(5)
+
 circ.x(0)
 circ.x(1)
 circ.x(2)
