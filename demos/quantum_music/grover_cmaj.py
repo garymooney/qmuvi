@@ -1,10 +1,14 @@
-import qmuvi
-from qmuvi.musical_processing import note_map_c_major
 import qiskit
 from qiskit import QuantumCircuit
-
-
 from qiskit.circuit.library import MCMT
+
+# Add the qmuvi path so that we can import qmuvi (if you have installed qmuvi, you can skip this step)
+import sys
+sys.path.append(r"../..")
+import qmuvi
+from qmuvi.musical_processing import note_map_c_major
+
+
 circ = QuantumCircuit(4)
 
 # Equal superposition
@@ -71,6 +75,6 @@ qmuvi.generate_qmuvi(circ,
                      instruments = [qmuvi.get_instrument_collection("windband")], 
                      note_map = note_map_c_major,
                      invert_colours = False, 
-                     fps = 60, 
+                     fps = 24, 
                      smooth_transitions = True
                      )

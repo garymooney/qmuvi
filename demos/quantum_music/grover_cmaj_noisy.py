@@ -1,11 +1,15 @@
+import qiskit
+from qiskit import QuantumCircuit
+from qiskit.circuit.library import MCMT
+
+# Add the qmuvi path so that we can import qmuvi (if you have installed qmuvi, you can skip this step)
+import sys
+sys.path.append(r"../..")
 import qmuvi
 from qmuvi.quantum_simulation import get_simple_noise_model
 from qmuvi.musical_processing import note_map_c_major
-import qiskit
-from qiskit import QuantumCircuit
 
 
-from qiskit.circuit.library import MCMT
 circ = QuantumCircuit(4)
 
 # Equal superposition
@@ -66,16 +70,12 @@ circ.barrier()
 time_list = [[60,0]]*8+[[960,0]]+[[240,0]]*4+[[1920,0]]
 
 instruments = []
-#instruments.append([57])
 instruments.append(qmuvi.get_instrument_collection("windband"))
 instruments.append(qmuvi.get_instrument_collection("windband"))
 instruments.append(qmuvi.get_instrument_collection("ethnic"))
 instruments.append(qmuvi.get_instrument_collection("ethnic"))
 instruments.append(qmuvi.get_instrument_collection("percussive"))
 instruments.append(qmuvi.get_instrument_collection("sound_effects"))
-#make_music_midi(circ, "grover_Cmaj_noisy", time_list, get_simple_depolarising_noise_model(0.1, 0.2), instruments)
-#convert_midi_to_wav_vlc("grover_Cmaj_noisy/grover_Cmaj_noisy")
-#convert_midi_to_wav_timidity("grover_Cmaj_noisy/grover_Cmaj_noisy")
 
 qmuvi.generate_qmuvi(circ, 
                      "grover_Cmaj_noisy", 
@@ -84,6 +84,6 @@ qmuvi.generate_qmuvi(circ,
                      instruments = instruments, 
                      note_map = note_map_c_major,
                      invert_colours = True, 
-                     fps =  60, 
+                     fps =  15, 
                      smooth_transitions = False
                      )

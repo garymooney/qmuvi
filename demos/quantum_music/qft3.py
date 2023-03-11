@@ -1,11 +1,17 @@
-import qmuvi
-from qmuvi.quantum_simulation import get_simple_noise_model
-from qmuvi.musical_processing import note_map_c_major_arpeggio
 import qiskit
 from qiskit import QuantumCircuit
 from numpy import pi
 
+# Add the qmuvi path so that we can import qmuvi (if you have installed qmuvi, you can skip this step)
+import sys
+sys.path.append(r"../..")
+import qmuvi
+from qmuvi.quantum_simulation import get_simple_noise_model
+from qmuvi.musical_processing import note_map_c_major_arpeggio
+
+
 circ = QuantumCircuit(3)
+
 circ.x(0)
 circ.x(1)
 circ.barrier()
@@ -40,6 +46,6 @@ qmuvi.generate_qmuvi(circ,
                      instruments = instruments, 
                      note_map = note_map_c_major_arpeggio,
                      invert_colours = True, 
-                     fps = 60, 
+                     fps = 24, 
                      smooth_transitions = True
                      )
