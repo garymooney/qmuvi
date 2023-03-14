@@ -246,6 +246,8 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager,
     # (regular: 0, linear: 1, ideal: ~1.661, GS: ~2)
     options.append("--volume-curve=1.661")
     # options.append("--module=4")
+    options.append("--config-file=../third-party/resources/timidity/timidity.cfg")
+    
     options_string = " ".join(options)
 
     def timidity_convert_subprocess(filename: str, 
@@ -272,36 +274,64 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager,
             package_path = os.path.dirname(os.path.abspath(__file__))
             
             shell = False
-            if platform.system() == 'Windows':
-                # Join the path to the binary file
-                binary_path = os.path.join(
-                    package_path, '..', 'third-party', 'binaries', 'TiMidity-2.15.0', 'windows', 'timidity.exe')
-            else:
-                # Assume the binary is in the PATH on other platforms (installable on MacOS)
-                binary_path = 'timidity'
-                shell = True
-
-            command = [
-                binary_path,
-                options_string,
-                f'-o {filename}.wav',
-                f'{filename}.mid'
-            ]
-
-            command_string = " ".join(command)
 
             if log_to_file == True:
                 log.info(f"{platform.system()}")
                 log.info(f"cwd: {os.getcwd()}")
                 log.info(f"package_path: {package_path}")
-                log.info(f"timidity binary path: {binary_path}")
                 log.debug(f"midi filename: {filename}.mid")
                 log.debug(f"wav filename: {filename}.wav")
+
+
+            if platform.system() == 'Windows':
+
+                # Join the path to the binary file
+                binary_path = os.path.join(
+                    package_path, '..', 'third-party', 'binaries', 'TiMidity-2.15.0', 'windows', 'timidity.exe')
+
+                command = " ".join(
+                    [
+                        binary_path,
+                        options_string,
+                        f'-o {filename}.wav',
+                        f'{filename}.mid'
+                    ]
+                )
+
+            elif platform.system() == 'Darwin':
+
+                binary_path = os.path.join(
+                    package_path, '..', 'third-party', 'binaries', 'TiMidity-2.15.0', 'macos', 'timidity')
+
+                command = [binary_path] + options + ['-o', f'{filename}.wav', f'{filename}.mid']
+
+            else:
+
+                # Assume the binary is in the PATH on other platforms (installable on Linux)
+                binary_path = 'timidity'
+                shell = True
+
+                command = " ".join(
+                    [
+                        binary_path,
+                        options_string,
+                        f'-o {filename}.wav',
+                        f'{filename}.mid'
+                    ]
+                )
+
+            if log_to_file == True:
+                log.info(f"timidity binary path: {binary_path}")
                 log.info(f"timidity options: {options_string}")
-                log.debug(f"executing subprocess command: {command_string}")
+                log.debug(f"executing subprocess command: {command}")                
+
+
+
 
             thread_results[thread_index] = subprocess.run(
-                command_string, cwd=package_path, capture_output=True, check=True, shell=shell)
+                command, cwd=package_path, capture_output=True, check=True, shell=shell)
+
+            
             
             if log_to_file == True:
                 log.debug(f"completed subprocess")
