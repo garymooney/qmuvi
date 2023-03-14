@@ -49,6 +49,13 @@ Each pure state is a statevector representing a superposition of basis states, e
 
 Each pure state of the statistical distribution is assigned a instrument collection. The instrument in the collection that will be used to play a note is determined by the corresponding basis state's phase in the superposition. The angles are discretised to match the size of the collection, where an angle of zero corresponds to the first instrument. A list of up to 8 instrument collections can be specified when making the music video (see below example). The collections from the list will be assigned to pure states in the statistical distribution in order of decreasing probability. If there are less than 8 collections specified, the remaining pure states will use the last instrument collection in the list. 
 
+# Setup
+**Python version:** 3.10.8 (should work for &ge;3.7 and possibly lower) 
+
+**Python packages:** `pip install -r requirements.txt`  (to replicate our dev environment)  
+
+or install the following libs: `qiskit==0.37.0`, `mido==1.2.10`, `moviepy==1.0.3`, `matplotlib==3.5.2`, and `pylatexenc`,  
+
 # How to use:
 Just add barrier gates to your quantum circuit and call the `generate_qmuvi` method, that's it! Examples are found in the [demos](https://github.com/garymooney/qmuvi/blob/main/demos/) folder.
 
@@ -88,13 +95,13 @@ Properties in qMuVi can be customised using optional arguments in the `generate_
 
 qMuVi provides simple customisation options such as `invert_colours`, `fps`, `smooth_transitions`, and `show_measured_probabilities_only`, along with more advanced options which are described below.
 
-### Noise Model (noise_model)
+### _noise_model_
 A [qiskit.providers.aer.noise.NoiseModel](https://qiskit.org/documentation/apidoc/aer_noise.html) object. A simple depolarising noise model can be obtained using the `get_simple_noise_model` method in the `qmuvi.quantum_simulation` module, or you can make your own.
 
 **How it works:** To sample quantum states, qMuVi uses the qiskit AerSimulator to simulate the circuits. A noise model can be 
 passed to the simulator to include noise in the computations, which is translated to the generated output in qMuVi.
 
-**Example (noise_model):**
+**Example:**
 ```python
 import qmuvi
 from qmuvi.quantum_simulation import get_simple_noise_model
@@ -105,14 +112,14 @@ noise_model = get_simple_noise_model(gate_error_rate_1q = 0.01,
 qmuvi.generate_qmuvi(circ, "simple_qft3", noise_model = noise_model)
 ```
 
-### Rhythm (rhythm)
+### _rhythm_
 A list of tuples in the form `(sound_time, rest_time)`.
 
 **How it works:** Each tuple `(sound_time, rest_time)` in the list corresponds to a sampled quantum 
             state in the circuit. The `sound_time` is how long the sound will play for and the `rest_time` is the wait 
             time afterwards before playing the next sound. Times are in units of ticks where 480 ticks is 1 second.
 
-**Example (rhythm):**
+**Example:**
 ```python
 import qmuvi
 # define quantum circuit ...
@@ -121,7 +128,7 @@ rhythm = [[200,40]]*7+[[960,0]]
 qmuvi.generate_qmuvi(circ, "simple_qft3", rhythm = rhythm)
 ```
 
-### Instruments (instruments)
+### _instruments_
 A list of instruments as _int_s defined by the General MIDI standard. Premade instrument collections can be obtained using the `get_instrument_collection` method, or you can make your own.
 
 <table>
@@ -150,7 +157,7 @@ A list of instruments as _int_s defined by the General MIDI standard. Premade in
 
 **How it works:** An instrument collection is assigned to each pure state in the quantum state decomposition and the phase of the basis state determines the instrument in the collection.
 
-**Example (instruments):**
+**Example:**
 ```python
 import qmuvi
 # define quantum circuit ...
@@ -161,7 +168,7 @@ instruments = [qmuvi.get_instrument_collection("pipe"),
                
 qmuvi.generate_qmuvi(circ, "simple_qft3", instruments = instruments)
 ```
-### Note Map (note_map)
+### _note_map_
 A callable object that maps state numbers to note numbers. Premade note maps can be found in the `qmuvi.musical_processing` module, or you can make your own.
 
 | Note Maps |
@@ -173,7 +180,7 @@ A callable object that maps state numbers to note numbers. Premade note maps can
 
 **How it works:** The note map is used to convert the basis state numbers to the note numbers when generating the MIDI. A note number of 60 is middle C. You can make your own by for example defining a lambda function: `note_map = lambda n: n+60` or a method with the signiture `note_map(n: int) -> int`.
 
-**Example (note_map):**
+**Example:**
 ```python
 import qmuvi
 from qmuvi.musical_processing import note_map_c_major_arpeggio
@@ -181,22 +188,3 @@ from qmuvi.musical_processing import note_map_c_major_arpeggio
                
 qmuvi.generate_qmuvi(circ, "simple_qft3", note_map = note_map_c_major_arpeggio)
 ```
-
-# Setup
-**Python version:** 3.11 (should work for &ge;3.7 and possibly lower)  
-**Python packages:** qiskit==0.37.0, mido==1.2.10, moviepy==1.0.3, matplotlib==3.5.2, and pylatexenc  
-(see requirements.txt to replicate our dev environment if needed).
-  
-qMuVi uses TiMidity++ to generate audio. This is already configured for Windows using precompiled binaries. For macOS, there are a couple of steps below.
-
-### macOS: Timidity
-Use your package manager to install [TiMidity++](https://formulae.brew.sh/formula/timidity). E.g.
-
-```brew install timidity```
-
-A soundfont needs to be configured in timidity for it to convert MIDI files to WAV. You can use whatever soundfont you like, however for convenience, the general purpose soundfont [GeneralUser GS](https://schristiancollins.com/generaluser.php) is provided in this project at "[qmuvi/third-party/resources/GeneralUser_GS_1.471/](https://github.com/garymooney/qmuvi/tree/main/third-party/resources/GeneralUser_GS_1.471)". (you can find instructions for how to setup the soundfont with timidity online)
-
-### macOS: Note about _ffmpeg_
-The [ffmpeg](https://formulae.brew.sh/formula/ffmpeg) codec for video processing should be installed automatically by the MoviePy python package. However, sometimes for whatever reason it doesn't get installed. In this case, you can install it using your package manager. E.g.
-
-```brew install ffmpeg```
