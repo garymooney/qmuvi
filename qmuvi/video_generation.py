@@ -760,9 +760,25 @@ def generate_video_from_data(quantum_circuit: qiskit.QuantumCircuit,
         frame[top+3: bottom, left: left+3] = lerp_colour
         frame[top+3: bottom, right-3: right] = lerp_colour
 
+        
+
         return frame
 
     video_final = video_final.fl(draw_needle_effect)
+
+    script_path = os.path.dirname(os.path.abspath(__file__))
+
+    asset_path = os.path.join(script_path, '..', 'assets')
+
+    inverted_img = 'white.png'
+    non_inverted_img = 'black.png'
+
+    if invert_colours == True:
+        generated_title = ImageClip(os.path.join(asset_path, inverted_img)).set_duration(video_final.duration).set_pos(("right", "bottom")).resize(height=30, width=205).margin(right=28, bottom=2, opacity=0)
+    else :
+        generated_title = ImageClip(os.path.join(asset_path, non_inverted_img)).set_duration(video_final.duration).set_pos(("right", "bottom")).resize(height=30, width=205).margin(right=28, bottom=2, opacity=0)
+    
+    video_final= CompositeVideoClip([video_final, generated_title]) 
 
     # preset options (speed vs filesize): ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo
     video_final.write_videofile(output_manager.get_default_file_pathname() + '.mp4', preset='ultrafast', fps=fps, codec='mpeg4', audio_fps=44100,
