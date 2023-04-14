@@ -1,36 +1,106 @@
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "qmuvi"
+[tool]
+[tool.poetry]
+name = "qMuVi"
 version = "0.1.0"
-description = "A quantum music video generation tool"
+homepage = "https://github.com/garymooney/qmuvi"
+description = "qMuVi is a Python library that converts quantum circuits into music videos, enabling visualisation of quantum state evolution through sound and animation. It supports noise models to simulate physical quantum devices and displays animating probability and phase distributions of basis states.."
+authors = ["Gary Mooney <gary.mooney4444@gmail.com>"]
 readme = "README.md"
-authors = [
-  { name="Gary Mooney", email="mooneyg@unimelb.edu.au" },
-  { name="Harish Vallury", email="hvallury@student.unimelb.edu.au" },
+license =  "LGPL-2.1-or-later"
+classifiers=[
+    'Development Status :: 2 - Pre-Alpha',
+    'Intended Audience :: Developers',
+    'Intended Audience :: Education',
+    'Intended Audience :: Science/Research',
+    'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
+    'Natural Language :: English',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
 ]
-requires-python = ">=3.7"
-classifiers = [
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)",
-    "Operating System :: OS Independent",
+packages = [
+    { include = "qmuvi" },
+    { include = "tests", format = "sdist" },
 ]
-dependencies = [
-    "qiskit",
-    "mido",
-    "pymovie",
-    "matplotlib",
-    "pylatexenc",
+include = ["pachage_data/*"]
+
+[tool.poetry.dependencies]
+python = ">=3.10.8,<4.0"
+
+black  = {version = "^22.3.0", optional = true}
+isort  = {version = "5.10.1", optional = true}
+flake8  = {version = "^6.0.0", optional = true}
+pytest  = {version = "^7.0.1", optional = true}
+pytest-cov  = {version = "^3.0.0", optional = true}
+tox  = {version = "^4.4.12", optional = true}
+tox-gh-actions = {version = "^3.1.0", optional = true}
+virtualenv  = {version = "^20.13.1", optional = true}
+pip  = {version = "^22.0.3", optional = true}
+twine  = {version = "^3.8.0", optional = true}
+toml = {version = "^0.10.2", optional = true}
+sphinx = "^6.1.3"
+sphinx-rtd-theme = {version = "^1.2.0", optional = true}
+sphinx-autodoc-typehints = {version = "^1.22", optional = true}
+myst-parser = {version = "^1.0.0", optional = true}
+livereload = {version = "^2.6.3", optional = true}
+numpy = "1.24.0"
+qiskit = "0.39.4"
+moviepy = "1.0.3"
+matplotlib = "3.6.2"
+pylatexenc = "^2.10"
+mido = "^1.2.10"
+
+
+[tool.poetry.extras]
+test = [
+    "pytest",
+    "pytest-cov"
+    ]
+
+dev = ["tox",
+    "pre-commit",
+    "virtualenv",
+    "pip",
+    "twine",
+    "toml",
+    "black",
+    "isort",
+    "flake8"
+    ]
+
+doc = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinx-autodoc-typehints",
+    "myst-parser",
+    "livereload"
 ]
 
-[project.optional-dependencies]
-dev = [
-  "pytest"
-]
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
-[project.urls]
-"Homepage" = "https://github.com/garymooney/qmuvi"
-"Bug Tracker" = "https://github.com/garymooney/qmuvi/issues"
+[tool.black]
+line-length = 150
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | \.history
+)/
+'''
+
+[tool.isort]
+profile = "black"
+

@@ -188,3 +188,6 @@ from qmuvi.musical_processing import note_map_c_major_arpeggio
                
 qmuvi.generate_qmuvi(circ, "simple_qft3", note_map = note_map_c_major_arpeggio)
 ```
+
+# Features
+* Generate a music video from a Qiskit quantum circuit. 

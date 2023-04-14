@@ -1,5 +1,6 @@
 from qmuvi.data_manager import extract_natural_number_from_string_end
 
+
 def test_extract_natural_number_from_string_end():
     # Test case with a number at the end of the string
     s = "hello123"
