@@ -11,6 +11,7 @@ Welcome to qMuVi's documentation!
    :caption: Contents
 
    readme_link
+   gallery_link
    modules
    contributing_link
    authors_link
