@@ -18,14 +18,13 @@ jobs:
       - name: Sphinx build
         run: |
           poetry install -E doc
-          poetry run docs\\make clean html
           poetry run sphinx-apidoc -f -o docs qmuvi/
-          poetry run docs\\make html
+          poetry run sphinx-build docs docs/_build
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/prep-for-pypi-gm-#25' }}
         with:
           publish_branch: gh-pages
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs\\_build/
+          publish_dir: docs/_build/
           force_orphan: true
