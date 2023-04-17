@@ -20,8 +20,7 @@ def tmp_data_manager(tmp_path: str) -> DataManager:
     return DataManager(data_dir=tmpdir, default_name="test")
 
 
-@pytest.mark.parametrize("log_to_file", [True, False])
-def test_convert_midi_to_wav_timidity(tmp_data_manager, log_to_file):
+def test_convert_midi_to_wav_timidity(tmp_data_manager):
     midi_file_path = create_test_midi_file(tmp_data_manager.data_dir)
 
     # Call the function that uses timidity
@@ -34,3 +33,7 @@ def test_convert_midi_to_wav_timidity(tmp_data_manager, log_to_file):
 
     # Clean up temporary files
     os.remove(midi_file_path)
+    # remove log_files in form of ending in log_file_0, log_file_1, ... from cwd
+    for filename in os.listdir():
+        if filename.startswith("log-timidity-"):
+            os.remove(filename)

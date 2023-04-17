@@ -9,6 +9,8 @@ qMuVi is a python library that can be used in your [qiskit](https://qiskit.org/)
 
 Quantum computing is notorious for being unintuitive and difficult to imagine. This tool attempts to create a connection between a human observer and the complex workings of quantum computation. By transforming quantum circuits into music videos, it allows you to "hear" and "see" how a quantum state evolves as it is processed by a quantum algorithm.
 
+<video src="https://user-images.githubusercontent.com/14325614/227772719-a341769d-b578-4d23-9e7d-c18462bd1c22.webm" alt="grover_Cmaj"></video>
+
 **Showcase video:**
 <div align="left">
       <a href="https://www.youtube.com/watch?v=seersj3W-hg" target="_blank" rel="noopener noreferrer">
