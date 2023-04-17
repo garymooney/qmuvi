@@ -391,7 +391,9 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, log_t
     # (regular: 0, linear: 1, ideal: ~1.661, GS: ~2)
     options.append("--volume-curve=1.661")
     # options.append("--module=4")
-    options.append("--config-file=package_data/resources/timidity/timidity.cfg")
+    package_path = os.path.dirname(os.path.abspath(__file__))
+    config_filepath = os.path.join(package_path, "package_data", "resources", "timidity", "timidity.cfg")
+    options.append(f'--config-file="{config_filepath}"')
 
     options_string = " ".join(options)
 
@@ -409,7 +411,9 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, log_t
                 log.setLevel(logging.DEBUG)
 
                 # add file handler
-                file_handler = logging.FileHandler(f"{os.getcwd()}/log-timidity-{thread_index}.log")
+                log_filepath = os.path.join(os.getcwd(), f"log-timidity-{thread_index}.log")
+                # os.remove(log_filepath)
+                file_handler = logging.FileHandler(log_filepath, mode="w")
                 formatter = logging.Formatter("%(asctime)s - %(levelname)s: %(message)s")
                 file_handler.setFormatter(formatter)
                 log.addHandler(file_handler)
@@ -423,21 +427,21 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, log_t
                 log.info(f"{platform.system()}")
                 log.info(f"cwd: {os.getcwd()}")
                 log.info(f"package_path: {package_path}")
-                log.debug(f"midi filename: {filename}.mid")
-                log.debug(f"wav filename: {filename}.wav")
+                log.debug(f'midi filename: "{filename}.mid"')
+                log.debug(f'wav filename: "{filename}.wav"')
 
             if platform.system() == "Windows":
                 # Join the path to the binary file
                 binary_path = os.path.join(package_path, "package_data", "binaries", "TiMidity-2.15.0", "windows", "timidity.exe")
-                command = " ".join([binary_path, options_string, f"-o {filename}.wav", f"{filename}.mid"])
+                command = " ".join([binary_path, options_string, f'-o "{filename}.wav"', f'"{filename}.mid"'])
             elif platform.system() == "Darwin":
                 binary_path = os.path.join(package_path, "package_data", "binaries", "TiMidity-2.15.0", "macos", "timidity")
-                command = [binary_path] + options + ["-o", f"{filename}.wav", f"{filename}.mid"]
+                command = [binary_path] + options + ["-o", f'"{filename}.wav"', f'"{filename}.mid"']
             else:
                 # Assume the binary is in the PATH on other platforms (installable on Linux)
                 binary_path = "timidity"
                 shell = True
-                command = " ".join([binary_path, options_string, f"-o {filename}.wav", f"{filename}.mid"])
+                command = " ".join([binary_path, options_string, f'-o "{filename}.wav"', f'"{filename}.mid"'])
 
             if log_to_file is True:
                 log.info(f"timidity binary path: {binary_path}")
@@ -545,7 +549,7 @@ def convert_files_mid_to_wav_timidity_threading(
 
     # start a thread for each file to be converted
     threads = []
-    for file_index, file in enumerate(pathnames):
+    for file_index in range(len(pathnames)):
         t = threading.Thread(
             target=timidity_convert_method,
             name=f"timidity-{file_index}",
@@ -561,12 +565,11 @@ def convert_files_mid_to_wav_timidity_threading(
     thread_has_timed_out = False
     for thread_index, t in enumerate(threads):
         t.join(timeout=timeout)
-        base_filename = base_pathnames[thread_index]
-        wav_file = base_filename + ".wav"
+        wav_file = f"'{base_pathnames[file_index]}" + ".wav'"
         if t.is_alive() and not os.path.isfile(wav_file):
             # thread is still running and .wav file was not created, a conversion timeout has occured
             t._stop()
-            print("Timidity++ timed out for " + base_filename + ".mid, skipping conversion")
+            print(f"Timidity++ timed out for {wav_file}, skipping conversion")
             thread_has_timed_out = True
         if os.path.isfile(wav_file):
             output_wav_files.append(wav_file)
