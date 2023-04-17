@@ -391,8 +391,17 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, log_t
     # (regular: 0, linear: 1, ideal: ~1.661, GS: ~2)
     options.append("--volume-curve=1.661")
     # options.append("--module=4")
-    package_path = os.path.dirname(os.path.abspath(__file__))
+
+    package_path = os.path.dirname(os.path.realpath(__file__))
+    print("__file__:", __file__)
+    print("os.path.realpath(__file__):", os.path.realpath(__file__))
+    print("package_path:", package_path)
+    exists = os.path.exists(package_path)
+    print("package_path exists:", exists)
+    print("all subdirectories:", [x[0] for x in os.walk(package_path)])
+
     config_filepath = os.path.join(package_path, "package_data", "resources", "timidity", "timidity.cfg")
+
     options.append(f'--config-file="{config_filepath}"')
 
     options_string = " ".join(options)
