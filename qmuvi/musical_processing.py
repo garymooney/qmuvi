@@ -11,6 +11,7 @@ import sys
 import threading
 import time
 from typing import Any, AnyStr, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from shutil import which
 
 import numpy as np
 from mido import Message, MetaMessage, MidiFile, MidiTrack, bpm2tempo
@@ -442,6 +443,11 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, log_t
                 # Assume the binary is in the PATH on other platforms (installable on Linux)
                 binary_path = "timidity"
                 shell = True
+                if which(binary_path) is None:
+                    if log_to_file is True:
+                        log.exception(f"Error: Could not find timidity binary in PATH: {binary_path}. Please install timidity.")
+                    raise Exception(f"Could not find timidity binary in PATH: {binary_path}. Please install timidity.")
+
                 command = " ".join([binary_path, options_string, f'-o "{filename}.wav"', f'"{filename}.mid"'])
 
             if log_to_file is True:
