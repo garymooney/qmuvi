@@ -2,7 +2,8 @@
 [tool.poetry]
 name = "qMuVi"
 version = "0.1.0"
-homepage = "https://github.com/garymooney/qmuvi"
+homepage = "https://garymooney.github.io/qmuvi/"
+repository = "https://github.com/garymooney/qmuvi"
 description = "qMuVi is a Python library that converts quantum circuits into music videos, enabling visualisation of quantum state evolution through sound and animation. It supports noise models to simulate physical quantum devices and displays animating probability and phase distributions of basis states.."
 authors = ["Gary Mooney <gary.mooney4444@gmail.com>"]
 readme = "README.md"
@@ -14,17 +15,14 @@ classifiers=[
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
     'Natural Language :: English',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11'
 ]
 packages = [
     { include = "qmuvi" },
     { include = "tests", format = "sdist" },
 ]
-include = ["pachage_data/*"]
+include = ["package_data/*"]
 
 [tool.poetry.dependencies]
 python = ">=3.10.8,<4.0"

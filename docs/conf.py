@@ -57,7 +57,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = "sphinx_rtd_theme"
 
-html_logo = os.path.join(os.path.join(os.path.abspath(".."), "assets"), "logo_black.png")
+html_logo = os.path.join(os.path.join(os.path.abspath("package_data"), "assets"), "logo_black.png")
 
 html_static_path = ['_static']
 

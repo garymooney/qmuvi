@@ -19,4 +19,3 @@ RUN python3.10 -m pip install --upgrade pip \
     && pip3 install tox tox-gh-actions poetry
 
 WORKDIR /home/runner/work/qmuvi/qmuvi
-

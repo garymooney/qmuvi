@@ -93,6 +93,10 @@ You can now play around with the scripts in the Examples directory.
 
 9. Submit a pull request through the GitHub website.
 
+### VSCode Environment Setup (optional)
+
+* install EditorConfig for VS Code extension to automatically read the .editorconfig file.
+
 ## Pull Request Guidelines
 
 Before you submit a pull request, check that it meets these guidelines:
@@ -103,10 +107,6 @@ Before you submit a pull request, check that it meets these guidelines:
    feature to the list in README.md.
 3. When the github actions have been setup for the project, make sure that the tests pass for all supported Python versions by checking
    https://github.com/garymooney/qmuvi/actions
-
-## VSCode Environment Setup (optional)
-
-* install EditorConfig for VS Code extension to automatically read the .editorconfig file.
 
 ## Deploying
 

@@ -800,7 +800,7 @@ def generate_video_from_data(
 
     script_path = os.path.dirname(os.path.abspath(__file__))
 
-    asset_path = os.path.join(script_path, "..", "assets")
+    asset_path = os.path.join(script_path, "package_data", "assets")
 
     inverted_img = "white.png"
     non_inverted_img = "black.png"
