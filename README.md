@@ -51,12 +51,8 @@ Each pure state is a statevector representing a superposition of basis states, e
 
 Each pure state of the statistical distribution is assigned a instrument collection. The instrument in the collection that will be used to play a note is determined by the corresponding basis state's phase in the superposition. The angles are discretised to match the size of the collection, where an angle of zero corresponds to the first instrument. A list of up to 8 instrument collections can be specified when making the music video (see below example). The collections from the list will be assigned to pure states in the statistical distribution in order of decreasing probability. If there are less than 8 collections specified, the remaining pure states will use the last instrument collection in the list.
 
-# Setup
-**Python version:** 3.10.8 (should work for &ge;3.7 and possibly lower)
-
-**Python packages:** `pip install -r requirements.txt`  (to replicate our dev environment)
-
-or install the following libs: `qiskit==0.37.0`, `mido==1.2.10`, `moviepy==1.0.3`, `matplotlib==3.5.2`, and `pylatexenc`,
+# Contributing
+See the [contributing](https://github.com/garymooney/qmuvi/blob/main/CONTRIBUTING.md) page.
 
 # How to use:
 Just add barrier gates to your quantum circuit and call the `generate_qmuvi` method, that's it! Examples are found in the [demos](https://github.com/garymooney/qmuvi/blob/main/demos/) folder. Documentation can be found on the GitHub Pages site here: [https://garymooney.github.io/qmuvi](https://garymooney.github.io/qmuvi)

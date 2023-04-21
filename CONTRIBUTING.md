@@ -76,12 +76,14 @@ Ready to contribute? Here's how to set up `qmuvi` for local development.
 
 You can now play around with the scripts in the Examples directory.
 
-7. When you're done making changes, check that your changes pass the
-   tests, including testing other Python versions (3.10, 3.11), with tox:
+7. When you're done making changes, you can locally check that your changes pass the
+   test with Python 3.10 by using tox
 
 ```
-    $ tox
+    $ tox -e py310
 ```
+
+or using docker by running the "docker-build-image.bat" and "docker-run-image-test.bat" batch scripts (or the macos/linux equivalent).
 
 8. Commit your changes and push your branch to GitHub:
 
@@ -101,12 +103,11 @@ You can now play around with the scripts in the Examples directory.
 
 Before you submit a pull request, check that it meets these guidelines:
 
-1. The pull request should pass all of the `tox` tests. Python tests will be run for versions 3.10 and 3.11, and linter tests will also be executed.
+1. The pull request should pass all of the `tox` tests. This includes linter, Python 3.10 and Python 3.11. Make sure that the tests pass by checking
+   https://github.com/garymooney/qmuvi/actions
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.md.
-3. When the github actions have been setup for the project, make sure that the tests pass for all supported Python versions by checking
-   https://github.com/garymooney/qmuvi/actions
 
 ## Deploying
 
