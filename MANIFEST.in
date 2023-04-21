@@ -1,4 +1,0 @@
-# MANIFEST.in
-
-include third-party/resources*
-include third-party/binaries*

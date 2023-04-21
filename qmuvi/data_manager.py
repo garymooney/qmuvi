@@ -1,15 +1,18 @@
+"""This module is used to manage data generated within the qmuvi package."""
 
+import glob
+import json
 import os
 import shutil
-import json
-import glob
 from typing import Any, AnyStr
 
 
 class DataManager:
-    def __init__(self, data_dir: str, default_name: str = 'data'):
+    """Used to manage saving and loading within a target data directory."""
+
+    def __init__(self, data_dir: str, default_name: str = "data"):
         """Create a new DataManager object. The data directory is created if it does not exist.
-        
+
         Parameters
         ----------
             data_dir
@@ -24,7 +27,7 @@ class DataManager:
 
     def save_json(self, data: Any, filename: str = None) -> None:
         """Save the given data as a JSON file with the given filename in the data directory.
-        
+
         Parameters
         ----------
             data
@@ -35,12 +38,12 @@ class DataManager:
         if filename is None:
             filename = self.default_name + ".json"
         filepath = os.path.join(self.data_dir, filename)
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(data, f)
 
     def load_json(self, filename: str = None) -> Any:
         """Load and return the data from the JSON file with the given filename in the data directory.
-        
+
         Parameters
         ----------
             filename
@@ -53,12 +56,12 @@ class DataManager:
         if filename is None:
             filename = self.default_name + ".json"
         filepath = os.path.join(self.data_dir, filename)
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             return json.load(f)
 
     def save_data(self, data: Any, filename: str = None) -> None:
         """Save the given data as a plain text file with the given filename in the data directory.
-        
+
         Parameters
         ----------
             data
@@ -69,12 +72,12 @@ class DataManager:
         if filename is None:
             filename = self.default_name + ".txt"
         filepath = os.path.join(self.data_dir, filename)
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             f.write(data)
 
     def load_data(self, filename: str = None) -> Any:
         """Load and return the data from the plain text file with the given filename in the data directory.
-        
+
         Parameters
         ----------
             filename
@@ -83,12 +86,12 @@ class DataManager:
         if filename is None:
             filename = self.default_name + ".txt"
         filepath = os.path.join(self.data_dir, filename)
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             return f.read()
 
     def create_folder(self, folder_name: str) -> None:
         """Create a new folder with the given name in the data directory (appends to data_dir).
-        
+
         Parameters
         ----------
             folder_name
@@ -99,7 +102,7 @@ class DataManager:
 
     def delete_folder(self, folder_name: str) -> None:
         """Delete the folder with the given name in the data directory.
-        
+
         Parameters
         ----------
             folder_name
@@ -110,7 +113,7 @@ class DataManager:
 
     def folder_exists(self, folder_name: str) -> bool:
         """Return True if a folder with the given name exists in the data directory, False otherwise.
-        
+
         Parameters
         ----------
             folder_name
@@ -123,9 +126,10 @@ class DataManager:
         folder_path = os.path.join(self.data_dir, folder_name)
         return os.path.isdir(folder_path)
 
-    def glob(self, subpathname: AnyStr, *, recursive: bool=...) -> list[str]:
+    def glob(self, subpathname: AnyStr, *, recursive: bool = ...) -> list[str]:
         """Return a list of subpaths of data_dir matching a pathname pattern.
-        Uses glob.glob method The pattern may contain simple shell-style wildcards.
+
+        Uses the glob.glob method. The pattern may contain simple shell-style wildcards.
 
         Parameters
         ----------
@@ -142,7 +146,7 @@ class DataManager:
 
     def get_default_file_pathname(self) -> str:
         """Return the default file pathname (with no extension) for the data directory.
-        
+
         Returns
         -------
             The default file pathname (with no extension) for the data directory.
@@ -151,7 +155,7 @@ class DataManager:
 
     def get_path(self, filename: str) -> str:
         """Return the full path to the given filename in the data directory.
-        
+
         Parameters
         ----------
             filename
@@ -165,7 +169,7 @@ class DataManager:
 
     def remove_files(self, filename: str) -> None:
         """Remove all files with the given name in the data directory.
-        
+
         Parameters
         ----------
             filename
@@ -174,7 +178,8 @@ class DataManager:
         for file in glob.glob(os.path.join(self.data_dir, filename)):
             os.remove(file)
 
-def extract_natural_number_from_string_end(s: str, zero_if_none = False) -> int:
+
+def extract_natural_number_from_string_end(s: str, zero_if_none=False) -> int:
     """Extract the last number of 1 or more digits from the end of the given string.
 
     Parameters
@@ -191,7 +196,7 @@ def extract_natural_number_from_string_end(s: str, zero_if_none = False) -> int:
     if s is None or len(s) == 0:
         return None
 
-    string_iter = len(s)-1
+    string_iter = len(s) - 1
     end_number_digits = []
     for i in range(len(s)):
         if not s[string_iter].isdigit():
@@ -199,16 +204,17 @@ def extract_natural_number_from_string_end(s: str, zero_if_none = False) -> int:
         end_number_digits.append(s[string_iter])
         string_iter -= 1
     if len(end_number_digits) > 0:
-        end_number = int(''.join(end_number_digits[::-1]))
+        end_number = int("".join(end_number_digits[::-1]))
     else:
         end_number = 0 if zero_if_none else None
     return end_number
 
+
 def get_unique_pathname(base_name: str, location: str) -> str:
-    """Get a unique pathname in the working directory based on the base_name. 
-    
+    """Get a unique pathname in the working directory based on the base_name.
+
     If a file with the name already exists in the working directory, a number is appended to the end of the name.
-    E.g. If the folder "test" already exists, the number "1" is appended to get "test-1". If "test-1" already exists, 
+    E.g. If the folder "test" already exists, the number "1" is appended to get "test-1". If "test-1" already exists,
     the number is incremented to get "test-2" and so on.
 
     Parameters
@@ -223,17 +229,13 @@ def get_unique_pathname(base_name: str, location: str) -> str:
         The name of the new pathname.
     """
     # Create output folder with a different name to existing folders
-    folder_names = [dir for dir in glob.glob(os.path.join(
-        location, base_name + "*")) if os.path.isdir(dir)]
+    folder_names = [dir for dir in glob.glob(os.path.join(location, base_name + "*")) if os.path.isdir(dir)]
 
     if len(folder_names) == 0:
         output_folder_name = base_name
     else:
-        folder_ending_numbers = [extract_natural_number_from_string_end(
-            folder, zero_if_none=True) for folder in folder_names]
-        output_folder_name = base_name + "-" + \
-            str(max(folder_ending_numbers) + 1)
+        folder_ending_numbers = [extract_natural_number_from_string_end(folder, zero_if_none=True) for folder in folder_names]
+        output_folder_name = base_name + "-" + str(max(folder_ending_numbers) + 1)
 
     output_path = os.path.join(location, output_folder_name)
     return output_path
-
