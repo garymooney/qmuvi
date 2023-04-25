@@ -1,5 +1,5 @@
-qmuvi
-=====
+Documentation
+=============
 
 .. toctree::
    :maxdepth: 4

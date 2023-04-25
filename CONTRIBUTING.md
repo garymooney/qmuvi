@@ -7,7 +7,7 @@ You can contribute in many ways:
 
 ### Report Bugs
 
-Report bugs at https://github.com/garymooney/qmuvi/issues.
+Report bugs at [https://github.com/garymooney/qmuvi/issues](https://github.com/garymooney/qmuvi/issues).
 
 If you are reporting a bug, please include:
 
@@ -33,7 +33,7 @@ articles, and such.
 
 ### Submit Feedback
 
-The best way to send feedback is to file an issue at https://github.com/garymooney/qmuvi/issues.
+The best way to send feedback is to file an issue at [https://github.com/garymooney/qmuvi/issues](https://github.com/garymooney/qmuvi/issues).
 
 If you are proposing a feature:
 
@@ -97,14 +97,14 @@ or using docker by running the "docker-build-image.bat" and "docker-run-image-te
 
 ### VSCode Environment Setup (optional)
 
-* install EditorConfig for VS Code extension to automatically read the .editorconfig file.
+* Install EditorConfig for VS Code extension to automatically read the .editorconfig file.
 
 ## Pull Request Guidelines
 
 Before you submit a pull request, check that it meets these guidelines:
 
 1. The pull request should pass all of the `tox` tests. This includes linter, Python 3.10 and Python 3.11. Make sure that the tests pass by checking
-   https://github.com/garymooney/qmuvi/actions
+   [https://github.com/garymooney/qmuvi/actions](https://github.com/garymooney/qmuvi/actions)
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.md.
