@@ -1,11 +1,11 @@
-## Development Lead
+## Project Leads
 
-* Gary Mooney <gary.mooney4444@gmail.com>
+* Gary Mooney: [@garymooney](https://github.com/garymooney), email: (<mooneyg@unimelb.edu.au>)
+* Harish Vallury: [@hvallury](https://github.com/hvallury)
 
 ## Contributors
 
-* Harish Vallury
 * Gan Yu Pin
 * Yang Yang
-* Sam Tonetto
-* Valan Baptist Mathuranayagam
+* [@SamTonetto](https://github.com/SamTonetto)
+* [@valanm22](https://github.com/valanm22)

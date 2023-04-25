@@ -11,6 +11,9 @@ Welcome to qMuVi's documentation!
    :caption: Contents
 
    readme_link
+   winning_project_link
+   how_it_works_link
+   mapping_quantum_to_music_link
    modules
    contributing_link
    authors_link
