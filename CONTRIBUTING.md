@@ -112,13 +112,12 @@ Before you submit a pull request, check that it meets these guidelines:
 ## Deploying
 
 A reminder for the maintainers on how to deploy.
-Make sure all your changes are committed.
+Make sure all of the changes have been committed and tests have passed successfully.
+Update the version number in the pyproject.toml file.
 Then run:
 
 ```
-$ poetry patch # possible: major / minor / patch
-$ git push
-$ git push --tags
+$ poetry publish --username PYPI_USERNAME --password PYPI_PASSWORD
 ```
 
 Github Actions will then deploy to PyPI if tests pass.
