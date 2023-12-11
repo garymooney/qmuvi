@@ -7,17 +7,17 @@
 		"pytest"
     ],
     "debian_dependencies": [
-		"timidity",
-		"curl"
+		"timidity"
     ],
     "language": {
         "name": "python",
-        "versions": ["3.10"]
+        "versions": ["3.9"]
     },
     "tests_command": [
-        "tox -e py310"
+        "tox -epy39"
     ],
     "styles_check_command": [
+		"tox -elint",
     ],
     "coverages_check_command": [
     ]
