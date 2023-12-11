@@ -1,0 +1,22 @@
+{
+    "dependencies_files": [
+    ],
+    "extra_dependencies": [
+        "poetry",
+		"tox",
+		"pytest"
+    ],
+    "debian_dependencies": [
+    ],
+    "language": {
+        "name": "python",
+        "versions": ["3.10"]
+    },
+    "tests_command": [
+        "tox -e py310"
+    ],
+    "styles_check_command": [
+    ],
+    "coverages_check_command": [
+    ]
+}
