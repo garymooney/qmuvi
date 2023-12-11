@@ -598,7 +598,6 @@ def generate_video_from_data(
     # sort in ascending order of frame number in filename, e.g. info_panel_0, info_panel_1, ...
     paths.sort(key=lambda x: data_manager.extract_natural_number_from_string_end(os.path.splitext(x)[0]))
 
-
     # create info panel clips and stack them to the right of the plot clips
     for file_index, file in enumerate(paths):
         frame_time = (rhythm[file_index][0] + rhythm[file_index][1]) / 480.0
@@ -637,7 +636,7 @@ def generate_video_from_data(
     image_empty_clip = image_empty_clip.resize(height=circuit_anim_height)
 
     duplicate_count = math.ceil(float(barrier_image_width) / image_empty_clip.size[0])
-    image_empty_clip_array = clips_array([[image_empty_clip]*duplicate_count], bg_color=bg_color)
+    image_empty_clip_array = clips_array([[image_empty_clip] * duplicate_count], bg_color=bg_color)
     image_empty_clip_array = crop.crop(image_empty_clip_array, x1=0, x2=barrier_image_width)
 
     partial_circuit_clip_list = []
@@ -825,7 +824,7 @@ def generate_video_from_data(
     video_final = CompositeVideoClip([video_final, generated_title])
 
     # uncomment to output a frame so be able to check the output without needing to wait for the full video to render.
-    #video_final.save_frame(output_manager.get_default_file_pathname() + "_frame.png", t=0.1)
+    # video_final.save_frame(output_manager.get_default_file_pathname() + "_frame.png", t=0.1)
 
     # preset options (speed vs filesize): ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo
     video_final.write_videofile(
