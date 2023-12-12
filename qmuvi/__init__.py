@@ -13,12 +13,12 @@ from qiskit import QuantumCircuit, transpile
 from qiskit.converters import circuit_to_dag
 
 # Import from Qiskit Aer noise module
-from qiskit.providers.aer.noise import NoiseModel, thermal_relaxation_error
+from qiskit_aer.noise import NoiseModel, thermal_relaxation_error
 
 from . import data_manager, musical_processing, quantum_simulation, video_generation
 from .musical_processing import note_map_c_major_arpeggio
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 
 def get_instrument_collection(collection_name: str) -> List[int]:

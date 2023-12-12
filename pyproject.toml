@@ -15,7 +15,6 @@ classifiers=[
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
     'Natural Language :: English',
-	'Programming Language :: Python :: 3.8',
 	'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11'
@@ -47,10 +46,11 @@ sphinx-rtd-theme = {version = "^1.2.0", optional = true}
 sphinx-autodoc-typehints = {version = "^1.22", optional = true}
 myst-parser = {version = "^1.0.0", optional = true}
 livereload = {version = "^2.6.3", optional = true}
-numpy = "1.24.0"
-qiskit = "0.39.4"
-moviepy = "1.0.3"
-matplotlib = "3.6.2"
+numpy = "^1.24.0"
+qiskit = ">= 0.39.4"
+qiskit-aer = ">= 0.11.0"
+moviepy = "^1.0.3"
+matplotlib = "^3.6.2"
 pylatexenc = "^2.10"
 mido = "^1.2.10"
 

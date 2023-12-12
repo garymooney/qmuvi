@@ -1,4 +1,4 @@
-# Methods relating to the simulation and sampliing of QISKIT circuits for QMUVI
+# Methods relating to the simulation and sampliing of Qiskit circuits for qMuVi
 
 from typing import List
 
@@ -6,10 +6,10 @@ import numpy as np
 import qiskit
 from qiskit import IBMQ, Aer, QuantumCircuit, transpile
 from qiskit.converters import circuit_to_dag
-from qiskit.providers.aer import AerSimulator
 
+from qiskit_aer import AerSimulator
 # Import from Qiskit Aer noise module
-from qiskit.providers.aer.noise import (
+from qiskit_aer.noise import (
     NoiseModel,
     QuantumError,
     ReadoutError,
@@ -17,6 +17,8 @@ from qiskit.providers.aer.noise import (
     pauli_error,
     thermal_relaxation_error,
 )
+
+
 from qiskit.quantum_info import Kraus, Statevector, SuperOp
 
 
