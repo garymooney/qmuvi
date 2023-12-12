@@ -1,5 +1,6 @@
 import tempfile
 import os
+from time import sleep
 import pytest
 
 from qmuvi.musical_processing import convert_midi_to_wav_timidity
@@ -24,7 +25,7 @@ def test_convert_midi_to_wav_timidity(tmp_data_manager):
     midi_file_path = create_test_midi_file(tmp_data_manager.data_dir)
 
     # Call the function that uses timidity
-    convert_midi_to_wav_timidity(tmp_data_manager, log_to_file=True)
+    convert_midi_to_wav_timidity(tmp_data_manager, timeout=0.5, log_to_file=False)
 
     # Check that subprocess.run was called with the expected arguments
     expected_output_path = os.path.join(tmp_data_manager.data_dir, "test.wav")
@@ -33,6 +34,7 @@ def test_convert_midi_to_wav_timidity(tmp_data_manager):
 
     # Clean up temporary files
     os.remove(midi_file_path)
+
     # remove log_files in form of ending in log_file_0, log_file_1, ... from cwd
     for filename in os.listdir():
         if filename.startswith("log-timidity-"):

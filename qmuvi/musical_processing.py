@@ -312,7 +312,7 @@ def get_sound_data_from_density_matrix(
     return sound_data
 
 
-def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, log_to_file: bool = False) -> None:
+def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeout: int = 8, log_to_file: bool = False) -> None:
     """Convert a MIDI file to a WAV file using the Timidity++ library.
 
     This function takes the path to generated MIDI files and uses the Timidity++ library to
@@ -322,6 +322,8 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, log_t
     ----------
         output_manager
             A data manager object for finding the MIDI files and handling the output file.
+        timeout
+            The number of seconds to wait for each thread to complete before raising a timeout exception. Default is 8.
         log_to_file
             Whether to log the output of the Timidity process to a file.
 
@@ -468,7 +470,7 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, log_t
             log.info(thread_results[thread_index].stdout.decode())
             log.info(thread_results[thread_index].stderr.decode())
 
-    convert_files_mid_to_wav_timidity_threading(files, options_string, timidity_convert_subprocess, timeout=8)
+    convert_files_mid_to_wav_timidity_threading(files, options_string, timidity_convert_subprocess, timeout=timeout)
 
     files = output_manager.glob(output_manager.default_name + "-*.wav")
     if len(files) > 1:
