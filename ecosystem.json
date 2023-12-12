@@ -17,7 +17,7 @@
         "tox -epy39"
     ],
     "styles_check_command": [
-		"tox -elint",
+		"tox -elint"
     ],
     "coverages_check_command": [
     ]
