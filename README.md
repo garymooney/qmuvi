@@ -1,4 +1,4 @@
-[![build tests](https://github.com/garymooney/qmuvi/actions/workflows/build-tests.yml/badge.svg?branch=main)](https://github.com/garymooney/qmuvi/actions/workflows/build-tests.yml)
+[![code tests](https://github.com/garymooney/qmuvi/actions/workflows/code-tests.yml/badge.svg)](https://github.com/garymooney/qmuvi/actions/workflows/code-tests.yml)
 [![docs](https://github.com/garymooney/qmuvi/actions/workflows/docs.yml/badge.svg)](https://github.com/garymooney/qmuvi/actions/workflows/docs.yml)
 
 <img src="https://user-images.githubusercontent.com/6459545/182747409-52b2b800-4c01-45ca-a826-2120aa50fc5c.png" width="256">
