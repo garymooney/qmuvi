@@ -3,23 +3,15 @@
 from typing import List
 
 import numpy as np
-import qiskit
-from qiskit import IBMQ, Aer, QuantumCircuit, transpile
+from qiskit import QuantumCircuit, transpile
 from qiskit.converters import circuit_to_dag
 
 from qiskit_aer import AerSimulator
 # Import from Qiskit Aer noise module
 from qiskit_aer.noise import (
     NoiseModel,
-    QuantumError,
-    ReadoutError,
     depolarizing_error,
-    pauli_error,
-    thermal_relaxation_error,
 )
-
-
-from qiskit.quantum_info import Kraus, Statevector, SuperOp
 
 
 def get_simple_noise_model(gate_error_rate_1q: float = 0.0, gate_error_rate_cnot: float = 0.0) -> NoiseModel:

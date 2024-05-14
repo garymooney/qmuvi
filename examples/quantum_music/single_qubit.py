@@ -1,4 +1,3 @@
-import qiskit
 from qiskit import QuantumCircuit
 from numpy import pi
 

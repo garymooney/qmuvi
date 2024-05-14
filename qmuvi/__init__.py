@@ -1,21 +1,15 @@
-import glob
-import math
 import os
-import platform
-import sys
-import warnings
-from typing import Any, AnyStr, Callable, List, Mapping, Optional, Tuple, Union
+from typing import Callable, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 import qiskit.quantum_info as qi
-from mido import Message, MetaMessage, MidiFile, MidiTrack, bpm2tempo
-from qiskit import QuantumCircuit, transpile
-from qiskit.converters import circuit_to_dag
+from qiskit import QuantumCircuit
 
 # Import from Qiskit Aer noise module
-from qiskit_aer.noise import NoiseModel, thermal_relaxation_error
+from qiskit_aer.noise import NoiseModel
 
-from . import data_manager, musical_processing, quantum_simulation, video_generation
+from . import data_manager as qmuvi_data_manager
+from . import musical_processing, quantum_simulation, video_generation
 from .musical_processing import note_map_c_major_arpeggio
 
 __version__ = "0.1.1"
@@ -88,6 +82,7 @@ def generate_qmuvi(
     smooth_transitions: bool = True,
     log_to_file: bool = False,
     show_measured_probabilities_only: bool = False,
+    output_dir: str = None
 ) -> None:
     """Samples the quantum circuit at every barrier and uses the state properties to create a music video (.mp4).
 
@@ -124,6 +119,8 @@ def generate_qmuvi(
             Whether to output the timidity synth midi conversion log files.
         show_measured_probabilities_only
             Whether to only show the total basis state measurement probability distribution in the video.
+        output_dir
+            The output directory. If None, creates and uses a unique output folder in the working directory.
 
     Returns
     -------
@@ -151,8 +148,9 @@ def generate_qmuvi(
     else:
         raise TypeError("instruments must be a list of lists of ints or a list of ints.")
 
-    output_path = data_manager.get_unique_pathname(qmuvi_name + "-output", os.getcwd())
-    output_manager = data_manager.DataManager(output_path, default_name=qmuvi_name)
+    if output_dir is None:
+        output_dir = qmuvi_data_manager.get_unique_pathname(qmuvi_name + "-output", os.getcwd())
+    output_manager = qmuvi_data_manager.DataManager(output_dir, default_name=qmuvi_name)
 
     # generate data from quantum circuit
     sounds_list, fidelity_list, meas_prob_samples = generate_qmuvi_data(quantum_circuit, output_manager, noise_model=noise_model)
@@ -178,7 +176,7 @@ def generate_qmuvi(
 
 
 def generate_qmuvi_data(
-    quantum_circuit: QuantumCircuit, output_manager: data_manager.DataManager, noise_model: NoiseModel = None
+    quantum_circuit: QuantumCircuit, output_manager: qmuvi_data_manager.DataManager, noise_model: NoiseModel = None
 ) -> Tuple[List[List[Tuple[float, Mapping[int, Tuple[float, float]], List[float], List[float]]]], List[float], List[List[float]]]:
     """Samples the quantum circuit at every barrier and generates data from the state properties.
 
@@ -291,8 +289,8 @@ def generate_qmuvi_music(
         log_to_file
             Whether to output the timidity synth midi conversion log files.
     """
-    output_path = data_manager.get_unique_pathname(qmuvi_name + "-output", os.getcwd())
-    output_manager = data_manager.DataManager(output_path, default_name=qmuvi_name)
+    output_path = qmuvi_data_manager.get_unique_pathname(qmuvi_name + "-output", os.getcwd())
+    output_manager = qmuvi_data_manager.DataManager(output_path, default_name=qmuvi_name)
 
     # generate data from quantum circuit
     sounds_list, fidelity_list, meas_prob_samples = generate_qmuvi_data(quantum_circuit, output_manager, noise_model=noise_model)
@@ -308,7 +306,7 @@ def generate_qmuvi_music(
 
 def generate_qmuvi_video(
     quantum_circuit: QuantumCircuit,
-    output_manager: data_manager.DataManager,
+    output_manager: qmuvi_data_manager.DataManager,
     rhythm: Optional[List[Tuple[int, int]]] = None,
     noise_model: NoiseModel = None,
     note_map: Callable[[int], int] = note_map_c_major_arpeggio,

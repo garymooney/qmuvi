@@ -36,6 +36,26 @@ apt-get install timidity # Debian and Ubuntu
 zypper install timidity # OpenSUSE
 ```
 
+## Install From Source
+For the latest version from source, you can install using poetry:
+
+1. Ensure [poetry](https://python-poetry.org/docs/) is installed.
+2. Clone the qMuVi repo and navigate to root.
+```
+git clone https://github.com/garymooney/qmuvi.git
+cd qmuvi
+```
+3. Install qMuVi using poetry.
+```
+poetry install -E test -E doc -E dev
+```
+Note. Use `poetry run` to execute commands within the virtual environment managed by poetry (if not already in a virtual environment).
+
+4. Run the tests to verify that everything is working.
+```
+poetry run pytest -s tests
+```
+
 # Usage
 ```python
 import qmuvi
@@ -63,7 +83,7 @@ Properties in qMuVi can be customised using optional arguments in the `generate_
 
 qMuVi provides simple customisation options such as `invert_colours`, `fps`, `smooth_transitions`, and `show_measured_probabilities_only`, along with more advanced options which are described below.
 
-### _noise_model_
+## Property - _noise_model_
 A [Qiskit NoiseModel](https://qiskit.org/documentation/apidoc/aer_noise.html) object. A simple depolarising noise model can be obtained using the `get_simple_noise_model` method in the `qmuvi.quantum_simulation` module, or you can make your own.
 
 **How it works:** To sample quantum states, qMuVi uses the qiskit AerSimulator to simulate the circuits. A noise model can be
@@ -80,7 +100,7 @@ noise_model = get_simple_noise_model(gate_error_rate_1q = 0.01,
 qmuvi.generate_qmuvi(circ, "simple_qft3", noise_model = noise_model)
 ```
 
-### _rhythm_
+## Property - _rhythm_
 A list of tuples in the form `(sound_time, rest_time)`.
 
 **How it works:** Each tuple `(sound_time, rest_time)` in the list corresponds to a sampled quantum
@@ -96,7 +116,7 @@ rhythm = [[200,40]]*7+[[960,0]]
 qmuvi.generate_qmuvi(circ, "simple_qft3", rhythm = rhythm)
 ```
 
-### _instruments_
+## Property - _instruments_
 A list of instruments as _int_s defined by the General MIDI standard. Premade instrument collections can be obtained using the `get_instrument_collection` method, or you can make your own.
 
 <table>
@@ -136,7 +156,7 @@ instruments = [qmuvi.get_instrument_collection("pipe"),
 
 qmuvi.generate_qmuvi(circ, "simple_qft3", instruments = instruments)
 ```
-### _note_map_
+## Property - _note_map_
 A callable object that maps state numbers to note numbers. Premade note maps can be found in the `qmuvi.musical_processing` module, or you can make your own.
 
 | Note Maps |
@@ -158,4 +178,5 @@ qmuvi.generate_qmuvi(circ, "simple_qft3", note_map = note_map_c_major_arpeggio)
 ```
 
 # Features
-* Generate a music video from a Qiskit quantum circuit.
+* **Quantum Circuit** (Qiskit) $\rightarrow$ **Music Video File** (as MP4).
+* **Quantum Circuit** (Qiskit) $\rightarrow$ **Music Files** (as MIDI and WAV).
