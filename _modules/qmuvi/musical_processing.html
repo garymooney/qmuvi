@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qmuvi.musical_processing &mdash; qMuVi 0.1.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #000a0a" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo_black.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme_link.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../winning_project_link.html">qMuVi: Qiskit Hackathon Winner 2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_it_works_link.html">How it Works</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../mapping_quantum_to_music_link.html">Mapping Quantum to Music</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">qmuvi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing_link.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../authors_link.html">Authors</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #000a0a" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">qMuVi</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../qmuvi.html">qmuvi</a></li>
+      <li class="breadcrumb-item active">qmuvi.musical_processing</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qmuvi.musical_processing</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Methods relating to the generation of music from sampled density matrices</span>
+<span class="c1"># Path: qmuvi\musical_processing.py</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">shutil</span> <span class="kn">import</span> <span class="n">which</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">mido</span> <span class="kn">import</span> <span class="n">Message</span><span class="p">,</span> <span class="n">MetaMessage</span><span class="p">,</span> <span class="n">MidiFile</span><span class="p">,</span> <span class="n">MidiTrack</span><span class="p">,</span> <span class="n">bpm2tempo</span>
+
+<span class="kn">import</span> <span class="nn">qmuvi.data_manager</span> <span class="k">as</span> <span class="nn">data_manager</span>
+
+
+<div class="viewcode-block" id="note_map_chromatic_middle_c"><a class="viewcode-back" href="../../qmuvi.html#qmuvi.musical_processing.note_map_chromatic_middle_c">[docs]</a><span class="k">def</span> <span class="nf">note_map_chromatic_middle_c</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Map `n` to a note in the chromatic scale. It starts at middle C.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        n</span>
+<span class="sd">            The integer to be mapped to a note.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        The note mapped to from `n`. Returns `n` + 60.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">60</span></div>
+
+
+<div class="viewcode-block" id="note_map_c_major"><a class="viewcode-back" href="../../qmuvi.html#qmuvi.musical_processing.note_map_c_major">[docs]</a><span class="k">def</span> <span class="nf">note_map_c_major</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Map `n` to a note in the C major scale. It starts at middle C.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        n</span>
+<span class="sd">            The integer to be mapped to a note.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        The note mapped to from `n`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">C_MAJ</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="mi">0</span><span class="p">,</span>
+        <span class="mi">2</span><span class="p">,</span>
+        <span class="mi">4</span><span class="p">,</span>
+        <span class="mi">5</span><span class="p">,</span>
+        <span class="mi">7</span><span class="p">,</span>
+        <span class="mi">9</span><span class="p">,</span>
+        <span class="mi">11</span><span class="p">,</span>
+        <span class="mi">12</span><span class="p">,</span>
+        <span class="mi">14</span><span class="p">,</span>
+        <span class="mi">16</span><span class="p">,</span>
+        <span class="mi">17</span><span class="p">,</span>
+        <span class="mi">19</span><span class="p">,</span>
+        <span class="mi">21</span><span class="p">,</span>
+        <span class="mi">23</span><span class="p">,</span>
+        <span class="mi">24</span><span class="p">,</span>
+        <span class="mi">26</span><span class="p">,</span>
+        <span class="mi">28</span><span class="p">,</span>
+        <span class="mi">29</span><span class="p">,</span>
+        <span class="mi">31</span><span class="p">,</span>
+        <span class="mi">33</span><span class="p">,</span>
+        <span class="mi">35</span><span class="p">,</span>
+        <span class="mi">36</span><span class="p">,</span>
+        <span class="mi">38</span><span class="p">,</span>
+        <span class="mi">40</span><span class="p">,</span>
+        <span class="mi">41</span><span class="p">,</span>
+        <span class="mi">43</span><span class="p">,</span>
+        <span class="mi">45</span><span class="p">,</span>
+        <span class="mi">47</span><span class="p">,</span>
+        <span class="mi">48</span><span class="p">,</span>
+        <span class="mi">50</span><span class="p">,</span>
+        <span class="mi">52</span><span class="p">,</span>
+        <span class="mi">53</span><span class="p">,</span>
+        <span class="mi">55</span><span class="p">,</span>
+        <span class="mi">57</span><span class="p">,</span>
+        <span class="mi">59</span><span class="p">,</span>
+        <span class="mi">60</span><span class="p">,</span>
+        <span class="mi">62</span><span class="p">,</span>
+        <span class="mi">64</span><span class="p">,</span>
+        <span class="mi">65</span><span class="p">,</span>
+        <span class="mi">67</span><span class="p">,</span>
+        <span class="mi">69</span><span class="p">,</span>
+        <span class="mi">71</span><span class="p">,</span>
+        <span class="mi">72</span><span class="p">,</span>
+        <span class="mi">74</span><span class="p">,</span>
+        <span class="mi">76</span><span class="p">,</span>
+        <span class="mi">77</span><span class="p">,</span>
+        <span class="mi">79</span><span class="p">,</span>
+        <span class="mi">81</span><span class="p">,</span>
+        <span class="mi">83</span><span class="p">,</span>
+        <span class="mi">84</span><span class="p">,</span>
+        <span class="mi">86</span><span class="p">,</span>
+        <span class="mi">88</span><span class="p">,</span>
+        <span class="mi">89</span><span class="p">,</span>
+        <span class="mi">91</span><span class="p">,</span>
+        <span class="mi">93</span><span class="p">,</span>
+        <span class="mi">95</span><span class="p">,</span>
+        <span class="mi">96</span><span class="p">,</span>
+        <span class="mi">98</span><span class="p">,</span>
+        <span class="mi">100</span><span class="p">,</span>
+        <span class="mi">101</span><span class="p">,</span>
+        <span class="mi">103</span><span class="p">,</span>
+        <span class="mi">105</span><span class="p">,</span>
+        <span class="mi">107</span><span class="p">,</span>
+        <span class="mi">108</span><span class="p">,</span>
+        <span class="mi">110</span><span class="p">,</span>
+        <span class="mi">112</span><span class="p">,</span>
+        <span class="mi">113</span><span class="p">,</span>
+        <span class="mi">115</span><span class="p">,</span>
+        <span class="mi">117</span><span class="p">,</span>
+        <span class="mi">119</span><span class="p">,</span>
+        <span class="mi">120</span><span class="p">,</span>
+        <span class="mi">122</span><span class="p">,</span>
+        <span class="mi">124</span><span class="p">,</span>
+        <span class="mi">125</span><span class="p">,</span>
+        <span class="mi">127</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">CURR_MODE</span> <span class="o">=</span> <span class="n">C_MAJ</span>
+    <span class="n">note</span> <span class="o">=</span> <span class="mi">60</span> <span class="o">+</span> <span class="n">n</span>
+    <span class="c1"># Shifting</span>
+    <span class="k">if</span> <span class="n">CURR_MODE</span> <span class="ow">and</span> <span class="n">note</span> <span class="o">&lt;</span> <span class="n">CURR_MODE</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="n">CURR_MODE</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">while</span> <span class="n">CURR_MODE</span> <span class="ow">and</span> <span class="n">note</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">CURR_MODE</span><span class="p">:</span>
+            <span class="n">note</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">note</span></div>
+
+
+<div class="viewcode-block" id="note_map_f_minor"><a class="viewcode-back" href="../../qmuvi.html#qmuvi.musical_processing.note_map_f_minor">[docs]</a><span class="k">def</span> <span class="nf">note_map_f_minor</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Map `n` to a note in the F minor scale. It starts at middle C.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        n</span>
+<span class="sd">            The integer to be mapped to a note.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        The note mapped to from `n`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">F_MIN</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="mi">5</span><span class="p">,</span>
+        <span class="mi">7</span><span class="p">,</span>
+        <span class="mi">8</span><span class="p">,</span>
+        <span class="mi">10</span><span class="p">,</span>
+        <span class="mi">12</span><span class="p">,</span>
+        <span class="mi">13</span><span class="p">,</span>
+        <span class="mi">15</span><span class="p">,</span>
+        <span class="mi">17</span><span class="p">,</span>
+        <span class="mi">19</span><span class="p">,</span>
+        <span class="mi">20</span><span class="p">,</span>
+        <span class="mi">22</span><span class="p">,</span>
+        <span class="mi">24</span><span class="p">,</span>
+        <span class="mi">25</span><span class="p">,</span>
+        <span class="mi">27</span><span class="p">,</span>
+        <span class="mi">29</span><span class="p">,</span>
+        <span class="mi">31</span><span class="p">,</span>
+        <span class="mi">32</span><span class="p">,</span>
+        <span class="mi">34</span><span class="p">,</span>
+        <span class="mi">36</span><span class="p">,</span>
+        <span class="mi">37</span><span class="p">,</span>
+        <span class="mi">39</span><span class="p">,</span>
+        <span class="mi">41</span><span class="p">,</span>
+        <span class="mi">43</span><span class="p">,</span>
+        <span class="mi">44</span><span class="p">,</span>
+        <span class="mi">46</span><span class="p">,</span>
+        <span class="mi">48</span><span class="p">,</span>
+        <span class="mi">49</span><span class="p">,</span>
+        <span class="mi">51</span><span class="p">,</span>
+        <span class="mi">53</span><span class="p">,</span>
+        <span class="mi">55</span><span class="p">,</span>
+        <span class="mi">56</span><span class="p">,</span>
+        <span class="mi">58</span><span class="p">,</span>
+        <span class="mi">60</span><span class="p">,</span>
+        <span class="mi">61</span><span class="p">,</span>
+        <span class="mi">63</span><span class="p">,</span>
+        <span class="mi">65</span><span class="p">,</span>
+        <span class="mi">67</span><span class="p">,</span>
+        <span class="mi">68</span><span class="p">,</span>
+        <span class="mi">70</span><span class="p">,</span>
+        <span class="mi">72</span><span class="p">,</span>
+        <span class="mi">74</span><span class="p">,</span>
+        <span class="mi">75</span><span class="p">,</span>
+        <span class="mi">77</span><span class="p">,</span>
+        <span class="mi">79</span><span class="p">,</span>
+        <span class="mi">80</span><span class="p">,</span>
+        <span class="mi">82</span><span class="p">,</span>
+        <span class="mi">84</span><span class="p">,</span>
+        <span class="mi">86</span><span class="p">,</span>
+        <span class="mi">87</span><span class="p">,</span>
+        <span class="mi">89</span><span class="p">,</span>
+        <span class="mi">91</span><span class="p">,</span>
+        <span class="mi">92</span><span class="p">,</span>
+        <span class="mi">94</span><span class="p">,</span>
+        <span class="mi">96</span><span class="p">,</span>
+        <span class="mi">97</span><span class="p">,</span>
+        <span class="mi">99</span><span class="p">,</span>
+        <span class="mi">101</span><span class="p">,</span>
+        <span class="mi">103</span><span class="p">,</span>
+        <span class="mi">104</span><span class="p">,</span>
+        <span class="mi">106</span><span class="p">,</span>
+        <span class="mi">108</span><span class="p">,</span>
+        <span class="mi">109</span><span class="p">,</span>
+        <span class="mi">111</span><span class="p">,</span>
+        <span class="mi">113</span><span class="p">,</span>
+        <span class="mi">115</span><span class="p">,</span>
+        <span class="mi">116</span><span class="p">,</span>
+        <span class="mi">118</span><span class="p">,</span>
+        <span class="mi">120</span><span class="p">,</span>
+        <span class="mi">121</span><span class="p">,</span>
+        <span class="mi">123</span><span class="p">,</span>
+        <span class="mi">125</span><span class="p">,</span>
+        <span class="mi">127</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">CURR_MODE</span> <span class="o">=</span> <span class="n">F_MIN</span>
+    <span class="n">note</span> <span class="o">=</span> <span class="mi">60</span> <span class="o">+</span> <span class="n">n</span>
+    <span class="c1"># Shifting</span>
+    <span class="k">if</span> <span class="n">CURR_MODE</span> <span class="ow">and</span> <span class="n">note</span> <span class="o">&lt;</span> <span class="n">CURR_MODE</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="n">CURR_MODE</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">while</span> <span class="n">CURR_MODE</span> <span class="ow">and</span> <span class="n">note</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">CURR_MODE</span><span class="p">:</span>
+            <span class="n">note</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">note</span></div>
+
+
+<div class="viewcode-block" id="note_map_c_major_arpeggio"><a class="viewcode-back" href="../../qmuvi.html#qmuvi.musical_processing.note_map_c_major_arpeggio">[docs]</a><span class="k">def</span> <span class="nf">note_map_c_major_arpeggio</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Map `n` to a note in the C major arpeggio. It starts at middle C.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        n</span>
+<span class="sd">            The integer to be mapped to a note.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        The note mapped to from `n`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">60</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span> <span class="o">+</span> <span class="mi">60</span></div>
+
+
+<div class="viewcode-block" id="get_sound_data_from_density_matrix"><a class="viewcode-back" href="../../qmuvi.html#qmuvi.musical_processing.get_sound_data_from_density_matrix">[docs]</a><span class="k">def</span> <span class="nf">get_sound_data_from_density_matrix</span><span class="p">(</span>
+    <span class="n">density_matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">default_pure_state_global_phasors</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">complex</span><span class="p">],</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract a list of sound data from a density matrix by eigendecomposing it into a mixture of pure states.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        density_matrix</span>
+<span class="sd">            A density matrix in the form of a numpy array.</span>
+<span class="sd">        default_pure_state_global_phasors</span>
+<span class="sd">            A dictionary of default global phasors for each pure state in the density matrix.</span>
+<span class="sd">            Used to keep the global phase consistent during eigendecompositions of different density matrices.</span>
+<span class="sd">        eps</span>
+<span class="sd">            A small probability threshold. Used to filter out pure states and some basis states with negligible probability.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        A list of sound data for pure states (under the condition pure_state_prob &gt; eps) in the form of tuples, each tuple containing:</span>
+<span class="sd">        (</span>
+<span class="sd">        pure_state_prob,</span>
+<span class="sd">        pure_state_info: A Dict with key: basis_state_number, and value: (basis_state_prob, basis_state_angle), # where (basis_state_prob &gt; eps)</span>
+<span class="sd">        all_basis_state_probs,</span>
+<span class="sd">        all_basis_state_angles</span>
+<span class="sd">        ).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sound_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># eigenvalues are not necessarily ordered</span>
+    <span class="n">mixture_eigenvalues</span><span class="p">,</span> <span class="n">mixture_statevectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eig</span><span class="p">(</span><span class="n">density_matrix</span><span class="p">)</span>
+    <span class="n">nonzero_probability_indices</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">eigenvalue</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mixture_eigenvalues</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">eigenvalue</span><span class="o">.</span><span class="n">real</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="p">:</span>
+            <span class="n">nonzero_probability_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="c1"># each pure state in the mixture has a global phase introduced during the eigendecomposition</span>
+    <span class="k">for</span> <span class="n">pure_state_index</span> <span class="ow">in</span> <span class="n">nonzero_probability_indices</span><span class="p">:</span>
+        <span class="n">pure_state_probability</span> <span class="o">=</span> <span class="n">mixture_eigenvalues</span><span class="p">[</span><span class="n">pure_state_index</span><span class="p">]</span><span class="o">.</span><span class="n">real</span>
+        <span class="n">notes_by_basis_state_index</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">pure_statevector</span> <span class="o">=</span> <span class="n">mixture_statevectors</span><span class="p">[:,</span> <span class="n">pure_state_index</span><span class="p">]</span>
+        <span class="n">zero_state_amplitude</span> <span class="o">=</span> <span class="nb">complex</span><span class="p">(</span><span class="n">pure_statevector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">zero_state_probability</span> <span class="o">=</span> <span class="p">(</span><span class="n">zero_state_amplitude</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">zero_state_amplitude</span><span class="p">))</span><span class="o">.</span><span class="n">real</span>
+        <span class="k">if</span> <span class="n">zero_state_probability</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="p">:</span>
+            <span class="n">pure_global_phasor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">zero_state_amplitude</span><span class="p">)</span>
+            <span class="n">default_pure_state_global_phasors</span><span class="p">[</span><span class="n">pure_state_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">pure_global_phasor</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pure_global_phasor</span> <span class="o">=</span> <span class="n">default_pure_state_global_phasors</span><span class="p">[</span><span class="n">pure_state_index</span><span class="p">]</span>
+
+        <span class="c1"># get the angles for each of the amplitudes (-pi, pi]</span>
+        <span class="n">basis_state_phase_angles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">pure_statevector</span> <span class="o">*</span> <span class="n">pure_global_phasor</span><span class="p">))</span>
+        <span class="n">basis_state_probabilities</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># get the (probability, angle) pair for the basis states in the statevector</span>
+        <span class="k">for</span> <span class="n">basis_state_index</span><span class="p">,</span> <span class="n">basis_state_amplitude</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pure_statevector</span><span class="p">):</span>
+            <span class="n">basis_state_probability</span> <span class="o">=</span> <span class="p">(</span><span class="nb">complex</span><span class="p">(</span><span class="n">basis_state_amplitude</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="nb">complex</span><span class="p">(</span><span class="n">basis_state_amplitude</span><span class="p">)))</span><span class="o">.</span><span class="n">real</span>
+            <span class="n">basis_state_probabilities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">basis_state_probability</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">basis_state_probability</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="p">:</span>
+                <span class="n">angle</span> <span class="o">=</span> <span class="n">basis_state_phase_angles</span><span class="p">[</span><span class="n">basis_state_index</span><span class="p">]</span>
+                <span class="n">notes_by_basis_state_index</span><span class="p">[</span><span class="n">basis_state_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">basis_state_probability</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span>
+
+        <span class="n">pure_state_sound_data</span> <span class="o">=</span> <span class="p">(</span><span class="n">pure_state_probability</span><span class="p">,</span> <span class="n">notes_by_basis_state_index</span><span class="p">,</span> <span class="n">basis_state_probabilities</span><span class="p">,</span> <span class="n">basis_state_phase_angles</span><span class="p">)</span>
+        <span class="n">sound_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pure_state_sound_data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sound_data</span></div>
+
+
+<div class="viewcode-block" id="convert_midi_to_wav_timidity"><a class="viewcode-back" href="../../qmuvi.html#qmuvi.musical_processing.convert_midi_to_wav_timidity">[docs]</a><span class="k">def</span> <span class="nf">convert_midi_to_wav_timidity</span><span class="p">(</span><span class="n">output_manager</span><span class="p">:</span> <span class="n">data_manager</span><span class="o">.</span><span class="n">DataManager</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span> <span class="n">log_to_file</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a MIDI file to a WAV file using the Timidity++ library.</span>
+
+<span class="sd">    This function takes the path to generated MIDI files and uses the Timidity++ library to</span>
+<span class="sd">    convert the files to a single WAV file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        output_manager</span>
+<span class="sd">            A data manager object for finding the MIDI files and handling the output file.</span>
+<span class="sd">        timeout</span>
+<span class="sd">            The number of seconds to wait for each thread to complete before raising a timeout exception. Default is 8.</span>
+<span class="sd">        log_to_file</span>
+<span class="sd">            Whether to log the output of the Timidity process to a file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        This function does not return anything, but writes the output WAV file to disk.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">output_manager</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">output_manager</span><span class="o">.</span><span class="n">default_name</span> <span class="o">+</span> <span class="s2">&quot;-*.mid&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="n">output_manager</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">output_manager</span><span class="o">.</span><span class="n">default_name</span> <span class="o">+</span> <span class="s2">&quot;.mid&quot;</span><span class="p">)</span>
+
+    <span class="c1"># documentation found here: https://www.mankier.com/1/timidity#Input_File</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;-Ow&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">log_to_file</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--verbose=3&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--preserve-silence&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;-A,120&quot;</span><span class="p">)</span>
+    <span class="c1"># anti-aliasing seems to cause some crackling</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--no-anti-alias&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--mod-wheel&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--portamento&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--vibrato&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--no-ch-pressure&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--mod-envelope&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--trace-text-meta&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--overlap-voice&quot;</span><span class="p">)</span>
+    <span class="c1"># options.append(&quot;--temper-control&quot;)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--default-bank=0&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--default-program=0&quot;</span><span class="p">)</span>
+    <span class="c1"># d: disabled, l: left, r: right, b: swap l&amp;r</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--delay=d,0&quot;</span><span class="p">)</span>
+    <span class="c1"># chorus options</span>
+    <span class="c1"># d: disabled,</span>
+    <span class="c1"># n: enable MIDI chorus effect control,</span>
+    <span class="c1"># s: surround sound, chorus detuned to a lesser degree.</span>
+    <span class="c1"># last number is chorus level 0-127</span>
+    <span class="c1">###</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--chorus=n,64&quot;</span><span class="p">)</span>
+    <span class="c1"># reverb options</span>
+    <span class="c1"># d: disabled,</span>
+    <span class="c1"># n: enable MIDI reverb effect control,</span>
+    <span class="c1"># g: global reverb effect,</span>
+    <span class="c1"># f: Freeverb MIDI reverb effect control,</span>
+    <span class="c1"># G: global, Freeverb effect.</span>
+    <span class="c1"># num 1: reverb level 0-127</span>
+    <span class="c1"># num 2: reverb scaleroom [0,1], roomsize = C * scaleroom + offsetroom, where C is reverberation character</span>
+    <span class="c1"># num 3: reverb offsetroom [0,1]</span>
+    <span class="c1"># num 4: reverb factor for pre-delay time of reverberation in percent</span>
+    <span class="c1">###</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--reverb=f,40,0.28,0.7,100&quot;</span><span class="p">)</span>
+    <span class="c1"># d: disable, c: Chamberlin resonant LPF (12dB/oct), m: Moog resonant low-pass VCF (24dB/oct)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--voice-lpf=c&quot;</span><span class="p">)</span>
+    <span class="c1"># 0: no shaping, 1: trad, 2: Overdrive-like soft-clipping + new noise shaping, 3: Tube-amplifier-like soft-clipping + new noise shaping, 4: New noise shaping</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--noise-shaping=4&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--resample=5&quot;</span><span class="p">)</span>  <span class="c1"># 0-5, 5 is highest quality</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--voice-queue=0&quot;</span><span class="p">)</span>
+    <span class="c1"># options.append(&quot;--fast-decay&quot;) # 0 means no voices will be killed even when there&#39;s a delay due to so many in the queue</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--decay-time=0&quot;</span><span class="p">)</span>
+    <span class="c1"># options.append(&quot;-R 100&quot;)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--interpolation=gauss&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;-EFresamp=34&quot;</span><span class="p">)</span>  <span class="c1"># for interpolation gauss: 0-34</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--output-stereo&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--output-24bit&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--polyphony=15887&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--sampling-freq=44100&quot;</span><span class="p">)</span>
+    <span class="c1"># options.append(&quot;--audio-buffer=5/100&quot;) # causes error in timidity version 2.15 (linux)</span>
+    <span class="c1"># (regular: 0, linear: 1, ideal: ~1.661, GS: ~2)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--volume-curve=1.661&quot;</span><span class="p">)</span>
+    <span class="c1"># options.append(&quot;--module=4&quot;)</span>
+
+    <span class="n">package_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+    <span class="n">config_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">package_path</span><span class="p">,</span> <span class="s2">&quot;package_data&quot;</span><span class="p">,</span> <span class="s2">&quot;resources&quot;</span><span class="p">,</span> <span class="s2">&quot;timidity&quot;</span><span class="p">,</span> <span class="s2">&quot;timidity.cfg&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;--config-file=&quot;</span><span class="si">{</span><span class="n">config_filepath</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+
+    <span class="n">options_string</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">timidity_convert_subprocess</span><span class="p">(</span>
+        <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">options_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">thread_results</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CompletedProcess</span><span class="p">],</span>
+        <span class="n">thread_errors</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">thread_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">log_to_file</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="c1"># setup logger for thread</span>
+                <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+
+                <span class="c1"># add file handler</span>
+                <span class="n">log_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="sa">f</span><span class="s2">&quot;log-timidity-</span><span class="si">{</span><span class="n">thread_index</span><span class="si">}</span><span class="s2">.log&quot;</span><span class="p">)</span>
+                <span class="c1"># os.remove(log_filepath)</span>
+                <span class="n">file_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="n">log_filepath</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+                <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> - </span><span class="si">%(levelname)s</span><span class="s2">: </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">file_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">file_handler</span><span class="p">)</span>
+
+            <span class="c1"># Get the absolute path of the package</span>
+            <span class="n">package_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+
+            <span class="n">shell</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="k">if</span> <span class="n">log_to_file</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cwd: </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;package_path: </span><span class="si">{</span><span class="n">package_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;midi filename: &quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">.mid&quot;&#39;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;wav filename: &quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">.wav&quot;&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Windows&quot;</span><span class="p">:</span>
+                <span class="c1"># Join the path to the binary file</span>
+                <span class="n">binary_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">package_path</span><span class="p">,</span> <span class="s2">&quot;package_data&quot;</span><span class="p">,</span> <span class="s2">&quot;binaries&quot;</span><span class="p">,</span> <span class="s2">&quot;TiMidity-2.15.0&quot;</span><span class="p">,</span> <span class="s2">&quot;windows&quot;</span><span class="p">,</span> <span class="s2">&quot;timidity.exe&quot;</span><span class="p">)</span>
+                <span class="n">command</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">binary_path</span><span class="p">,</span> <span class="n">options_string</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;-o &quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">.wav&quot;&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">.mid&quot;&#39;</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Darwin&quot;</span><span class="p">:</span>
+                <span class="n">binary_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">package_path</span><span class="p">,</span> <span class="s2">&quot;package_data&quot;</span><span class="p">,</span> <span class="s2">&quot;binaries&quot;</span><span class="p">,</span> <span class="s2">&quot;TiMidity-2.15.0&quot;</span><span class="p">,</span> <span class="s2">&quot;macos&quot;</span><span class="p">,</span> <span class="s2">&quot;timidity&quot;</span><span class="p">)</span>
+                <span class="n">command</span> <span class="o">=</span> <span class="p">[</span><span class="n">binary_path</span><span class="p">]</span> <span class="o">+</span> <span class="n">options</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">.wav&quot;&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">.mid&quot;&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Assume the binary is in the PATH on other platforms (installable on Linux)</span>
+                <span class="n">binary_path</span> <span class="o">=</span> <span class="s2">&quot;timidity&quot;</span>
+                <span class="n">shell</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="n">which</span><span class="p">(</span><span class="n">binary_path</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">log_to_file</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error: Could not find timidity binary in PATH: </span><span class="si">{</span><span class="n">binary_path</span><span class="si">}</span><span class="s2">. Please install timidity.&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find timidity binary in PATH: </span><span class="si">{</span><span class="n">binary_path</span><span class="si">}</span><span class="s2">. Please install timidity.&quot;</span><span class="p">)</span>
+
+                <span class="n">command</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">binary_path</span><span class="p">,</span> <span class="n">options_string</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;-o &quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">.wav&quot;&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">.mid&quot;&#39;</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">log_to_file</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;timidity binary path: </span><span class="si">{</span><span class="n">binary_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;timidity options: </span><span class="si">{</span><span class="n">options_string</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;executing subprocess command: </span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">thread_results</span><span class="p">[</span><span class="n">thread_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">package_path</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="n">shell</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">log_to_file</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;completed subprocess&quot;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">thread_errors</span><span class="p">[</span><span class="n">thread_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">log_to_file</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;An error occurred:&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">log_to_file</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">thread_results</span><span class="p">[</span><span class="n">thread_index</span><span class="p">]</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">thread_results</span><span class="p">[</span><span class="n">thread_index</span><span class="p">]</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+
+    <span class="n">convert_files_mid_to_wav_timidity_threading</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">options_string</span><span class="p">,</span> <span class="n">timidity_convert_subprocess</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+
+    <span class="n">files</span> <span class="o">=</span> <span class="n">output_manager</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">output_manager</span><span class="o">.</span><span class="n">default_name</span> <span class="o">+</span> <span class="s2">&quot;-*.wav&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Mixing .wav track files to a single file...&quot;</span><span class="p">)</span>
+        <span class="n">mix_wav_files</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">output_manager</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mix_wav_files"><a class="viewcode-back" href="../../qmuvi.html#qmuvi.musical_processing.mix_wav_files">[docs]</a><span class="k">def</span> <span class="nf">mix_wav_files</span><span class="p">(</span><span class="n">file_paths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">output_manager</span><span class="p">:</span> <span class="n">data_manager</span><span class="o">.</span><span class="n">DataManager</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mix multiple WAV files into a single file.</span>
+
+<span class="sd">    This function takes a list of file paths for WAV files and a data manager object for handling the output file, and</span>
+<span class="sd">    mixes the audio content of the input files into a single file. The resulting file is saved to the output file path</span>
+<span class="sd">    returned by the data manager.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_paths</span>
+<span class="sd">        A list of file paths for the WAV files to be mixed.</span>
+<span class="sd">    output_manager</span>
+<span class="sd">        A data manager object for handling the output file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        This function does not return a value. The resulting mixed audio file is saved to disk.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">moviepy.editor</span> <span class="k">as</span> <span class="nn">mpy</span>
+    <span class="kn">from</span> <span class="nn">moviepy.audio.AudioClip</span> <span class="kn">import</span> <span class="n">AudioArrayClip</span><span class="p">,</span> <span class="n">CompositeAudioClip</span>
+    <span class="kn">import</span> <span class="nn">wave</span>
+    <span class="n">audio_clips</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">audio_file_clips</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">file_paths</span><span class="p">:</span>
+        <span class="n">path_multiplatform</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span>
+        <span class="n">audio_file_clip</span> <span class="o">=</span> <span class="n">mpy</span><span class="o">.</span><span class="n">AudioFileClip</span><span class="p">(</span><span class="n">path_multiplatform</span><span class="p">,</span> <span class="n">nbytes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="mi">44100</span><span class="p">)</span>
+        <span class="n">audio_file_clips</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">audio_file_clip</span><span class="p">)</span>
+        <span class="n">audio_samples</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">audio_file_clip</span><span class="o">.</span><span class="n">iter_frames</span><span class="p">())</span>
+        <span class="n">audio_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">audio_samples</span><span class="p">)</span>
+        <span class="n">total_time</span> <span class="o">=</span> <span class="n">audio_file_clip</span><span class="o">.</span><span class="n">duration</span>
+        <span class="n">audio_array_clip</span> <span class="o">=</span> <span class="n">AudioArrayClip</span><span class="p">(</span><span class="n">audio_array</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="mi">44100</span> <span class="o">*</span> <span class="n">total_time</span><span class="p">)],</span> <span class="n">fps</span><span class="o">=</span><span class="mi">44100</span><span class="p">)</span>
+        <span class="n">audio_clips</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">audio_array_clip</span><span class="p">)</span>
+
+    <span class="n">composed_audio_clip</span> <span class="o">=</span> <span class="n">CompositeAudioClip</span><span class="p">(</span><span class="n">audio_file_clips</span><span class="p">)</span>
+    <span class="n">output_filename</span> <span class="o">=</span> <span class="n">output_manager</span><span class="o">.</span><span class="n">get_default_file_pathname</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;.wav&quot;</span>
+    <span class="n">composed_audio_clip</span><span class="o">.</span><span class="n">write_audiofile</span><span class="p">(</span><span class="n">output_filename</span><span class="p">,</span> <span class="n">codec</span><span class="o">=</span><span class="s2">&quot;pcm_s16le&quot;</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="mi">44100</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="convert_files_mid_to_wav_timidity_threading"><a class="viewcode-back" href="../../qmuvi.html#qmuvi.musical_processing.convert_files_mid_to_wav_timidity_threading">[docs]</a><span class="k">def</span> <span class="nf">convert_files_mid_to_wav_timidity_threading</span><span class="p">(</span>
+    <span class="n">pathnames</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">options_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">timidity_convert_method</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CompletedProcess</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a list of MIDI files to WAV format using TiMidity++ in a threaded manner.</span>
+
+<span class="sd">    Given a list of file paths to MIDI files, an options string for TiMidity++, a function to perform the conversion, and a timeout,</span>
+<span class="sd">    this function will convert each file to WAV format using TiMidity++ in a separate thread. Each thread runs the conversion function</span>
+<span class="sd">    with the given options string and the input file path. If a timeout is specified and the conversion function takes longer than the</span>
+<span class="sd">    timeout to complete, the function will raise an exception.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        pathnames</span>
+<span class="sd">            A list of file paths to MIDI files that will be converted to WAV format.</span>
+<span class="sd">        options_string</span>
+<span class="sd">            An options string to be passed to the TiMidity++ conversion function.</span>
+<span class="sd">        timidity_convert_method</span>
+<span class="sd">            The function to be used to perform the TiMidity++ conversion.</span>
+<span class="sd">        timeout</span>
+<span class="sd">            The number of seconds to wait for each thread to complete before raising a timeout exception. Default is 8.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        A list of file paths to the converted WAV files.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    Exception</span>
+<span class="sd">        If a timeout occurs while converting a MIDI file to WAV format.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output_wav_files</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">base_pathnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">pathname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">pathname</span> <span class="ow">in</span> <span class="n">pathnames</span><span class="p">]</span>
+
+    <span class="c1"># instantiate lists that store data from each thread</span>
+    <span class="n">thread_results</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">pathnames</span><span class="p">)</span>
+    <span class="n">thread_errors</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">pathnames</span><span class="p">)</span>
+
+    <span class="c1"># start a thread for each file to be converted</span>
+    <span class="n">threads</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">file_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pathnames</span><span class="p">)):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+            <span class="n">target</span><span class="o">=</span><span class="n">timidity_convert_method</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;timidity-</span><span class="si">{</span><span class="n">file_index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="p">((</span><span class="n">base_pathnames</span><span class="p">[</span><span class="n">file_index</span><span class="p">],</span> <span class="n">options_string</span><span class="p">,</span> <span class="n">thread_results</span><span class="p">,</span> <span class="n">thread_errors</span><span class="p">,</span> <span class="n">file_index</span><span class="p">)),</span>
+        <span class="p">)</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">threads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Converting to .wav files using TiMidity++&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Wait for all threads to finish, with a timeout</span>
+    <span class="n">thread_has_timed_out</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">thread_index</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">threads</span><span class="p">):</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="n">wav_file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">base_pathnames</span><span class="p">[</span><span class="n">file_index</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;.wav&#39;&quot;</span>
+        <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">is_alive</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">wav_file</span><span class="p">):</span>
+            <span class="c1"># thread is still running and .wav file was not created, a conversion timeout has occured</span>
+            <span class="n">t</span><span class="o">.</span><span class="n">_stop</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Timidity++ timed out for </span><span class="si">{</span><span class="n">wav_file</span><span class="si">}</span><span class="s2">, skipping conversion&quot;</span><span class="p">)</span>
+            <span class="n">thread_has_timed_out</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">wav_file</span><span class="p">):</span>
+            <span class="n">output_wav_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wav_file</span><span class="p">)</span>
+
+    <span class="c1"># wait a small amount of time to ensure that the .wav file conversion has been finalised</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+
+    <span class="c1"># kill the remaining threads that have successfully created their .wav file</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">threads</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+            <span class="n">t</span><span class="o">.</span><span class="n">_stop</span><span class="p">()</span>
+
+    <span class="c1"># Output any errors that may have occured within the threads</span>
+    <span class="k">for</span> <span class="n">thread_index</span><span class="p">,</span> <span class="n">thread_result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">thread_results</span><span class="p">):</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">pathnames</span><span class="p">[</span><span class="n">thread_index</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">thread_errors</span><span class="p">[</span><span class="n">thread_index</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># an error occured in the thread, show the error</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Errors in thread </span><span class="si">{</span><span class="n">thread_index</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">thread_errors</span><span class="p">[</span><span class="n">thread_index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">thread_result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># timidity command failed in subprocess, show subprocess stdout and stderr</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error from Timidity++ converting file </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Output:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">thread_result</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;stderr:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">thread_result</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pathnames</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">thread_has_timed_out</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ERROR: Thread timed out (</span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2">s) during timidity mid to wav conversion on the single file </span><span class="si">{</span><span class="n">pathnames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output_wav_files</span></div>
+
+
+<div class="viewcode-block" id="generate_midi_from_data"><a class="viewcode-back" href="../../qmuvi.html#qmuvi.musical_processing.generate_midi_from_data">[docs]</a><span class="k">def</span> <span class="nf">generate_midi_from_data</span><span class="p">(</span>
+    <span class="n">output_manager</span><span class="p">:</span> <span class="n">data_manager</span><span class="o">.</span><span class="n">DataManager</span><span class="p">,</span>
+    <span class="n">instruments</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">81</span><span class="p">,</span> <span class="mi">89</span><span class="p">))],</span>
+    <span class="n">note_map</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">note_map_c_major_arpeggio</span><span class="p">,</span>
+    <span class="n">rhythm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Use the qmuvi generated data files to create a song as a midi file (.mid).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        output_manager</span>
+<span class="sd">            The DataManager object for the output folder.</span>
+<span class="sd">        instruments</span>
+<span class="sd">            The collections of instruments for each pure state in the mixed state (up to 8 collections).</span>
+<span class="sd">            Computational basis state phase determines which instrument from the collection is used.</span>
+<span class="sd">        note_map</span>
+<span class="sd">            Converts state number to a note number where 60 is middle C.</span>
+<span class="sd">        rhythm</span>
+<span class="sd">            A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second).</span>
+<span class="sd">            If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        A list of file paths to the generated MIDI files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Generating MIDI track files...&quot;</span><span class="p">)</span>
+
+    <span class="n">sounds_list</span> <span class="o">=</span> <span class="n">output_manager</span><span class="o">.</span><span class="n">load_json</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;sounds_list.json&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rhythm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">rhythm</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">)</span>
+
+    <span class="c1"># format loaded data</span>
+    <span class="k">for</span> <span class="n">sound_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">pure_state_info_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">[</span><span class="n">sound_index</span><span class="p">])):</span>
+            <span class="c1"># pure_state_prob: float</span>
+            <span class="n">sounds_list</span><span class="p">[</span><span class="n">sound_index</span><span class="p">][</span><span class="n">pure_state_info_index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">[</span><span class="n">sound_index</span><span class="p">][</span><span class="n">pure_state_info_index</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c1"># pure_state_info: Dict[int basis_state_number, Tuple[float basis_state_prob, float basis_state_angle]], # where (basis_state_prob &gt; eps)</span>
+            <span class="n">pure_state_info</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">basis_state_number</span> <span class="ow">in</span> <span class="n">sounds_list</span><span class="p">[</span><span class="n">sound_index</span><span class="p">][</span><span class="n">pure_state_info_index</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">pure_state_info</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">basis_state_number</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">[</span><span class="n">sound_index</span><span class="p">][</span><span class="n">pure_state_info_index</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="n">basis_state_number</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">[</span><span class="n">sound_index</span><span class="p">][</span><span class="n">pure_state_info_index</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="n">basis_state_number</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+                <span class="p">)</span>
+            <span class="n">sounds_list</span><span class="p">[</span><span class="n">sound_index</span><span class="p">][</span><span class="n">pure_state_info_index</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">pure_state_info</span>
+            <span class="c1"># all_basis_state_probs: List[float basis_state_prob]</span>
+            <span class="k">for</span> <span class="n">basis_state_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">[</span><span class="n">sound_index</span><span class="p">][</span><span class="n">pure_state_info_index</span><span class="p">][</span><span class="mi">2</span><span class="p">])):</span>
+                <span class="n">sounds_list</span><span class="p">[</span><span class="n">sound_index</span><span class="p">][</span><span class="n">pure_state_info_index</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="n">basis_state_index</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+                    <span class="n">sounds_list</span><span class="p">[</span><span class="n">sound_index</span><span class="p">][</span><span class="n">pure_state_info_index</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="n">basis_state_index</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="c1"># all_basis_state_angles: List[float basis_state_angle]</span>
+            <span class="k">for</span> <span class="n">basis_state_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">[</span><span class="n">sound_index</span><span class="p">][</span><span class="n">pure_state_info_index</span><span class="p">][</span><span class="mi">3</span><span class="p">])):</span>
+                <span class="n">sounds_list</span><span class="p">[</span><span class="n">sound_index</span><span class="p">][</span><span class="n">pure_state_info_index</span><span class="p">][</span><span class="mi">3</span><span class="p">][</span><span class="n">basis_state_index</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+                    <span class="n">sounds_list</span><span class="p">[</span><span class="n">sound_index</span><span class="p">][</span><span class="n">pure_state_info_index</span><span class="p">][</span><span class="mi">3</span><span class="p">][</span><span class="n">basis_state_index</span><span class="p">]</span>
+                <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">rhythm_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rhythm</span><span class="p">)):</span>
+        <span class="n">rhythm</span><span class="p">[</span><span class="n">rhythm_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">rhythm</span><span class="p">[</span><span class="n">rhythm_index</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">rhythm</span><span class="p">[</span><span class="n">rhythm_index</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="n">track_count</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">mid_files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">tracks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">track_count</span><span class="p">):</span>
+        <span class="n">mid_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MidiFile</span><span class="p">())</span>
+        <span class="n">tracks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MidiTrack</span><span class="p">())</span>
+
+    <span class="c1"># if less than the the track_count number of instruments are provided, then the last instrument will be used for the remaining tracks</span>
+    <span class="n">instruments_by_track</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">instrument_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">track_count</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">instrument_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">instruments</span><span class="p">):</span>
+            <span class="n">instruments_by_track</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instruments</span><span class="p">[</span><span class="n">instrument_index</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">instruments_by_track</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instruments</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">track</span> <span class="ow">in</span> <span class="n">tracks</span><span class="p">:</span>
+        <span class="n">track</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MetaMessage</span><span class="p">(</span><span class="s2">&quot;set_tempo&quot;</span><span class="p">,</span> <span class="n">tempo</span><span class="o">=</span><span class="n">bpm2tempo</span><span class="p">(</span><span class="mi">60</span><span class="p">)))</span>
+
+    <span class="c1"># not sure where these numbers come from, might be from the GeneralMidi specification.</span>
+    <span class="n">available_channels</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">15</span><span class="p">]</span>
+    <span class="n">largest_track_instruments_count</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">instrument_list</span><span class="p">)</span> <span class="k">for</span> <span class="n">instrument_list</span> <span class="ow">in</span> <span class="n">instruments_by_track</span><span class="p">])</span>
+    <span class="n">channels</span> <span class="o">=</span> <span class="p">[</span><span class="n">available_channels</span><span class="p">[</span><span class="n">instrument_index</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">available_channels</span><span class="p">)]</span> <span class="k">for</span> <span class="n">instrument_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">largest_track_instruments_count</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">rhythm_index</span><span class="p">,</span> <span class="n">sound</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">):</span>
+        <span class="n">active_notes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># TODO: check if this is redundant (already done above)</span>
+        <span class="n">sorted_pure_state_infos</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sound</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># the largest probability of the pure states in the sampled state</span>
+        <span class="n">largest_chord_prob</span> <span class="o">=</span> <span class="n">sorted_pure_state_infos</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># start playing the notes with the correct velocity and instrument for each track</span>
+        <span class="k">for</span> <span class="n">track_number</span><span class="p">,</span> <span class="n">track</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tracks</span><span class="p">):</span>
+            <span class="n">channel</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="c1"># if there are no more pure states to add to the track, then add a rest</span>
+            <span class="k">if</span> <span class="n">track_number</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_pure_state_infos</span><span class="p">):</span>
+                <span class="n">track</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="s2">&quot;note_on&quot;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span> <span class="n">note</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">velocity</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+                <span class="n">active_notes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">track_number</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">channel</span><span class="p">))</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># chord is Dict[int basis_state_number, Tuple[float basis_state_prob, float basis_state_angle]]</span>
+            <span class="n">chord_prob</span><span class="p">,</span> <span class="n">pure_state_info</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sorted_pure_state_infos</span><span class="p">[</span><span class="n">track_number</span><span class="p">]</span>
+            <span class="n">largest_note_prob</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">pure_state_info</span><span class="p">[</span><span class="n">basis_state_number</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">basis_state_number</span> <span class="ow">in</span> <span class="n">pure_state_info</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+
+            <span class="k">for</span> <span class="n">basis_state_number</span> <span class="ow">in</span> <span class="n">pure_state_info</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">note_number</span> <span class="o">=</span> <span class="n">note_map</span><span class="p">(</span><span class="n">basis_state_number</span><span class="p">)</span>
+                <span class="n">note_prob</span><span class="p">,</span> <span class="n">note_angle</span> <span class="o">=</span> <span class="n">pure_state_info</span><span class="p">[</span><span class="n">basis_state_number</span><span class="p">]</span>
+                <span class="n">note_velocity</span> <span class="o">=</span> <span class="p">(</span><span class="n">note_prob</span> <span class="o">/</span> <span class="n">largest_note_prob</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">chord_prob</span> <span class="o">/</span> <span class="n">largest_chord_prob</span><span class="p">)</span>
+
+                <span class="c1"># converts the velocity from a float [0, 1] to an int [0, 127]</span>
+                <span class="n">velocity_128</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">128</span> <span class="o">*</span> <span class="p">(</span><span class="n">note_velocity</span><span class="p">))</span>
+                <span class="c1"># handle the special case where note_velocity &gt;= 1</span>
+                <span class="k">if</span> <span class="n">velocity_128</span> <span class="o">&gt;</span> <span class="mi">127</span><span class="p">:</span>
+                    <span class="n">velocity_128</span> <span class="o">=</span> <span class="mi">127</span>
+
+                <span class="n">track_instruments</span> <span class="o">=</span> <span class="n">instruments_by_track</span><span class="p">[</span><span class="n">track_number</span><span class="p">]</span>
+
+                <span class="c1"># bound the angle between 0 and 2pi taking into consideration the periodic nature of the phase</span>
+                <span class="n">note_angle_bounded</span> <span class="o">=</span> <span class="p">(</span><span class="n">note_angle</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">track_instruments</span><span class="p">))</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+                <span class="c1"># convert the angle to a fraction of 2pi, resulting in a value in the range [0, 1)</span>
+                <span class="n">note_angle_fraction</span> <span class="o">=</span> <span class="n">note_angle_bounded</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+                <span class="n">instrument_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">note_angle_fraction</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">track_instruments</span><span class="p">))</span>
+
+                <span class="n">instrument</span> <span class="o">=</span> <span class="n">track_instruments</span><span class="p">[</span><span class="n">instrument_index</span><span class="p">]</span>
+                <span class="n">channel</span> <span class="o">=</span> <span class="n">channels</span><span class="p">[</span><span class="n">instrument_index</span><span class="p">]</span>
+                <span class="c1"># Set the instrument for the track</span>
+                <span class="n">track</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="s2">&quot;program_change&quot;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span> <span class="n">program</span><span class="o">=</span><span class="n">instrument</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+                <span class="c1"># start playing the note_number with the given velocity, the note stops playing when the &#39;note_off&#39; message is sent</span>
+                <span class="n">track</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="s2">&quot;note_on&quot;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span> <span class="n">note</span><span class="o">=</span><span class="n">note_number</span><span class="p">,</span> <span class="n">velocity</span><span class="o">=</span><span class="n">velocity_128</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+                <span class="n">active_notes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">track_number</span><span class="p">,</span> <span class="n">note_number</span><span class="p">,</span> <span class="n">channel</span><span class="p">))</span>
+
+        <span class="c1"># move the tracks forward in time according to the rhythm</span>
+        <span class="c1"># TODO: Check if this assumes that sound notes cannot be 0, if so, then modify the approach to allow for 0 notes</span>
+        <span class="k">for</span> <span class="n">track_number</span><span class="p">,</span> <span class="n">track</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tracks</span><span class="p">):</span>
+            <span class="n">channel</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">track</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="s2">&quot;note_on&quot;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span> <span class="n">note</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">velocity</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">rhythm</span><span class="p">[</span><span class="n">rhythm_index</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">track</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="s2">&quot;note_off&quot;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span> <span class="n">note</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">velocity</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="c1"># turn off all of the notes for this sound</span>
+        <span class="k">for</span> <span class="n">track_number</span><span class="p">,</span> <span class="n">note_number</span><span class="p">,</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">active_notes</span><span class="p">:</span>
+            <span class="n">track</span> <span class="o">=</span> <span class="n">tracks</span><span class="p">[</span><span class="n">track_number</span><span class="p">]</span>
+            <span class="n">track</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="s2">&quot;note_off&quot;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span> <span class="n">note</span><span class="o">=</span><span class="n">note_number</span><span class="p">,</span> <span class="n">velocity</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="c1"># Add a rest, specified by the rhythm, to each track</span>
+        <span class="k">for</span> <span class="n">track_number</span><span class="p">,</span> <span class="n">track</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tracks</span><span class="p">):</span>
+            <span class="n">channel</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">track</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="s2">&quot;note_on&quot;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span> <span class="n">note</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">velocity</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">rhythm</span><span class="p">[</span><span class="n">rhythm_index</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">track</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="s2">&quot;note_off&quot;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span> <span class="n">note</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">velocity</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+
+    <span class="n">output_manager</span><span class="o">.</span><span class="n">remove_files</span><span class="p">(</span><span class="n">output_manager</span><span class="o">.</span><span class="n">default_name</span> <span class="o">+</span> <span class="s2">&quot;-*.mid&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">track_number</span><span class="p">,</span> <span class="n">track</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tracks</span><span class="p">):</span>
+        <span class="n">mid_files</span><span class="p">[</span><span class="n">track_number</span><span class="p">]</span><span class="o">.</span><span class="n">tracks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">track</span><span class="p">)</span>
+        <span class="n">mid_files</span><span class="p">[</span><span class="n">track_number</span><span class="p">]</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">output_manager</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">output_manager</span><span class="o">.</span><span class="n">default_name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">track_number</span><span class="si">}</span><span class="s2">.mid&quot;</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">mid_files</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Gary Mooney.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-XXXXXXXXXX', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

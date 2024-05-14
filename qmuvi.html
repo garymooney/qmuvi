@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qmuvi package &mdash; qMuVi 0.1.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contributing" href="contributing_link.html" />
+    <link rel="prev" title="qmuvi" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #000a0a" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/logo_black.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="winning_project_link.html">qMuVi: Qiskit Hackathon Winner 2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_it_works_link.html">How it Works</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mapping_quantum_to_music_link.html">Mapping Quantum to Music</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">qmuvi</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">qmuvi package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-qmuvi.data_manager">qmuvi.data_manager module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.data_manager.DataManager"><code class="docutils literal notranslate"><span class="pre">DataManager</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.data_manager.extract_natural_number_from_string_end"><code class="docutils literal notranslate"><span class="pre">extract_natural_number_from_string_end()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.data_manager.get_unique_pathname"><code class="docutils literal notranslate"><span class="pre">get_unique_pathname()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-qmuvi.musical_processing">qmuvi.musical_processing module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.musical_processing.convert_files_mid_to_wav_timidity_threading"><code class="docutils literal notranslate"><span class="pre">convert_files_mid_to_wav_timidity_threading()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.musical_processing.convert_midi_to_wav_timidity"><code class="docutils literal notranslate"><span class="pre">convert_midi_to_wav_timidity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.musical_processing.generate_midi_from_data"><code class="docutils literal notranslate"><span class="pre">generate_midi_from_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.musical_processing.get_sound_data_from_density_matrix"><code class="docutils literal notranslate"><span class="pre">get_sound_data_from_density_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.musical_processing.mix_wav_files"><code class="docutils literal notranslate"><span class="pre">mix_wav_files()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.musical_processing.note_map_c_major"><code class="docutils literal notranslate"><span class="pre">note_map_c_major()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.musical_processing.note_map_c_major_arpeggio"><code class="docutils literal notranslate"><span class="pre">note_map_c_major_arpeggio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.musical_processing.note_map_chromatic_middle_c"><code class="docutils literal notranslate"><span class="pre">note_map_chromatic_middle_c()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.musical_processing.note_map_f_minor"><code class="docutils literal notranslate"><span class="pre">note_map_f_minor()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-qmuvi.quantum_simulation">qmuvi.quantum_simulation module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.quantum_simulation.get_simple_noise_model"><code class="docutils literal notranslate"><span class="pre">get_simple_noise_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.quantum_simulation.sample_circuit_barriers"><code class="docutils literal notranslate"><span class="pre">sample_circuit_barriers()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-qmuvi.video_generation">qmuvi.video_generation module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.video_generation.blend_colours"><code class="docutils literal notranslate"><span class="pre">blend_colours()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.video_generation.convert_colour_to_float"><code class="docutils literal notranslate"><span class="pre">convert_colour_to_float()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.video_generation.convert_colour_to_uint8"><code class="docutils literal notranslate"><span class="pre">convert_colour_to_uint8()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.video_generation.convert_fig_pixels_to_inches"><code class="docutils literal notranslate"><span class="pre">convert_fig_pixels_to_inches()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.video_generation.ease_in"><code class="docutils literal notranslate"><span class="pre">ease_in()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.video_generation.ease_out"><code class="docutils literal notranslate"><span class="pre">ease_out()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.video_generation.filter_blend_colours"><code class="docutils literal notranslate"><span class="pre">filter_blend_colours()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.video_generation.filter_colour_multiply"><code class="docutils literal notranslate"><span class="pre">filter_colour_multiply()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.video_generation.generate_video_from_data"><code class="docutils literal notranslate"><span class="pre">generate_video_from_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.video_generation.invert_cmap"><code class="docutils literal notranslate"><span class="pre">invert_cmap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.video_generation.lerp"><code class="docutils literal notranslate"><span class="pre">lerp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.video_generation.reverse_cmap"><code class="docutils literal notranslate"><span class="pre">reverse_cmap()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-qmuvi">Module contents</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.generate_qmuvi"><code class="docutils literal notranslate"><span class="pre">generate_qmuvi()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.generate_qmuvi_data"><code class="docutils literal notranslate"><span class="pre">generate_qmuvi_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.generate_qmuvi_music"><code class="docutils literal notranslate"><span class="pre">generate_qmuvi_music()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.generate_qmuvi_video"><code class="docutils literal notranslate"><span class="pre">generate_qmuvi_video()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qmuvi.get_instrument_collection"><code class="docutils literal notranslate"><span class="pre">get_instrument_collection()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_link.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="authors_link.html">Authors</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #000a0a" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">qMuVi</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">qmuvi</a></li>
+      <li class="breadcrumb-item active">qmuvi package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/qmuvi.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="qmuvi-package">
+<h1>qmuvi package<a class="headerlink" href="#qmuvi-package" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-qmuvi.data_manager">
+<span id="qmuvi-data-manager-module"></span><h2>qmuvi.data_manager module<a class="headerlink" href="#module-qmuvi.data_manager" title="Permalink to this heading"></a></h2>
+<p>This module is used to manage data generated within the qmuvi package.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="qmuvi.data_manager.DataManager">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qmuvi.data_manager.</span></span><span class="sig-name descname"><span class="pre">DataManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'data'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#DataManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.DataManager" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Used to manage saving and loading within a target data directory.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="qmuvi.data_manager.DataManager.create_folder">
+<span class="sig-name descname"><span class="pre">create_folder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#DataManager.create_folder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.DataManager.create_folder" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new folder with the given name in the data directory (appends to data_dir).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>folder_name</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The name of the folder to create.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qmuvi.data_manager.DataManager.delete_folder">
+<span class="sig-name descname"><span class="pre">delete_folder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#DataManager.delete_folder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.DataManager.delete_folder" title="Permalink to this definition"></a></dt>
+<dd><p>Delete the folder with the given name in the data directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>folder_name</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The name of the folder to delete.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qmuvi.data_manager.DataManager.folder_exists">
+<span class="sig-name descname"><span class="pre">folder_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#DataManager.folder_exists"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.DataManager.folder_exists" title="Permalink to this definition"></a></dt>
+<dd><p>Return True if a folder with the given name exists in the data directory, False otherwise.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>folder_name</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The name of the folder to check for.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if a folder with the given name exists in the data directory, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qmuvi.data_manager.DataManager.get_default_file_pathname">
+<span class="sig-name descname"><span class="pre">get_default_file_pathname</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#DataManager.get_default_file_pathname"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.DataManager.get_default_file_pathname" title="Permalink to this definition"></a></dt>
+<dd><p>Return the default file pathname (with no extension) for the data directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The default file pathname (with no extension) for the data directory.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qmuvi.data_manager.DataManager.get_path">
+<span class="sig-name descname"><span class="pre">get_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#DataManager.get_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.DataManager.get_path" title="Permalink to this definition"></a></dt>
+<dd><p>Return the full path to the given filename in the data directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The name of the file to get the path to.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The full path to the given filename in the data directory.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qmuvi.data_manager.DataManager.glob">
+<span class="sig-name descname"><span class="pre">glob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subpathname</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recursive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Ellipsis</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#DataManager.glob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.DataManager.glob" title="Permalink to this definition"></a></dt>
+<dd><p>Return a list of subpaths of data_dir matching a pathname pattern.</p>
+<p>Uses the glob.glob method. The pattern may contain simple shell-style wildcards.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subpathname</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">AnyStr</span></code>) – The pathname pattern to match.</p></li>
+<li><p><strong>recursive</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – If True, the pattern “**” will match any files and zero or more directories and subdirectories.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of subpaths of data_dir matching a pathname pattern.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qmuvi.data_manager.DataManager.load_data">
+<span class="sig-name descname"><span class="pre">load_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#DataManager.load_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.DataManager.load_data" title="Permalink to this definition"></a></dt>
+<dd><p>Load and return the data from the plain text file with the given filename in the data directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The name of the file to load the data from.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qmuvi.data_manager.DataManager.load_json">
+<span class="sig-name descname"><span class="pre">load_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#DataManager.load_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.DataManager.load_json" title="Permalink to this definition"></a></dt>
+<dd><p>Load and return the data from the JSON file with the given filename in the data directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The name of the file to load the data from.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The data loaded from the JSON file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qmuvi.data_manager.DataManager.remove_files">
+<span class="sig-name descname"><span class="pre">remove_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#DataManager.remove_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.DataManager.remove_files" title="Permalink to this definition"></a></dt>
+<dd><p>Remove all files with the given name in the data directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The name of the files to remove.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qmuvi.data_manager.DataManager.save_data">
+<span class="sig-name descname"><span class="pre">save_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#DataManager.save_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.DataManager.save_data" title="Permalink to this definition"></a></dt>
+<dd><p>Save the given data as a plain text file with the given filename in the data directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – The data to save.</p></li>
+<li><p><strong>filename</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The name of the file to save the data to. If None, the default name is used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qmuvi.data_manager.DataManager.save_json">
+<span class="sig-name descname"><span class="pre">save_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#DataManager.save_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.DataManager.save_json" title="Permalink to this definition"></a></dt>
+<dd><p>Save the given data as a JSON file with the given filename in the data directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – The data to save.</p></li>
+<li><p><strong>filename</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The name of the file to save the data to. If None, the default name is used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.data_manager.extract_natural_number_from_string_end">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.data_manager.</span></span><span class="sig-name descname"><span class="pre">extract_natural_number_from_string_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_if_none</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#extract_natural_number_from_string_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.extract_natural_number_from_string_end" title="Permalink to this definition"></a></dt>
+<dd><p>Extract the last number of 1 or more digits from the end of the given string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The string to extract the number from.</p></li>
+<li><p><strong>zero_if_none</strong> – If True, return 0 if no number is found at the end of the string, otherwise return None. Default: False.</p></li>
+<li><p><strong>optional</strong> – If True, return 0 if no number is found at the end of the string, otherwise return None. Default: False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The last number of 1 or more digits from the end of the given string, or 0 if no number is found and zero_if_none is True.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.data_manager.get_unique_pathname">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.data_manager.</span></span><span class="sig-name descname"><span class="pre">get_unique_pathname</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">location</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/data_manager.html#get_unique_pathname"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.data_manager.get_unique_pathname" title="Permalink to this definition"></a></dt>
+<dd><p>Get a unique pathname in the working directory based on the base_name.</p>
+<p>If a file with the name already exists in the working directory, a number is appended to the end of the name.
+E.g. If the folder “test” already exists, the number “1” is appended to get “test-1”. If “test-1” already exists,
+the number is incremented to get “test-2” and so on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_name</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The base name for the new pathname.</p></li>
+<li><p><strong>location</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The directory location to create the new pathname in.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The name of the new pathname.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-qmuvi.musical_processing">
+<span id="qmuvi-musical-processing-module"></span><h2>qmuvi.musical_processing module<a class="headerlink" href="#module-qmuvi.musical_processing" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.musical_processing.convert_files_mid_to_wav_timidity_threading">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.musical_processing.</span></span><span class="sig-name descname"><span class="pre">convert_files_mid_to_wav_timidity_threading</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pathnames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timidity_convert_method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/musical_processing.html#convert_files_mid_to_wav_timidity_threading"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.musical_processing.convert_files_mid_to_wav_timidity_threading" title="Permalink to this definition"></a></dt>
+<dd><p>Convert a list of MIDI files to WAV format using TiMidity++ in a threaded manner.</p>
+<p>Given a list of file paths to MIDI files, an options string for TiMidity++, a function to perform the conversion, and a timeout,
+this function will convert each file to WAV format using TiMidity++ in a separate thread. Each thread runs the conversion function
+with the given options string and the input file path. If a timeout is specified and the conversion function takes longer than the
+timeout to complete, the function will raise an exception.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pathnames</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – A list of file paths to MIDI files that will be converted to WAV format.</p></li>
+<li><p><strong>options_string</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – An options string to be passed to the TiMidity++ conversion function.</p></li>
+<li><p><strong>timidity_convert_method</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">CompletedProcess</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – The function to be used to perform the TiMidity++ conversion.</p></li>
+<li><p><strong>timeout</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – The number of seconds to wait for each thread to complete before raising a timeout exception. Default is 8.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of file paths to the converted WAV files.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – If a timeout occurs while converting a MIDI file to WAV format.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.musical_processing.convert_midi_to_wav_timidity">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.musical_processing.</span></span><span class="sig-name descname"><span class="pre">convert_midi_to_wav_timidity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_to_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/musical_processing.html#convert_midi_to_wav_timidity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.musical_processing.convert_midi_to_wav_timidity" title="Permalink to this definition"></a></dt>
+<dd><p>Convert a MIDI file to a WAV file using the Timidity++ library.</p>
+<p>This function takes the path to generated MIDI files and uses the Timidity++ library to
+convert the files to a single WAV file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_manager</strong> (<a class="reference internal" href="#qmuvi.data_manager.DataManager" title="qmuvi.data_manager.DataManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataManager</span></code></a>) – A data manager object for finding the MIDI files and handling the output file.</p></li>
+<li><p><strong>timeout</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – The number of seconds to wait for each thread to complete before raising a timeout exception. Default is 8.</p></li>
+<li><p><strong>log_to_file</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to log the output of the Timidity process to a file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>This function does not return anything, but writes the output WAV file to disk.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.musical_processing.generate_midi_from_data">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.musical_processing.</span></span><span class="sig-name descname"><span class="pre">generate_midi_from_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">output_manager,</span> <span class="pre">instruments=[[81,</span> <span class="pre">82,</span> <span class="pre">83,</span> <span class="pre">84,</span> <span class="pre">85,</span> <span class="pre">86,</span> <span class="pre">87,</span> <span class="pre">88]],</span> <span class="pre">note_map=&lt;function</span> <span class="pre">note_map_c_major_arpeggio&gt;,</span> <span class="pre">rhythm=None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/musical_processing.html#generate_midi_from_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.musical_processing.generate_midi_from_data" title="Permalink to this definition"></a></dt>
+<dd><p>Use the qmuvi generated data files to create a song as a midi file (.mid).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_manager</strong> (<a class="reference internal" href="#qmuvi.data_manager.DataManager" title="qmuvi.data_manager.DataManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataManager</span></code></a>) – The DataManager object for the output folder.</p></li>
+<li><p><strong>instruments</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]) – The collections of instruments for each pure state in the mixed state (up to 8 collections).
+Computational basis state phase determines which instrument from the collection is used.</p></li>
+<li><p><strong>note_map</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]) – Converts state number to a note number where 60 is middle C.</p></li>
+<li><p><strong>rhythm</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]]) – A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second).
+If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of file paths to the generated MIDI files.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.musical_processing.get_sound_data_from_density_matrix">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.musical_processing.</span></span><span class="sig-name descname"><span class="pre">get_sound_data_from_density_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">density_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_pure_state_global_phasors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/musical_processing.html#get_sound_data_from_density_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.musical_processing.get_sound_data_from_density_matrix" title="Permalink to this definition"></a></dt>
+<dd><p>Extract a list of sound data from a density matrix by eigendecomposing it into a mixture of pure states.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>density_matrix</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>) – A density matrix in the form of a numpy array.</p></li>
+<li><p><strong>default_pure_state_global_phasors</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">complex</span></code>]) – A dictionary of default global phasors for each pure state in the density matrix.
+Used to keep the global phase consistent during eigendecompositions of different density matrices.</p></li>
+<li><p><strong>eps</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – A small probability threshold. Used to filter out pure states and some basis states with negligible probability.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]], <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of sound data for pure states (under the condition pure_state_prob &gt; eps) in the form of tuples, each tuple containing:
+(
+pure_state_prob,
+pure_state_info: A Dict with key: basis_state_number, and value: (basis_state_prob, basis_state_angle), # where (basis_state_prob &gt; eps)
+all_basis_state_probs,
+all_basis_state_angles
+).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.musical_processing.mix_wav_files">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.musical_processing.</span></span><span class="sig-name descname"><span class="pre">mix_wav_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/musical_processing.html#mix_wav_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.musical_processing.mix_wav_files" title="Permalink to this definition"></a></dt>
+<dd><p>Mix multiple WAV files into a single file.</p>
+<p>This function takes a list of file paths for WAV files and a data manager object for handling the output file, and
+mixes the audio content of the input files into a single file. The resulting file is saved to the output file path
+returned by the data manager.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_paths</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – A list of file paths for the WAV files to be mixed.</p></li>
+<li><p><strong>output_manager</strong> (<a class="reference internal" href="#qmuvi.data_manager.DataManager" title="qmuvi.data_manager.DataManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataManager</span></code></a>) – A data manager object for handling the output file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>This function does not return a value. The resulting mixed audio file is saved to disk.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.musical_processing.note_map_c_major">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.musical_processing.</span></span><span class="sig-name descname"><span class="pre">note_map_c_major</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/musical_processing.html#note_map_c_major"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.musical_processing.note_map_c_major" title="Permalink to this definition"></a></dt>
+<dd><p>Map <cite>n</cite> to a note in the C major scale. It starts at middle C.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – The integer to be mapped to a note.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The note mapped to from <cite>n</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.musical_processing.note_map_c_major_arpeggio">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.musical_processing.</span></span><span class="sig-name descname"><span class="pre">note_map_c_major_arpeggio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/musical_processing.html#note_map_c_major_arpeggio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.musical_processing.note_map_c_major_arpeggio" title="Permalink to this definition"></a></dt>
+<dd><p>Map <cite>n</cite> to a note in the C major arpeggio. It starts at middle C.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – The integer to be mapped to a note.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The note mapped to from <cite>n</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.musical_processing.note_map_chromatic_middle_c">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.musical_processing.</span></span><span class="sig-name descname"><span class="pre">note_map_chromatic_middle_c</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/musical_processing.html#note_map_chromatic_middle_c"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.musical_processing.note_map_chromatic_middle_c" title="Permalink to this definition"></a></dt>
+<dd><p>Map <cite>n</cite> to a note in the chromatic scale. It starts at middle C.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – The integer to be mapped to a note.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The note mapped to from <cite>n</cite>. Returns <cite>n</cite> + 60.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.musical_processing.note_map_f_minor">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.musical_processing.</span></span><span class="sig-name descname"><span class="pre">note_map_f_minor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/musical_processing.html#note_map_f_minor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.musical_processing.note_map_f_minor" title="Permalink to this definition"></a></dt>
+<dd><p>Map <cite>n</cite> to a note in the F minor scale. It starts at middle C.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – The integer to be mapped to a note.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The note mapped to from <cite>n</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-qmuvi.quantum_simulation">
+<span id="qmuvi-quantum-simulation-module"></span><h2>qmuvi.quantum_simulation module<a class="headerlink" href="#module-qmuvi.quantum_simulation" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.quantum_simulation.get_simple_noise_model">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.quantum_simulation.</span></span><span class="sig-name descname"><span class="pre">get_simple_noise_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gate_error_rate_1q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate_error_rate_cnot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/quantum_simulation.html#get_simple_noise_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.quantum_simulation.get_simple_noise_model" title="Permalink to this definition"></a></dt>
+<dd><p>Generates a simple noise model with depolarising errors on single qubit gates and CNOT gates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gate_error_rate_1q</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – The depolarising error to be applied to single qubit gates.</p></li>
+<li><p><strong>gate_error_rate_cnot</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – The depolarising error to be applied to CNOT gates.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">NoiseModel</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The noise model to be applied to the simulation.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.quantum_simulation.sample_circuit_barriers">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.quantum_simulation.</span></span><span class="sig-name descname"><span class="pre">sample_circuit_barriers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quantum_circuit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/quantum_simulation.html#sample_circuit_barriers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.quantum_simulation.sample_circuit_barriers" title="Permalink to this definition"></a></dt>
+<dd><p>Saves the state of the quantum circuit at each barrier in the simulation as a density matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>quantum_circuit</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">QuantumCircuit</span></code>) – The quantum circuit to be simulated.</p></li>
+<li><p><strong>noise_model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">NoiseModel</span></code>) – The noise model to be applied to the simulation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>density_matrices: A list of the sampled density matrices as 2d complex numpy arrays.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-qmuvi.video_generation">
+<span id="qmuvi-video-generation-module"></span><h2>qmuvi.video_generation module<a class="headerlink" href="#module-qmuvi.video_generation" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.video_generation.blend_colours">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.video_generation.</span></span><span class="sig-name descname"><span class="pre">blend_colours</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">colour1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colour2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/video_generation.html#blend_colours"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.video_generation.blend_colours" title="Permalink to this definition"></a></dt>
+<dd><p>Blends two colours together using the specified alpha value as a weighted average.</p>
+<p>The blended colour will have the minimum number of channels of the two input colours. For example, blending an RGB colour
+with an RGBA colour will result in an RGB colour.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>colour1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]) – The first colour to be blended.</p></li>
+<li><p><strong>colour2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]) – The second colour to be blended.</p></li>
+<li><p><strong>alpha</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – A value ranging from 0.0 (fully colour1) to 1.0 (fully colour2) that specifies the weight of the
+second colour in the blend. If the alpha value is outside the [0, 1] range, it will be clamped to this range.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The blended colour with the lesser number of channels of the two input colours.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.video_generation.convert_colour_to_float">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.video_generation.</span></span><span class="sig-name descname"><span class="pre">convert_colour_to_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">colour</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/video_generation.html#convert_colour_to_float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.video_generation.convert_colour_to_float" title="Permalink to this definition"></a></dt>
+<dd><p>Converts a colour to the float range [0, 1] used by matplotlib.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>colour</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]) – The colour to convert. This can be an iterable of ints or floats.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The converted colour, represented as an iterable of floats.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.video_generation.convert_colour_to_uint8">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.video_generation.</span></span><span class="sig-name descname"><span class="pre">convert_colour_to_uint8</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">colour</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/video_generation.html#convert_colour_to_uint8"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.video_generation.convert_colour_to_uint8" title="Permalink to this definition"></a></dt>
+<dd><p>Converts a colour to the uint8 format used by matplotlib.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>colour</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]) – The colour to convert. This can be an iterable of ints or floats.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The converted colour, represented as an iterable of uint8s.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.video_generation.convert_fig_pixels_to_inches">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.video_generation.</span></span><span class="sig-name descname"><span class="pre">convert_fig_pixels_to_inches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pixels</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/video_generation.html#convert_fig_pixels_to_inches"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.video_generation.convert_fig_pixels_to_inches" title="Permalink to this definition"></a></dt>
+<dd><p>Converts a size in pixels to inches based on the dpi setting in matplotlib.</p>
+<p>This function takes a float representing a size in pixels and returns a float representing the equivalent size in
+inches, based on the current dpi (dots per inch) setting for matplotlib figures.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pixels</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – The size in pixels to be converted to inches.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The equivalent size in inches.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.video_generation.ease_in">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.video_generation.</span></span><span class="sig-name descname"><span class="pre">ease_in</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/video_generation.html#ease_in"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.video_generation.ease_in" title="Permalink to this definition"></a></dt>
+<dd><p>Interpolates between two values using an ease-in curve.</p>
+<p>This function takes two iterables of start and end values and a float representing a time t in the range [0, 1],
+and performs interpolation between the two values using an ease-in curve based on the value of t. The ease-in curve
+starts slowly and speeds up as it approaches the end value. The result of the interpolation is an iterable of floats
+that is the same length as the input iterables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start_values</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]) – The start values for the interpolation. An iterable of floats.</p></li>
+<li><p><strong>end_values</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]) – The end values for the interpolation. An iterable of floats.</p></li>
+<li><p><strong>t</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – A float in the range [0, 1] that represents the time between the start and end values. If t=0, the result
+will be equal to the start values, if t=1, the result will be equal to the end values. If t is outside the
+range [0, 1], it will be clamped.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of floats representing the result of the interpolation using an ease-in curve between the start
+and end values. The resulting list will have the same length as the input iterables.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.video_generation.ease_out">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.video_generation.</span></span><span class="sig-name descname"><span class="pre">ease_out</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/video_generation.html#ease_out"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.video_generation.ease_out" title="Permalink to this definition"></a></dt>
+<dd><p>Interpolates between two values using an ease-out curve.</p>
+<p>This function takes two iterables of start and end values and a float representing a time t in the range [0, 1],
+and performs interpolation between the two values using an ease-out curve based on the value of t. The ease-out curve
+starts quickly and slows down as it approaches the end value. The result of the interpolation is an iterable of
+floats that is the same length as the input iterables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start_values</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]) – The start values for the interpolation. An iterable of floats.</p></li>
+<li><p><strong>end_values</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]) – The end values for the interpolation. An iterable of floats.</p></li>
+<li><p><strong>t</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – A float in the range [0, 1] that represents the time between the start and end values. If t=0, the result
+will be equal to the start values, if t=1, the result will be equal to the end values. If t is outside the
+range [0, 1], it will be clamped.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of floats representing the result of the interpolation using an ease-out curve between the start
+and end values. The resulting list will have the same length as the input iterables.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.video_generation.filter_blend_colours">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.video_generation.</span></span><span class="sig-name descname"><span class="pre">filter_blend_colours</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colour</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/video_generation.html#filter_blend_colours"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.video_generation.filter_blend_colours" title="Permalink to this definition"></a></dt>
+<dd><p>Applies alpha blending to each pixel in an image using a specified colour and alpha value.</p>
+<p>This function takes an image represented as a 2D array of colours, and applies alpha blending to
+each individual pixel in the bitmap. The blending is done using a specified colour and alpha value,
+with the resulting colour being a weighted average of the original pixel colour and the specified colour.
+The blended colour will have the minimum number of channels of the two input colours. For example, blending
+an RGB colour with an RGBA colour will result in an RGB colour.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]]]) – The image to be blended.</p></li>
+<li><p><strong>colour</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]) – The colour to blend with the image.</p></li>
+<li><p><strong>alpha</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – A value ranging from 0.0 (fully pixel colour) to 1.0 (fully colour) that specifies the weight of the
+colour in the blend. If the alpha value is outside the [0, 1] range, it will be clamped to this range.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]]]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The filtered image, represented as a 2D array of colours.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.video_generation.filter_colour_multiply">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.video_generation.</span></span><span class="sig-name descname"><span class="pre">filter_colour_multiply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colour</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/video_generation.html#filter_colour_multiply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.video_generation.filter_colour_multiply" title="Permalink to this definition"></a></dt>
+<dd><p>Multiplies each pixel in an image with a specified colour.</p>
+<p>This function takes an image represented as a 2D array of colours and multiplies each individual pixel in the
+bitmap with a specified colour. The resulting colour is obtained by multiplying the values of each colour channel
+of the original pixel with the corresponding values in the specified colour. The blended pixel colours will have
+the lesser number of channels of the two input colours. For example, blending an RGB colour
+with an RGBA colour will result in an RGB colour.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]]]) – The image to be filtered.</p></li>
+<li><p><strong>colour</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]) – The colour to multiply with the image.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]]]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The filtered image, represented as a 2D Iterable of colours. The blended pixel colours will have the lesser number of channels of the two input colours.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.video_generation.generate_video_from_data">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.video_generation.</span></span><span class="sig-name descname"><span class="pre">generate_video_from_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quantum_circuit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhythm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invert_colours</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vpr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3333333333333333</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_transitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_measured_probabilities_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/video_generation.html#generate_video_from_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.video_generation.generate_video_from_data" title="Permalink to this definition"></a></dt>
+<dd><p>Uses generated qMuVi data and wav file to generate a video (.mp4).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>quantum_circuit</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">QuantumCircuit</span></code>) – The qiskit QuantumCircuit.</p></li>
+<li><p><strong>output_manager</strong> (<a class="reference internal" href="#qmuvi.data_manager.DataManager" title="qmuvi.data_manager.DataManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataManager</span></code></a>) – The data manager to use for saving the video and all of its pieces.</p></li>
+<li><p><strong>rhythm</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]]) – A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second).
+If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0)</p></li>
+<li><p><strong>invert_colours</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to render the video in dark mode.</p></li>
+<li><p><strong>fps</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – The frames per second of the output video.</p></li>
+<li><p><strong>vpr</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – Vertical proportion ratio. The propotion of vertical space that the circuit will occupy. Can be a float or a function that maps qubit_count (int) to float.</p></li>
+<li><p><strong>smooth_transitions</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to animate the plots by interpolating between qMuVi data samples. Significantly increases render time.</p></li>
+<li><p><strong>show_measured_probabilities_only</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to only plot the basis state probabilities.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.video_generation.invert_cmap">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.video_generation.</span></span><span class="sig-name descname"><span class="pre">invert_cmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmap</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/video_generation.html#invert_cmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.video_generation.invert_cmap" title="Permalink to this definition"></a></dt>
+<dd><p>Inverts the colors of a Matplotlib colormap.</p>
+<p>This function takes a Matplotlib colormap object and returns a new colormap with the colors inverted. The inverted
+colormap is created by subtracting the red, green, and blue components of each color from 1.0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cmap</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Colormap</span></code>) – The colormap to invert.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ListedColormap</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The inverted colormap as a matplotlib.colors.ListedColormap object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.video_generation.lerp">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.video_generation.</span></span><span class="sig-name descname"><span class="pre">lerp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/video_generation.html#lerp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.video_generation.lerp" title="Permalink to this definition"></a></dt>
+<dd><p>Interpolates between two iterable sequences of values using linear interpolation.</p>
+<p>This function takes two iterables of start and end values and a float representing a time t in the range [0, 1],
+and performs linear interpolation between the two values based on the value of t. The result of the linear
+interpolation is an iterable of floats that is the same length as the input iterables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start_values</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]) – The start values for the linear interpolation. An iterable of floats.</p></li>
+<li><p><strong>end_values</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]) – The end values for the linear interpolation. An iterable of floats.</p></li>
+<li><p><strong>t</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – A float in the range [0, 1] that represents the time between the start and end values. If t=0, the result
+will be equal to the start values, if t=1, the result will be equal to the end values. If t is outside the
+range [0, 1], it will be clamped.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of floats representing the result of the linear interpolation between the start and end values.
+The resulting list will have the same length as the input iterables.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.video_generation.reverse_cmap">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.video_generation.</span></span><span class="sig-name descname"><span class="pre">reverse_cmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmap</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi/video_generation.html#reverse_cmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.video_generation.reverse_cmap" title="Permalink to this definition"></a></dt>
+<dd><p>Reverses the order of a Matplotlib colormap.</p>
+<p>This function takes a Matplotlib colormap object and returns a new colormap with the order of the colors reversed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cmap</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Colormap</span></code>) – The colormap to reverse.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ListedColormap</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The reversed colormap as a matplotlib.colors.ListedColormap object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-qmuvi">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-qmuvi" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.generate_qmuvi">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.</span></span><span class="sig-name descname"><span class="pre">generate_qmuvi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">quantum_circuit,</span> <span class="pre">qmuvi_name,</span> <span class="pre">noise_model=None,</span> <span class="pre">rhythm=None,</span> <span class="pre">instruments=[[81,</span> <span class="pre">82,</span> <span class="pre">83,</span> <span class="pre">84,</span> <span class="pre">85,</span> <span class="pre">86,</span> <span class="pre">87,</span> <span class="pre">88]],</span> <span class="pre">note_map=&lt;function</span> <span class="pre">note_map_c_major_arpeggio&gt;,</span> <span class="pre">invert_colours=False,</span> <span class="pre">fps=24,</span> <span class="pre">vpr=0.3333333333333333,</span> <span class="pre">smooth_transitions=True,</span> <span class="pre">log_to_file=False,</span> <span class="pre">show_measured_probabilities_only=False,</span> <span class="pre">output_dir=None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi.html#generate_qmuvi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.generate_qmuvi" title="Permalink to this definition"></a></dt>
+<dd><p>Samples the quantum circuit at every barrier and uses the state properties to create a music video (.mp4).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>quantum_circuit</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">QuantumCircuit</span></code>) – The qiskit QuantumCircuit.</p></li>
+<li><p><strong>name</strong> – The name of the qMuVi.</p></li>
+<li><p><strong>noise_model</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">NoiseModel</span></code>]) – To sample quantum states, qMuVi uses the qiskit AerSimulator to simulate the circuits. A NoiseModel can be
+passed to the simulator to include noise in the computations, which is translated to the generated output in
+qMuVi. If None, then no noise will be used in the simulations.</p></li>
+<li><p><strong>rhythm</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]]) – A is a list of tuples in the form (sound_time, rest_time), one for each qmuvi sampled state in the circuit.
+The sound_time is how long the sound will play for and the rest_time is the wait time afterwards
+before playing the next sound. Times are in units of ticks  where 480 ticks is 1 second.
+If None then each sound will be assigned (240, 0).</p></li>
+<li><p><strong>instruments</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]], <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]) – The collections of instruments for each pure state in the mixed state (up to 8 collections) (defaults to ‘synth_lead’).
+Computational basis state phase determines which instrument from the collection is used.</p></li>
+<li><p><strong>note_map</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]) – A callable object that maps state numbers to note numbers. The note map is used to convert the basis state numbers to
+the note number in the MIDI. A note number of 60 is middle C.</p></li>
+<li><p><strong>invert_colours</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to render the video in dark mode.</p></li>
+<li><p><strong>fps</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – The frames per second of the output video.</p></li>
+<li><p><strong>vpr</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – Propotion of vertical space that the circuit will occupy. Can be a float or a function that maps qubit_count (int) to float.</p></li>
+<li><p><strong>smooth_transitions</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to smoothly animate between histogram frames. Significantly increased render time.</p></li>
+<li><p><strong>log_to_file</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to output the timidity synth midi conversion log files.</p></li>
+<li><p><strong>show_measured_probabilities_only</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to only show the total basis state measurement probability distribution in the video.</p></li>
+<li><p><strong>output_dir</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The output directory. If None, creates and uses a unique output folder in the working directory.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>This function does not return a value. The resulting output files are saved in a folder in the current working directory.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.generate_qmuvi_data">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.</span></span><span class="sig-name descname"><span class="pre">generate_qmuvi_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quantum_circuit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi.html#generate_qmuvi_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.generate_qmuvi_data" title="Permalink to this definition"></a></dt>
+<dd><p>Samples the quantum circuit at every barrier and generates data from the state properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>quantum_circuit</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">QuantumCircuit</span></code>) – The qiskit QuantumCircuit.</p></li>
+<li><p><strong>output_manager</strong> (<a class="reference internal" href="#qmuvi.data_manager.DataManager" title="qmuvi.data_manager.DataManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataManager</span></code></a>) – The DataManager object for the output folder.</p></li>
+<li><p><strong>noise_model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">NoiseModel</span></code>) – A qiskit NoiseModel. If None then no noise will be used in the simulations.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]], <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]]], <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>sounds_list</dt><dd><p>a list of lists of sound data where the first index is the sample_number and the second is the
+pure state index in the eigendecomposition in descending order with respect to the pure_state_prob (eigenvalue).
+Only pure states with pure_state_prob &gt; eps are kept. The sound data is a tuple of form:
+(
+pure_state_prob: float,
+pure_state_info: Dict[int basis_state_number, Tuple[float basis_state_prob, float basis_state_angle]], # where (basis_state_prob &gt; eps)
+all_basis_state_probs: List[float basis_state_prob],
+all_basis_state_angles: List[float basis_state_angle]
+).</p>
+</dd>
+<dt>fidelity_list</dt><dd><p>A list of the fidelity of each of the sampled quantum states.</p>
+</dd>
+<dt>meas_prob_samples</dt><dd><p>A list of lists of the measurement probabilities where the first index is the sample_number and the second is the basis_state number.</p>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.generate_qmuvi_music">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.</span></span><span class="sig-name descname"><span class="pre">generate_qmuvi_music</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">quantum_circuit,</span> <span class="pre">qmuvi_name,</span> <span class="pre">noise_model=None,</span> <span class="pre">rhythm=None,</span> <span class="pre">instruments=[[81,</span> <span class="pre">82,</span> <span class="pre">83,</span> <span class="pre">84,</span> <span class="pre">85,</span> <span class="pre">86,</span> <span class="pre">87,</span> <span class="pre">88]],</span> <span class="pre">note_map=&lt;function</span> <span class="pre">note_map_c_major_arpeggio&gt;,</span> <span class="pre">log_to_file=False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi.html#generate_qmuvi_music"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.generate_qmuvi_music" title="Permalink to this definition"></a></dt>
+<dd><p>Samples the quantum circuit at every barrier and uses the state properties to create a song (.wav).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>quantum_circuit</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">QuantumCircuit</span></code>) – The qiskit QuantumCircuit.</p></li>
+<li><p><strong>qmuvi_name</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The name of the qMuVi.</p></li>
+<li><p><strong>noise_model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">NoiseModel</span></code>) – A qiskit NoiseModel. If None then no noise will be used in the simulations.</p></li>
+<li><p><strong>rhythm</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]]) – A list of tuples for the sound and rest times of each played sound in units of ticks (480 ticks is 1 second).
+If None, then for each sample, (sound_time, rest_time) = (240, 0)</p></li>
+<li><p><strong>instruments</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]) – The collections of instruments for each pure state in the mixed state (up to 8 collections) (defaults to ‘synth_lead’).
+Computational basis state phase determines which instrument from the collection is used.</p></li>
+<li><p><strong>note_map</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]) – Converts state number to a note number where 60 is middle C.</p></li>
+<li><p><strong>log_to_file</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to output the timidity synth midi conversion log files.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.generate_qmuvi_video">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.</span></span><span class="sig-name descname"><span class="pre">generate_qmuvi_video</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quantum_circuit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhythm=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_model=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">note_map=&lt;function</span> <span class="pre">note_map_c_major_arpeggio&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invert_colours=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps=60</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vpr=0.3333333333333333</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_transitions=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase_marker=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_measured_probabilities_only=False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi.html#generate_qmuvi_video"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.generate_qmuvi_video" title="Permalink to this definition"></a></dt>
+<dd><p>Samples the quantum circuit at every barrier and uses the state properties to create a silent video (.mp4). No music is generated using this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>quantum_circuit</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">QuantumCircuit</span></code>) – The qiskit QuantumCircuit.</p></li>
+<li><p><strong>output_manager</strong> (<a class="reference internal" href="#qmuvi.data_manager.DataManager" title="qmuvi.data_manager.DataManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataManager</span></code></a>) – The data manager to use for saving the video and all of its pieces.</p></li>
+<li><p><strong>rhythm</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]]) – A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second).
+If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0).</p></li>
+<li><p><strong>noise_model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">NoiseModel</span></code>) – qiskit NoiseModel. If None then no noise will be used in the simulations.</p></li>
+<li><p><strong>note_map</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]) – Converts state number to a note number where 60 is middle C.</p></li>
+<li><p><strong>invert_colours</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to render the video in dark mode.</p></li>
+<li><p><strong>fps</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – The frames per second of the output video.</p></li>
+<li><p><strong>vpr</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – Propotion of vertical space that the circuit will occupy. Can be a float or a function that maps qubit_count (int) to float.</p></li>
+<li><p><strong>smooth_transitions</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to smoothly animate between histogram frames. Significantly increased render time.</p></li>
+<li><p><strong>phase_marker</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to draw lines on the phase wheel indicating phases of the primary pure state.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qmuvi.get_instrument_collection">
+<span class="sig-prename descclassname"><span class="pre">qmuvi.</span></span><span class="sig-name descname"><span class="pre">get_instrument_collection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">collection_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qmuvi.html#get_instrument_collection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qmuvi.get_instrument_collection" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list of instruments as ints defined by the General MIDI standard.</p>
+<dl class="simple">
+<dt>Instrument collections:</dt><dd><p>‘piano’: list(range(1,9)),
+‘tuned_perc’: list(range(9,17)),
+‘organ’: list(range(17,25)),
+‘guitar’: list(range(25,33)),
+‘bass’: list(range(33,41)),
+‘strings’: list(range(41,49)),
+‘ensemble’: list(range(49,57)),
+‘brass’: list(range(57,65)),
+‘reed’: list(range(65,73)),
+‘pipe’: list(range(73,81)),
+‘synth_lead’: list(range(81,89)),
+‘synth_pad’: list(range(89,97)),
+‘synth_effects’: list(range(97,105)),
+‘ethnic’: list(range(105,113)),
+‘percussive’: list(range(113,121)),
+‘sound_effects’: list(range(121,128)),
+‘windband’: [74,69,72,67,57,58,71,59]</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>collection_name</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – The name of the instrument collection.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of instruments from the given instrument collection name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="qmuvi" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contributing_link.html" class="btn btn-neutral float-right" title="Contributing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Gary Mooney.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-XXXXXXXXXX', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

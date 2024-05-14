@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qmuvi &mdash; qMuVi 0.1.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #000a0a" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/logo_black.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme_link.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../winning_project_link.html">qMuVi: Qiskit Hackathon Winner 2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_it_works_link.html">How it Works</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mapping_quantum_to_music_link.html">Mapping Quantum to Music</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">qmuvi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing_link.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors_link.html">Authors</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #000a0a" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">qMuVi</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qmuvi</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qmuvi</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">qiskit.quantum_info</span> <span class="k">as</span> <span class="nn">qi</span>
+<span class="kn">from</span> <span class="nn">qiskit</span> <span class="kn">import</span> <span class="n">QuantumCircuit</span>
+
+<span class="c1"># Import from Qiskit Aer noise module</span>
+<span class="kn">from</span> <span class="nn">qiskit_aer.noise</span> <span class="kn">import</span> <span class="n">NoiseModel</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">data_manager</span> <span class="k">as</span> <span class="n">qmuvi_data_manager</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">musical_processing</span><span class="p">,</span> <span class="n">quantum_simulation</span><span class="p">,</span> <span class="n">video_generation</span>
+<span class="kn">from</span> <span class="nn">.musical_processing</span> <span class="kn">import</span> <span class="n">note_map_c_major_arpeggio</span>
+
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1.1&quot;</span>
+
+
+<div class="viewcode-block" id="get_instrument_collection"><a class="viewcode-back" href="../qmuvi.html#qmuvi.get_instrument_collection">[docs]</a><span class="k">def</span> <span class="nf">get_instrument_collection</span><span class="p">(</span><span class="n">collection_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a list of instruments as ints defined by the General MIDI standard.</span>
+
+<span class="sd">    Instrument collections:</span>
+<span class="sd">        &#39;piano&#39;: list(range(1,9)),</span>
+<span class="sd">        &#39;tuned_perc&#39;: list(range(9,17)),</span>
+<span class="sd">        &#39;organ&#39;: list(range(17,25)),</span>
+<span class="sd">        &#39;guitar&#39;: list(range(25,33)),</span>
+<span class="sd">        &#39;bass&#39;: list(range(33,41)),</span>
+<span class="sd">        &#39;strings&#39;: list(range(41,49)),</span>
+<span class="sd">        &#39;ensemble&#39;: list(range(49,57)),</span>
+<span class="sd">        &#39;brass&#39;: list(range(57,65)),</span>
+<span class="sd">        &#39;reed&#39;: list(range(65,73)),</span>
+<span class="sd">        &#39;pipe&#39;: list(range(73,81)),</span>
+<span class="sd">        &#39;synth_lead&#39;: list(range(81,89)),</span>
+<span class="sd">        &#39;synth_pad&#39;: list(range(89,97)),</span>
+<span class="sd">        &#39;synth_effects&#39;: list(range(97,105)),</span>
+<span class="sd">        &#39;ethnic&#39;: list(range(105,113)),</span>
+<span class="sd">        &#39;percussive&#39;: list(range(113,121)),</span>
+<span class="sd">        &#39;sound_effects&#39;: list(range(121,128)),</span>
+<span class="sd">        &#39;windband&#39;: [74,69,72,67,57,58,71,59]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        collection_name</span>
+<span class="sd">            The name of the instrument collection.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        A list of instruments from the given instrument collection name.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">instrument_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;piano&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">)),</span>
+        <span class="s2">&quot;tuned_perc&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">17</span><span class="p">)),</span>
+        <span class="s2">&quot;organ&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">17</span><span class="p">,</span> <span class="mi">25</span><span class="p">)),</span>
+        <span class="s2">&quot;guitar&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">33</span><span class="p">)),</span>
+        <span class="s2">&quot;bass&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="mi">41</span><span class="p">)),</span>
+        <span class="s2">&quot;strings&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">41</span><span class="p">,</span> <span class="mi">49</span><span class="p">)),</span>
+        <span class="s2">&quot;ensemble&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">49</span><span class="p">,</span> <span class="mi">57</span><span class="p">)),</span>
+        <span class="s2">&quot;brass&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">57</span><span class="p">,</span> <span class="mi">65</span><span class="p">)),</span>
+        <span class="s2">&quot;reed&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">65</span><span class="p">,</span> <span class="mi">73</span><span class="p">)),</span>
+        <span class="s2">&quot;pipe&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">73</span><span class="p">,</span> <span class="mi">81</span><span class="p">)),</span>
+        <span class="s2">&quot;synth_lead&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">81</span><span class="p">,</span> <span class="mi">89</span><span class="p">)),</span>
+        <span class="s2">&quot;synth_pad&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">89</span><span class="p">,</span> <span class="mi">97</span><span class="p">)),</span>
+        <span class="s2">&quot;synth_effects&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">97</span><span class="p">,</span> <span class="mi">105</span><span class="p">)),</span>
+        <span class="s2">&quot;ethnic&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">105</span><span class="p">,</span> <span class="mi">113</span><span class="p">)),</span>
+        <span class="s2">&quot;percussive&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">113</span><span class="p">,</span> <span class="mi">121</span><span class="p">)),</span>
+        <span class="s2">&quot;sound_effects&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="mi">128</span><span class="p">)),</span>
+        <span class="s2">&quot;windband&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">74</span><span class="p">,</span> <span class="mi">69</span><span class="p">,</span> <span class="mi">72</span><span class="p">,</span> <span class="mi">67</span><span class="p">,</span> <span class="mi">57</span><span class="p">,</span> <span class="mi">58</span><span class="p">,</span> <span class="mi">71</span><span class="p">,</span> <span class="mi">59</span><span class="p">],</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">instrument_dict</span><span class="p">[</span><span class="n">collection_name</span><span class="p">]</span></div>
+
+
+<span class="c1"># TODO: make rhythm units of seconds with 480 units of precision rather than units of ticks.</span>
+<div class="viewcode-block" id="generate_qmuvi"><a class="viewcode-back" href="../qmuvi.html#qmuvi.generate_qmuvi">[docs]</a><span class="k">def</span> <span class="nf">generate_qmuvi</span><span class="p">(</span>
+    <span class="n">quantum_circuit</span><span class="p">:</span> <span class="n">QuantumCircuit</span><span class="p">,</span>
+    <span class="n">qmuvi_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">noise_model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">NoiseModel</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rhythm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">instruments</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">81</span><span class="p">,</span> <span class="mi">89</span><span class="p">))],</span>
+    <span class="n">note_map</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">note_map_c_major_arpeggio</span><span class="p">,</span>
+    <span class="n">invert_colours</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">fps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">24</span><span class="p">,</span>
+    <span class="n">vpr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">,</span>
+    <span class="n">smooth_transitions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">log_to_file</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">show_measured_probabilities_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Samples the quantum circuit at every barrier and uses the state properties to create a music video (.mp4).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        quantum_circuit</span>
+<span class="sd">            The qiskit QuantumCircuit.</span>
+<span class="sd">        name</span>
+<span class="sd">            The name of the qMuVi.</span>
+<span class="sd">        noise_model</span>
+<span class="sd">            To sample quantum states, qMuVi uses the qiskit AerSimulator to simulate the circuits. A NoiseModel can be</span>
+<span class="sd">            passed to the simulator to include noise in the computations, which is translated to the generated output in</span>
+<span class="sd">            qMuVi. If None, then no noise will be used in the simulations.</span>
+<span class="sd">        rhythm</span>
+<span class="sd">            A is a list of tuples in the form (sound_time, rest_time), one for each qmuvi sampled state in the circuit.</span>
+<span class="sd">            The sound_time is how long the sound will play for and the rest_time is the wait time afterwards</span>
+<span class="sd">            before playing the next sound. Times are in units of ticks  where 480 ticks is 1 second.</span>
+<span class="sd">            If None then each sound will be assigned (240, 0).</span>
+<span class="sd">        instruments</span>
+<span class="sd">            The collections of instruments for each pure state in the mixed state (up to 8 collections) (defaults to &#39;synth_lead&#39;).</span>
+<span class="sd">            Computational basis state phase determines which instrument from the collection is used.</span>
+<span class="sd">        note_map</span>
+<span class="sd">            A callable object that maps state numbers to note numbers. The note map is used to convert the basis state numbers to</span>
+<span class="sd">            the note number in the MIDI. A note number of 60 is middle C.</span>
+<span class="sd">        invert_colours</span>
+<span class="sd">            Whether to render the video in dark mode.</span>
+<span class="sd">        fps</span>
+<span class="sd">            The frames per second of the output video.</span>
+<span class="sd">        vpr</span>
+<span class="sd">            Propotion of vertical space that the circuit will occupy. Can be a float or a function that maps qubit_count (int) to float.</span>
+<span class="sd">        smooth_transitions</span>
+<span class="sd">            Whether to smoothly animate between histogram frames. Significantly increased render time.</span>
+<span class="sd">        log_to_file</span>
+<span class="sd">            Whether to output the timidity synth midi conversion log files.</span>
+<span class="sd">        show_measured_probabilities_only</span>
+<span class="sd">            Whether to only show the total basis state measurement probability distribution in the video.</span>
+<span class="sd">        output_dir</span>
+<span class="sd">            The output directory. If None, creates and uses a unique output folder in the working directory.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        This function does not return a value. The resulting output files are saved in a folder in the current working directory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">vpr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">vpr</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">3.0</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vpr</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="n">vpr_temp</span> <span class="o">=</span> <span class="n">vpr</span>
+
+        <span class="k">def</span> <span class="nf">vpr</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">vpr_temp</span>
+
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">vpr</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;vpr must be a float, None or a Callable[[int], float].&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instruments</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instruments</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instruments</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">8</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The maximum number of instrument collections is 8.&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instruments</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instruments</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">instruments</span> <span class="o">=</span> <span class="p">[</span><span class="n">instruments</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;instruments must be a list of lists of ints or a list of ints.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">output_dir</span> <span class="o">=</span> <span class="n">qmuvi_data_manager</span><span class="o">.</span><span class="n">get_unique_pathname</span><span class="p">(</span><span class="n">qmuvi_name</span> <span class="o">+</span> <span class="s2">&quot;-output&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+    <span class="n">output_manager</span> <span class="o">=</span> <span class="n">qmuvi_data_manager</span><span class="o">.</span><span class="n">DataManager</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">default_name</span><span class="o">=</span><span class="n">qmuvi_name</span><span class="p">)</span>
+
+    <span class="c1"># generate data from quantum circuit</span>
+    <span class="n">sounds_list</span><span class="p">,</span> <span class="n">fidelity_list</span><span class="p">,</span> <span class="n">meas_prob_samples</span> <span class="o">=</span> <span class="n">generate_qmuvi_data</span><span class="p">(</span><span class="n">quantum_circuit</span><span class="p">,</span> <span class="n">output_manager</span><span class="p">,</span> <span class="n">noise_model</span><span class="o">=</span><span class="n">noise_model</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rhythm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">rhythm</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">)</span>
+
+    <span class="c1"># generate midi files from data</span>
+    <span class="n">musical_processing</span><span class="o">.</span><span class="n">generate_midi_from_data</span><span class="p">(</span><span class="n">output_manager</span><span class="p">,</span> <span class="n">instruments</span><span class="o">=</span><span class="n">instruments</span><span class="p">,</span> <span class="n">note_map</span><span class="o">=</span><span class="n">note_map</span><span class="p">,</span> <span class="n">rhythm</span><span class="o">=</span><span class="n">rhythm</span><span class="p">)</span>
+    <span class="c1"># convert midi files to a wav file</span>
+    <span class="n">musical_processing</span><span class="o">.</span><span class="n">convert_midi_to_wav_timidity</span><span class="p">(</span><span class="n">output_manager</span><span class="p">,</span> <span class="n">log_to_file</span><span class="o">=</span><span class="n">log_to_file</span><span class="p">)</span>
+    <span class="c1"># generate video from data</span>
+    <span class="n">video_generation</span><span class="o">.</span><span class="n">generate_video_from_data</span><span class="p">(</span>
+        <span class="n">quantum_circuit</span><span class="p">,</span>
+        <span class="n">output_manager</span><span class="o">=</span><span class="n">output_manager</span><span class="p">,</span>
+        <span class="n">rhythm</span><span class="o">=</span><span class="n">rhythm</span><span class="p">,</span>
+        <span class="n">invert_colours</span><span class="o">=</span><span class="n">invert_colours</span><span class="p">,</span>
+        <span class="n">fps</span><span class="o">=</span><span class="n">fps</span><span class="p">,</span>
+        <span class="n">vpr</span><span class="o">=</span><span class="n">vpr</span><span class="p">,</span>
+        <span class="n">smooth_transitions</span><span class="o">=</span><span class="n">smooth_transitions</span><span class="p">,</span>
+        <span class="n">show_measured_probabilities_only</span><span class="o">=</span><span class="n">show_measured_probabilities_only</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="generate_qmuvi_data"><a class="viewcode-back" href="../qmuvi.html#qmuvi.generate_qmuvi_data">[docs]</a><span class="k">def</span> <span class="nf">generate_qmuvi_data</span><span class="p">(</span>
+    <span class="n">quantum_circuit</span><span class="p">:</span> <span class="n">QuantumCircuit</span><span class="p">,</span> <span class="n">output_manager</span><span class="p">:</span> <span class="n">qmuvi_data_manager</span><span class="o">.</span><span class="n">DataManager</span><span class="p">,</span> <span class="n">noise_model</span><span class="p">:</span> <span class="n">NoiseModel</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Samples the quantum circuit at every barrier and generates data from the state properties.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        quantum_circuit</span>
+<span class="sd">            The qiskit QuantumCircuit.</span>
+<span class="sd">        output_manager</span>
+<span class="sd">            The DataManager object for the output folder.</span>
+<span class="sd">        noise_model</span>
+<span class="sd">            A qiskit NoiseModel. If None then no noise will be used in the simulations.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        sounds_list</span>
+<span class="sd">            a list of lists of sound data where the first index is the sample_number and the second is the</span>
+<span class="sd">            pure state index in the eigendecomposition in descending order with respect to the pure_state_prob (eigenvalue).</span>
+<span class="sd">            Only pure states with pure_state_prob &gt; eps are kept. The sound data is a tuple of form:</span>
+<span class="sd">            (</span>
+<span class="sd">            pure_state_prob: float,</span>
+<span class="sd">            pure_state_info: Dict[int basis_state_number, Tuple[float basis_state_prob, float basis_state_angle]], # where (basis_state_prob &gt; eps)</span>
+<span class="sd">            all_basis_state_probs: List[float basis_state_prob],</span>
+<span class="sd">            all_basis_state_angles: List[float basis_state_angle]</span>
+<span class="sd">            ).</span>
+<span class="sd">        fidelity_list</span>
+<span class="sd">            A list of the fidelity of each of the sampled quantum states.</span>
+<span class="sd">        meas_prob_samples</span>
+<span class="sd">            A list of lists of the measurement probabilities where the first index is the sample_number and the second is the basis_state number.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Generating qMuVi data...&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">noise_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">noise_model</span> <span class="o">=</span> <span class="n">NoiseModel</span><span class="p">()</span>
+
+    <span class="c1"># TODO: When no noise: switch to statevector simulation to reduce resource requirements.</span>
+    <span class="n">density_matrices_pure</span> <span class="o">=</span> <span class="n">quantum_simulation</span><span class="o">.</span><span class="n">sample_circuit_barriers</span><span class="p">(</span><span class="n">quantum_circuit</span><span class="p">)</span>
+    <span class="c1"># TODO: When no noise: remove redundant quantum simulation.</span>
+    <span class="n">density_matrices_noisy</span> <span class="o">=</span> <span class="n">quantum_simulation</span><span class="o">.</span><span class="n">sample_circuit_barriers</span><span class="p">(</span><span class="n">quantum_circuit</span><span class="p">,</span> <span class="n">noise_model</span><span class="p">)</span>
+
+    <span class="c1"># calculate the fidelity of each of the sampled quantum states</span>
+    <span class="n">fidelity_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">qi</span><span class="o">.</span><span class="n">state_fidelity</span><span class="p">(</span><span class="n">dm_noisy</span><span class="p">,</span> <span class="n">density_matrices_pure</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">dm_noisy</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">density_matrices_noisy</span><span class="p">)]</span>
+
+    <span class="c1"># used to keep the phase of the pure states consistent among each of the sampled states</span>
+    <span class="n">global_phasors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">density_matrices_noisy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+
+    <span class="c1"># generate the sound data for each sampled state</span>
+    <span class="c1"># The music is composed of a list of sounds, one for each sample of the quantum circuit</span>
+    <span class="c1"># Each sound is a list of tuples, one for each pure state in the sampled state</span>
+    <span class="c1"># Each tuple is of the form:</span>
+    <span class="c1"># (</span>
+    <span class="c1">#  pure_state_prob: float,</span>
+    <span class="c1">#  pure_state_info: Dict[int basis_state_number, Tuple[float basis_state_prob, float basis_state_angle]], # where (basis_state_prob &gt; eps)</span>
+    <span class="c1">#  all_basis_state_probs: List[float basis_state_prob],</span>
+    <span class="c1">#  all_basis_state_angles: List[float basis_state_angle]</span>
+    <span class="c1"># )</span>
+    <span class="n">sounds_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">rho</span> <span class="ow">in</span> <span class="n">density_matrices_noisy</span><span class="p">:</span>
+        <span class="n">sound_data</span> <span class="o">=</span> <span class="n">musical_processing</span><span class="o">.</span><span class="n">get_sound_data_from_density_matrix</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="n">global_phasors</span><span class="p">)</span>
+        <span class="n">sounds_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sound_data</span><span class="p">)</span>
+
+    <span class="c1"># gather the probabilities for each sampled state</span>
+    <span class="n">meas_prob_samples</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">rho</span> <span class="ow">in</span> <span class="n">density_matrices_noisy</span><span class="p">:</span>
+        <span class="c1"># get the measurement probabilities from each basis state</span>
+        <span class="n">measurement_probabilities</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rho</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">measurement_probabilities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rho</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
+        <span class="n">meas_prob_samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">measurement_probabilities</span><span class="p">)</span>
+
+    <span class="c1"># sort the sounds by probability</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sound</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">):</span>
+        <span class="c1"># the first index of an element of sound is the probability of the pure state in the</span>
+        <span class="c1"># linear combination making up the density matrix</span>
+        <span class="n">sounds_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sound</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">output_manager</span><span class="o">.</span><span class="n">save_json</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;sounds_list.json&quot;</span><span class="p">)</span>
+    <span class="n">output_manager</span><span class="o">.</span><span class="n">save_json</span><span class="p">(</span><span class="n">fidelity_list</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;fidelity_list.json&quot;</span><span class="p">)</span>
+    <span class="n">output_manager</span><span class="o">.</span><span class="n">save_json</span><span class="p">(</span><span class="n">meas_prob_samples</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;meas_probs_list.json&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sounds_list</span><span class="p">,</span> <span class="n">fidelity_list</span><span class="p">,</span> <span class="n">meas_prob_samples</span></div>
+
+
+<div class="viewcode-block" id="generate_qmuvi_music"><a class="viewcode-back" href="../qmuvi.html#qmuvi.generate_qmuvi_music">[docs]</a><span class="k">def</span> <span class="nf">generate_qmuvi_music</span><span class="p">(</span>
+    <span class="n">quantum_circuit</span><span class="p">:</span> <span class="n">QuantumCircuit</span><span class="p">,</span>
+    <span class="n">qmuvi_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">noise_model</span><span class="p">:</span> <span class="n">NoiseModel</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rhythm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">instruments</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">81</span><span class="p">,</span> <span class="mi">89</span><span class="p">))],</span>
+    <span class="n">note_map</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">note_map_c_major_arpeggio</span><span class="p">,</span>
+    <span class="n">log_to_file</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Samples the quantum circuit at every barrier and uses the state properties to create a song (.wav).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        quantum_circuit</span>
+<span class="sd">            The qiskit QuantumCircuit.</span>
+<span class="sd">        qmuvi_name</span>
+<span class="sd">            The name of the qMuVi.</span>
+<span class="sd">        noise_model</span>
+<span class="sd">            A qiskit NoiseModel. If None then no noise will be used in the simulations.</span>
+<span class="sd">        rhythm</span>
+<span class="sd">            A list of tuples for the sound and rest times of each played sound in units of ticks (480 ticks is 1 second).</span>
+<span class="sd">            If None, then for each sample, (sound_time, rest_time) = (240, 0)</span>
+<span class="sd">        instruments</span>
+<span class="sd">            The collections of instruments for each pure state in the mixed state (up to 8 collections) (defaults to &#39;synth_lead&#39;).</span>
+<span class="sd">            Computational basis state phase determines which instrument from the collection is used.</span>
+<span class="sd">        note_map</span>
+<span class="sd">            Converts state number to a note number where 60 is middle C.</span>
+<span class="sd">        log_to_file</span>
+<span class="sd">            Whether to output the timidity synth midi conversion log files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output_path</span> <span class="o">=</span> <span class="n">qmuvi_data_manager</span><span class="o">.</span><span class="n">get_unique_pathname</span><span class="p">(</span><span class="n">qmuvi_name</span> <span class="o">+</span> <span class="s2">&quot;-output&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+    <span class="n">output_manager</span> <span class="o">=</span> <span class="n">qmuvi_data_manager</span><span class="o">.</span><span class="n">DataManager</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">default_name</span><span class="o">=</span><span class="n">qmuvi_name</span><span class="p">)</span>
+
+    <span class="c1"># generate data from quantum circuit</span>
+    <span class="n">sounds_list</span><span class="p">,</span> <span class="n">fidelity_list</span><span class="p">,</span> <span class="n">meas_prob_samples</span> <span class="o">=</span> <span class="n">generate_qmuvi_data</span><span class="p">(</span><span class="n">quantum_circuit</span><span class="p">,</span> <span class="n">output_manager</span><span class="p">,</span> <span class="n">noise_model</span><span class="o">=</span><span class="n">noise_model</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rhythm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">rhythm</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">)</span>
+
+    <span class="c1"># generate midi files from data</span>
+    <span class="n">musical_processing</span><span class="o">.</span><span class="n">generate_midi_from_data</span><span class="p">(</span><span class="n">output_manager</span><span class="p">,</span> <span class="n">instruments</span><span class="o">=</span><span class="n">instruments</span><span class="p">,</span> <span class="n">note_map</span><span class="o">=</span><span class="n">note_map</span><span class="p">,</span> <span class="n">rhythm</span><span class="o">=</span><span class="n">rhythm</span><span class="p">)</span>
+    <span class="c1"># convert midi files to a wav file</span>
+    <span class="n">musical_processing</span><span class="o">.</span><span class="n">convert_midi_to_wav_timidity</span><span class="p">(</span><span class="n">output_manager</span><span class="p">,</span> <span class="n">log_to_file</span><span class="o">=</span><span class="n">log_to_file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="generate_qmuvi_video"><a class="viewcode-back" href="../qmuvi.html#qmuvi.generate_qmuvi_video">[docs]</a><span class="k">def</span> <span class="nf">generate_qmuvi_video</span><span class="p">(</span>
+    <span class="n">quantum_circuit</span><span class="p">:</span> <span class="n">QuantumCircuit</span><span class="p">,</span>
+    <span class="n">output_manager</span><span class="p">:</span> <span class="n">qmuvi_data_manager</span><span class="o">.</span><span class="n">DataManager</span><span class="p">,</span>
+    <span class="n">rhythm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">noise_model</span><span class="p">:</span> <span class="n">NoiseModel</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">note_map</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">note_map_c_major_arpeggio</span><span class="p">,</span>
+    <span class="n">invert_colours</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">fps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">60</span><span class="p">,</span>
+    <span class="n">vpr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">,</span>
+    <span class="n">smooth_transitions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">phase_marker</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">show_measured_probabilities_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Samples the quantum circuit at every barrier and uses the state properties to create a silent video (.mp4). No music is generated using this method.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        quantum_circuit</span>
+<span class="sd">            The qiskit QuantumCircuit.</span>
+<span class="sd">        output_manager</span>
+<span class="sd">            The data manager to use for saving the video and all of its pieces.</span>
+<span class="sd">        rhythm</span>
+<span class="sd">            A list of tuples for the length and rest times of each sound in units of ticks (480 ticks is 1 second).</span>
+<span class="sd">            If None, then each sound length and rest time will be set to (note_sound, rest_time) = (240, 0).</span>
+<span class="sd">        noise_model</span>
+<span class="sd">             qiskit NoiseModel. If None then no noise will be used in the simulations.</span>
+<span class="sd">        note_map</span>
+<span class="sd">            Converts state number to a note number where 60 is middle C.</span>
+<span class="sd">        invert_colours</span>
+<span class="sd">            Whether to render the video in dark mode.</span>
+<span class="sd">        fps</span>
+<span class="sd">            The frames per second of the output video.</span>
+<span class="sd">        vpr</span>
+<span class="sd">            Propotion of vertical space that the circuit will occupy. Can be a float or a function that maps qubit_count (int) to float.</span>
+<span class="sd">        smooth_transitions</span>
+<span class="sd">            Whether to smoothly animate between histogram frames. Significantly increased render time.</span>
+<span class="sd">        phase_marker</span>
+<span class="sd">            Whether to draw lines on the phase wheel indicating phases of the primary pure state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">vpr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">vpr</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">3.0</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vpr</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="n">vpr_temp</span> <span class="o">=</span> <span class="n">vpr</span>
+
+        <span class="k">def</span> <span class="nf">vpr</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">vpr_temp</span>
+
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">vpr</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;vpr must be a float, None or a Callable[[int], float].&quot;</span><span class="p">)</span>
+
+    <span class="c1"># generate data from quantum circuit</span>
+    <span class="n">sounds_list</span><span class="p">,</span> <span class="n">fidelity_list</span><span class="p">,</span> <span class="n">meas_prob_samples</span> <span class="o">=</span> <span class="n">generate_qmuvi_data</span><span class="p">(</span><span class="n">quantum_circuit</span><span class="p">,</span> <span class="n">output_manager</span><span class="p">,</span> <span class="n">noise_model</span><span class="o">=</span><span class="n">noise_model</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rhythm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">rhythm</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sounds_list</span><span class="p">)</span>
+
+    <span class="c1"># generate video from data</span>
+    <span class="n">video_generation</span><span class="o">.</span><span class="n">generate_video_from_data</span><span class="p">(</span>
+        <span class="n">quantum_circuit</span><span class="p">,</span>
+        <span class="n">output_manager</span><span class="o">=</span><span class="n">output_manager</span><span class="p">,</span>
+        <span class="n">rhythm</span><span class="o">=</span><span class="n">rhythm</span><span class="p">,</span>
+        <span class="n">invert_colours</span><span class="o">=</span><span class="n">invert_colours</span><span class="p">,</span>
+        <span class="n">fps</span><span class="o">=</span><span class="n">fps</span><span class="p">,</span>
+        <span class="n">vpr</span><span class="o">=</span><span class="n">vpr</span><span class="p">,</span>
+        <span class="n">smooth_transitions</span><span class="o">=</span><span class="n">smooth_transitions</span><span class="p">,</span>
+        <span class="n">phase_marker</span><span class="o">=</span><span class="n">phase_marker</span><span class="p">,</span>
+        <span class="n">show_measured_probabilities_only</span><span class="o">=</span><span class="n">show_measured_probabilities_only</span><span class="p">,</span>
+    <span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Gary Mooney.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-XXXXXXXXXX', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>
