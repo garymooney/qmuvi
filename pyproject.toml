@@ -1,7 +1,7 @@
 [tool]
 [tool.poetry]
 name = "qMuVi"
-version = "0.1.1"
+version = "0.2.0"
 homepage = "https://garymooney.github.io/qmuvi/"
 repository = "https://github.com/garymooney/qmuvi"
 description = "qMuVi is a Python library that converts quantum circuits into music videos, enabling visualisation of quantum state evolution through sound and animation. It supports noise models to simulate physical quantum devices and displays animating probability and phase distributions of basis states."
@@ -53,6 +53,7 @@ moviepy = "^1.0.3"
 matplotlib = "^3.6.2"
 pylatexenc = "^2.10"
 mido = "^1.2.10"
+opencv-python = "^4.9.0.80"
 
 
 [tool.poetry.extras]

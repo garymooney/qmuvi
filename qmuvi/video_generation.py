@@ -1,16 +1,11 @@
 # Methods relating to the generation of video from sampled density matrices
-import collections.abc
 import math
 import os
-import re
 from typing import (
-    Any,
-    AnyStr,
     Callable,
     Dict,
     Iterable,
     List,
-    Mapping,
     Optional,
     Tuple,
     Union,
@@ -24,7 +19,7 @@ import qiskit
 from matplotlib.colors import ListedColormap
 from matplotlib.lines import Line2D
 from matplotlib.pyplot import cm
-from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
+from moviepy.audio.AudioClip import CompositeAudioClip
 from moviepy.editor import (
     CompositeVideoClip,
     ImageClip,
@@ -32,13 +27,12 @@ from moviepy.editor import (
     clips_array,
     concatenate,
 )
-from moviepy.video.fx import crop, freeze, invert_colors
+from moviepy.video.fx import crop, invert_colors
 from moviepy.video.io.bindings import mplfig_to_npimage
 from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag
 
 import qmuvi.data_manager as data_manager
-import qmuvi.musical_processing as musical_processing
 
 Colour = Iterable[Union[int, float]]
 

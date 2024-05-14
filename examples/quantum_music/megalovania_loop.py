@@ -1,4 +1,3 @@
-import qiskit
 from qiskit import QuantumCircuit
 
 # Add the qmuvi path so that we can import qmuvi (if you have installed qmuvi, you can skip this step)
@@ -152,13 +151,13 @@ while i < loop_repeats:
 time_list = [(60,0),(60,0),(60,60),(60,120),(60,60),(60,60),(120,0),(60,0),(60,0),(60,0)] * 4 * loop_repeats
 chromatic_G1 = lambda n: n + 31
 
-qmuvi.generate_qmuvi(circ, 
-                     "megalovania_loop", 
-                     noise_model = get_simple_noise_model(0.01, 0.02), 
-                     rhythm = time_list, 
-                     instruments = [[81],[80]], 
+qmuvi.generate_qmuvi(circ,
+                     "megalovania_loop",
+                     noise_model = get_simple_noise_model(0.01, 0.02),
+                     rhythm = time_list,
+                     instruments = [[81],[80]],
                      note_map = chromatic_G1,
-                     invert_colours = True, 
-                     fps = 24, 
+                     invert_colours = True,
+                     fps = 24,
                      smooth_transitions = True
                      )

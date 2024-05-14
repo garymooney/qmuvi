@@ -1,4 +1,3 @@
-import qiskit
 from qiskit import QuantumCircuit
 from qiskit.circuit.library import MCMT
 
@@ -77,13 +76,13 @@ instruments.append(qmuvi.get_instrument_collection("ethnic"))
 instruments.append(qmuvi.get_instrument_collection("percussive"))
 instruments.append(qmuvi.get_instrument_collection("sound_effects"))
 
-qmuvi.generate_qmuvi(circ, 
-                     "grover_Cmaj_noisy", 
-                     noise_model = get_simple_noise_model(0.01, 0.02), 
-                     rhythm = time_list, 
-                     instruments = instruments, 
+qmuvi.generate_qmuvi(circ,
+                     "grover_Cmaj_noisy",
+                     noise_model = get_simple_noise_model(0.01, 0.02),
+                     rhythm = time_list,
+                     instruments = instruments,
                      note_map = note_map_c_major,
-                     invert_colours = True, 
-                     fps =  15, 
+                     invert_colours = True,
+                     fps =  15,
                      smooth_transitions = False
                      )

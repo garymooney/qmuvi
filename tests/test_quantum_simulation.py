@@ -1,9 +1,5 @@
-import tempfile
-import os
-import pytest
 import qiskit.quantum_info
 from qiskit import QuantumCircuit
-import numpy as np
 import math
 from typing import List
 

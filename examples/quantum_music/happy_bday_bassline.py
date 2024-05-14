@@ -1,4 +1,3 @@
-import qiskit
 from qiskit import QuantumCircuit
 
 # Add the qmuvi path so that we can import qmuvi (if you have installed qmuvi, you can skip this step)
@@ -125,13 +124,13 @@ time_list[len(time_list)-1] = [360, 0]
 s = 2
 time_list = [[s*t for t in tt] for tt in time_list]
 
-qmuvi.generate_qmuvi(c, 
-                     "happy_bday_bassline", 
-                     noise_model = get_simple_noise_model(0.025, 0.045), 
-                     rhythm = time_list, 
-                     instruments = [[75], qmuvi.get_instrument_collection("pipe"), qmuvi.get_instrument_collection("pipe"), qmuvi.get_instrument_collection("reed"), qmuvi.get_instrument_collection("brass"), qmuvi.get_instrument_collection("organ")], 
+qmuvi.generate_qmuvi(c,
+                     "happy_bday_bassline",
+                     noise_model = get_simple_noise_model(0.025, 0.045),
+                     rhythm = time_list,
+                     instruments = [[75], qmuvi.get_instrument_collection("pipe"), qmuvi.get_instrument_collection("pipe"), qmuvi.get_instrument_collection("reed"), qmuvi.get_instrument_collection("brass"), qmuvi.get_instrument_collection("organ")],
                      note_map = note_map_chromatic_middle_c,
-                     invert_colours = False, 
-                     fps = 24, 
+                     invert_colours = False,
+                     fps = 24,
                      smooth_transitions = True
                      )
