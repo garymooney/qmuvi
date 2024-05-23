@@ -1,6 +1,8 @@
 [![code tests](https://github.com/garymooney/qmuvi/actions/workflows/code-tests.yml/badge.svg)](https://github.com/garymooney/qmuvi/actions/workflows/code-tests.yml)
 [![docs](https://github.com/garymooney/qmuvi/actions/workflows/docs.yml/badge.svg)](https://github.com/garymooney/qmuvi/actions/workflows/docs.yml)
 
+[![DOI](https://zenodo.org/badge/511167976.svg)](https://zenodo.org/doi/10.5281/zenodo.11257940)
+
 <img src="https://user-images.githubusercontent.com/6459545/182747409-52b2b800-4c01-45ca-a826-2120aa50fc5c.png" width="256">
 
 An open-source **q**uantum **Mu**sic **Vi**deo tool
