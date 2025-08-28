@@ -1,24 +1,19 @@
-# Methods relating to the generation of music from sampled density matrices
-# Path: qmuvi\musical_processing.py
+"""This module contains functions relating to the generation of music from sampled density matrices."""
 
-import glob
 import logging
 import os
 import platform
-import re
 import subprocess
 import sys
 import threading
 import time
 from shutil import which
-from typing import Any, AnyStr, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 from mido import Message, MetaMessage, MidiFile, MidiTrack, bpm2tempo
 
-import qmuvi
 import qmuvi.data_manager as data_manager
-import qmuvi.quantum_simulation as quantum_simulation
 
 
 def note_map_chromatic_middle_c(n: int) -> int:
@@ -251,7 +246,7 @@ def note_map_c_major_arpeggio(n: int) -> int:
 
 
 def get_sound_data_from_density_matrix(
-    density_matrix: np.ndarray, default_pure_state_global_phasors: Mapping[int, complex], eps: float = 1e-8
+    density_matrix: np.ndarray, default_pure_state_global_phasors: List[complex], eps: float = 1e-8
 ) -> List[Tuple[float, Dict[int, Tuple[float, float]], List[float], List[float]]]:
     """Extract a list of sound data from a density matrix by eigendecomposing it into a mixture of pure states.
 
@@ -312,7 +307,7 @@ def get_sound_data_from_density_matrix(
     return sound_data
 
 
-def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeout: int = 8, log_to_file: bool = False) -> None:
+def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeout: float = 8.0, log_to_file: bool = False) -> None:
     """Convert a MIDI file to a WAV file using the Timidity++ library.
 
     This function takes the path to generated MIDI files and uses the Timidity++ library to
@@ -404,8 +399,8 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeo
     def timidity_convert_subprocess(
         filename: str,
         options_string: str,
-        thread_results: Mapping[int, subprocess.CompletedProcess],
-        thread_errors: Mapping[int, Any],
+        thread_results: Dict[int, subprocess.CompletedProcess],
+        thread_errors: Dict[int, Any],
         thread_index: int,
     ) -> None:
         try:
@@ -428,11 +423,11 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeo
             shell = False
 
             if log_to_file is True:
-                log.info(f"{platform.system()}")
-                log.info(f"cwd: {os.getcwd()}")
-                log.info(f"package_path: {package_path}")
-                log.debug(f'midi filename: "{filename}.mid"')
-                log.debug(f'wav filename: "{filename}.wav"')
+                log.info(f"{platform.system()}")  # type: ignore
+                log.info(f"cwd: {os.getcwd()}")  # type: ignore
+                log.info(f"package_path: {package_path}")  # type: ignore
+                log.debug(f'midi filename: "{filename}.mid"')  # type: ignore
+                log.debug(f'wav filename: "{filename}.wav"')  # type: ignore
 
             if platform.system() == "Windows":
                 # Join the path to the binary file
@@ -447,28 +442,28 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeo
                 shell = True
                 if which(binary_path) is None:
                     if log_to_file is True:
-                        log.exception(f"Error: Could not find timidity binary in PATH: {binary_path}. Please install timidity.")
+                        log.exception(f"Error: Could not find timidity binary in PATH: {binary_path}. Please install timidity.")  # type: ignore
                     raise Exception(f"Could not find timidity binary in PATH: {binary_path}. Please install timidity.")
 
                 command = " ".join([binary_path, options_string, f'-o "{filename}.wav"', f'"{filename}.mid"'])
 
             if log_to_file is True:
-                log.info(f"timidity binary path: {binary_path}")
-                log.info(f"timidity options: {options_string}")
-                log.debug(f"executing subprocess command: {command}")
+                log.info(f"timidity binary path: {binary_path}")  # type: ignore
+                log.info(f"timidity options: {options_string}")  # type: ignore
+                log.debug(f"executing subprocess command: {command}")  # type: ignore
 
             thread_results[thread_index] = subprocess.run(command, cwd=package_path, capture_output=True, check=True, shell=shell)
 
             if log_to_file is True:
-                log.debug("completed subprocess")
+                log.debug("completed subprocess")  # type: ignore
 
         except BaseException as e:
             thread_errors[thread_index] = (e, sys.exc_info())
             if log_to_file is True:
-                log.exception("An error occurred:")
+                log.exception("An error occurred:")  # type: ignore
         if log_to_file is True:
-            log.info(thread_results[thread_index].stdout.decode())
-            log.info(thread_results[thread_index].stderr.decode())
+            log.info(thread_results[thread_index].stdout.decode())  # type: ignore
+            log.info(thread_results[thread_index].stderr.decode())  # type: ignore
 
     convert_files_mid_to_wav_timidity_threading(files, options_string, timidity_convert_subprocess, timeout=timeout)
 
@@ -496,16 +491,19 @@ def mix_wav_files(file_paths: List[str], output_manager: data_manager.DataManage
     -------
         This function does not return a value. The resulting mixed audio file is saved to disk.
     """
-    import moviepy.editor as mpy
+    import moviepy as mpy
     from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
 
     audio_clips = []
     audio_file_clips = []
     for path in file_paths:
         path_multiplatform = path.replace("\\", "/")
+        print("path_multiplatform:", path_multiplatform)
         audio_file_clip = mpy.AudioFileClip(path_multiplatform, nbytes=4, fps=44100)
         audio_file_clips.append(audio_file_clip)
-        audio_array = audio_file_clip.to_soundarray(nbytes=4)
+        # audio_array = audio_file_clip.to_soundarray(nbytes=4, fps=44100)
+        audio_samples = list(audio_file_clip.iter_frames())
+        audio_array = np.array(audio_samples)
         total_time = audio_file_clip.duration
         audio_array_clip = AudioArrayClip(audio_array[0 : int(44100 * total_time)], fps=44100)
         audio_clips.append(audio_array_clip)
@@ -553,7 +551,7 @@ def convert_files_mid_to_wav_timidity_threading(
     base_pathnames = [os.path.splitext(pathname.replace("\\", "/"))[0] for pathname in pathnames]
 
     # instantiate lists that store data from each thread
-    thread_results = [None] * len(pathnames)
+    thread_results: List[Optional[subprocess.CompletedProcess]] = [None] * len(pathnames)
     thread_errors = [None] * len(pathnames)
 
     # start a thread for each file to be converted
@@ -574,7 +572,7 @@ def convert_files_mid_to_wav_timidity_threading(
     thread_has_timed_out = False
     for thread_index, t in enumerate(threads):
         t.join(timeout=timeout)
-        wav_file = f"'{base_pathnames[file_index]}" + ".wav'"
+        wav_file = f"'{base_pathnames[file_index]}" + ".wav'"  # type: ignore
         if t.is_alive() and not os.path.isfile(wav_file):
             # thread is still running and .wav file was not created, a conversion timeout has occured
             t._stop()
@@ -594,12 +592,13 @@ def convert_files_mid_to_wav_timidity_threading(
     # Output any errors that may have occured within the threads
     for thread_index, thread_result in enumerate(thread_results):
         filename = pathnames[thread_index]
-        if thread_errors[thread_index] is not None:
+        error = thread_errors[thread_index]
+        if error is not None:
             # an error occured in the thread, show the error
             print(f"Errors in thread {thread_index}:")
-            raise thread_errors[thread_index][0]
+            raise error[0]
 
-        if thread_result.returncode != 0:
+        if thread_result is not None and thread_result.returncode != 0:
             # timidity command failed in subprocess, show subprocess stdout and stderr
             print(f"Error from Timidity++ converting file {filename}")
             print("Output:")

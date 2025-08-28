@@ -67,18 +67,18 @@ circ.barrier()
 circ.x(1)
 circ.barrier()
 
-time_list = [[80,0],[40,0],[120,0],[120,0],[120,0],[240,0],
-             [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],
-             [80,0],[40,0],[120,0],[120,0],[120,0],[120,0],[120,0],
-             [80,0],[40,0],[120,0],[120,0],[120,0],[240,0],]
+time_list = [(80,0),(40,0),(120,0),(120,0),(120,0),(240,0),
+             (80,0),(40,0),(120,0),(120,0),(120,0),(240,0),
+             (80,0),(40,0),(120,0),(120,0),(120,0),(120,0),(120,0),
+             (80,0),(40,0),(120,0),(120,0),(120,0),(240,0),]
 
-qmuvi.generate_qmuvi(circ, 
-                     "happy_bday", 
-                     noise_model = None, 
-                     rhythm = time_list, 
-                     instruments = [qmuvi.get_instrument_collection("pipe"), qmuvi.get_instrument_collection("reed"), qmuvi.get_instrument_collection("brass"), qmuvi.get_instrument_collection("organ")], 
+qmuvi.generate_qmuvi(circ,
+                     "happy_bday",
+                     noise_model = None,
+                     rhythm = time_list,
+                     instruments = [qmuvi.get_instrument_collection("pipe"), qmuvi.get_instrument_collection("reed"), qmuvi.get_instrument_collection("brass"), qmuvi.get_instrument_collection("organ")],
                      note_map = note_map_chromatic_middle_c,
-                     invert_colours = False, 
-                     fps = 24, 
+                     invert_colours = False,
+                     fps = 24,
                      smooth_transitions = True
                      )

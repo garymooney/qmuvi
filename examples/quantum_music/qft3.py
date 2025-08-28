@@ -29,7 +29,7 @@ circ.h(2)
 circ.barrier()
 circ.barrier()
 
-time_list = [[200,40]]*7+[[960,0]]
+time_list = [(200,40)]*7+[(960,0)]
 
 instruments = []
 instruments.append(qmuvi.get_instrument_collection("synth_lead"))
@@ -39,13 +39,13 @@ instruments.append(qmuvi.get_instrument_collection("synth_pad"))
 instruments.append(qmuvi.get_instrument_collection("percussive"))
 instruments.append(qmuvi.get_instrument_collection("sound_effects"))
 
-qmuvi.generate_qmuvi(circ, 
-                     "qft3", 
-                     noise_model = get_simple_noise_model(0.2, 0.4), 
-                     rhythm = time_list, 
-                     instruments = instruments, 
+qmuvi.generate_qmuvi(circ,
+                     "qft3",
+                     noise_model = get_simple_noise_model(0.2, 0.4),
+                     rhythm = time_list,
+                     instruments = instruments,
                      note_map = note_map_c_major_arpeggio,
-                     invert_colours = True, 
-                     fps = 24, 
+                     invert_colours = True,
+                     fps = 24,
                      smooth_transitions = True
                      )

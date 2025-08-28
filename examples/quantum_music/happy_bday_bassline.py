@@ -115,23 +115,23 @@ for i in range(loop_repeats):
         c.x(0)
 
 
-time_list = [[80, 0], [40, 0], [120, 0], [120, 0], [120, 0], [240, 0],
-             [80, 0], [40, 0], [120, 0], [120, 0], [120, 0], [240, 0],
-             [80, 0], [40, 0], [120, 0], [120, 0], [120, 0], [120, 0], [120, 0],
-             [80, 0], [40, 0], [120, 0], [120, 0], [120, 0], [240, 0]] * loop_repeats
+time_list = [(80, 0), (40, 0), (120, 0), (120, 0), (120, 0), (240, 0),
+             (80, 0), (40, 0), (120, 0), (120, 0), (120, 0), (240, 0),
+             (80, 0), (40, 0), (120, 0), (120, 0), (120, 0), (120, 0), (120, 0),
+             (80, 0), (40, 0), (120, 0), (120, 0), (120, 0), (240, 0)] * loop_repeats
 
-time_list[len(time_list)-1] = [360, 0]
+time_list[len(time_list)-1] = (360, 0)
 # slow down by factor s
 s = 2
-time_list = [[s*t for t in tt] for tt in time_list]
+time_list = [(s*tt[0], s*tt[1]) for tt in time_list]
 
-qmuvi.generate_qmuvi(c, 
-                     "happy_bday_bassline", 
-                     noise_model = get_simple_noise_model(0.025, 0.045), 
-                     rhythm = time_list, 
-                     instruments = [[75], qmuvi.get_instrument_collection("pipe"), qmuvi.get_instrument_collection("pipe"), qmuvi.get_instrument_collection("reed"), qmuvi.get_instrument_collection("brass"), qmuvi.get_instrument_collection("organ")], 
+qmuvi.generate_qmuvi(c,
+                     "happy_bday_bassline",
+                     noise_model = get_simple_noise_model(0.025, 0.045),
+                     rhythm = time_list,
+                     instruments = [[75], qmuvi.get_instrument_collection("pipe"), qmuvi.get_instrument_collection("pipe"), qmuvi.get_instrument_collection("reed"), qmuvi.get_instrument_collection("brass"), qmuvi.get_instrument_collection("organ")],
                      note_map = note_map_chromatic_middle_c,
-                     invert_colours = False, 
-                     fps = 24, 
+                     invert_colours = False,
+                     fps = 24,
                      smooth_transitions = True
                      )

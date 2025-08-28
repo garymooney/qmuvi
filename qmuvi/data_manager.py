@@ -4,7 +4,7 @@ import glob
 import json
 import os
 import shutil
-from typing import Any, AnyStr
+from typing import Any, AnyStr, Dict, List, Optional
 
 
 class DataManager:
@@ -25,7 +25,7 @@ class DataManager:
             os.makedirs(self.data_dir)
         self.default_name = os.path.splitext(default_name)[0]
 
-    def save_json(self, data: Any, filename: str = None) -> None:
+    def save_json(self, data: Any, filename: Optional[str] = None) -> None:
         """Save the given data as a JSON file with the given filename in the data directory.
 
         Parameters
@@ -41,7 +41,7 @@ class DataManager:
         with open(filepath, "w") as f:
             json.dump(data, f)
 
-    def load_json(self, filename: str = None) -> Any:
+    def load_json(self, filename: Optional[str] = None) -> Any:
         """Load and return the data from the JSON file with the given filename in the data directory.
 
         Parameters
@@ -59,7 +59,7 @@ class DataManager:
         with open(filepath, "r") as f:
             return json.load(f)
 
-    def save_data(self, data: Any, filename: str = None) -> None:
+    def save_data(self, data: Any, filename: Optional[str] = None) -> None:
         """Save the given data as a plain text file with the given filename in the data directory.
 
         Parameters
@@ -75,7 +75,7 @@ class DataManager:
         with open(filepath, "w") as f:
             f.write(data)
 
-    def load_data(self, filename: str = None) -> Any:
+    def load_data(self, filename: Optional[str] = None) -> Any:
         """Load and return the data from the plain text file with the given filename in the data directory.
 
         Parameters
@@ -142,7 +142,7 @@ class DataManager:
         -------
             A list of subpaths of data_dir matching a pathname pattern.
         """
-        return glob.glob(os.path.join(self.data_dir, subpathname), recursive=recursive)
+        return glob.glob(os.path.join(self.data_dir, subpathname), recursive=recursive)  # type: ignore
 
     def get_default_file_pathname(self) -> str:
         """Return the default file pathname (with no extension) for the data directory.
@@ -179,7 +179,7 @@ class DataManager:
             os.remove(file)
 
 
-def extract_natural_number_from_string_end(s: str, zero_if_none=False) -> int:
+def extract_natural_number_from_string_end(s: Optional[str], zero_if_none=False) -> Optional[int]:
     """Extract the last number of 1 or more digits from the end of the given string.
 
     Parameters
@@ -210,6 +210,32 @@ def extract_natural_number_from_string_end(s: str, zero_if_none=False) -> int:
     return end_number
 
 
+def sorted_paths_by_ending_number(paths: List[str]) -> List[str]:
+    """Create a new list that's sorted in ascending order with respect to ending number of each path filename, e.g. info_panel_0, info_panel_1, ...
+    If the path is None or empty, it is not included in the returned list.
+
+    Parameters
+    ----------
+    paths
+        The list of paths to sort. Note that filename is extracted using os.path.splitext.
+
+    Returns
+    -------
+        A new list of paths sorted in ascending order with respect to the ending number of each path filename.
+    """
+    # sort in ascending order of frame number in filename, e.g. info_panel_0, info_panel_1, ...
+    valid_paths = []
+    valid_paths_dict: Dict[str, int] = {}
+    for dir in paths:
+        num = extract_natural_number_from_string_end(os.path.splitext(dir)[0], zero_if_none=True)
+        if num is not None:
+            valid_paths.append(dir)
+            valid_paths_dict[dir] = num
+    valid_paths.sort(key=lambda x: valid_paths_dict[x])
+
+    return valid_paths
+
+
 def get_unique_pathname(base_name: str, location: str) -> str:
     """Get a unique pathname in the working directory based on the base_name.
 
@@ -235,6 +261,7 @@ def get_unique_pathname(base_name: str, location: str) -> str:
         output_folder_name = base_name
     else:
         folder_ending_numbers = [extract_natural_number_from_string_end(folder, zero_if_none=True) for folder in folder_names]
+        folder_ending_numbers = [num for num in folder_ending_numbers if num is not None]
         output_folder_name = base_name + "-" + str(max(folder_ending_numbers) + 1)
 
     output_path = os.path.join(location, output_folder_name)
