@@ -14,10 +14,10 @@
         "versions": ["3.9"]
     },
     "tests_command": [
-        "tox -epy39"
+        "tox -e py39"
     ],
     "styles_check_command": [
-		"tox -elint"
+		"tox -e lint"
     ],
     "coverages_check_command": [
     ]

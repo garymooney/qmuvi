@@ -1,4 +1,3 @@
-import qiskit
 from qiskit import QuantumCircuit
 from qiskit.circuit.library import MCMTGate, ZGate
 
@@ -6,7 +5,6 @@ from qiskit.circuit.library import MCMTGate, ZGate
 import sys
 sys.path.append(r"../..")
 import qmuvi
-from qmuvi.quantum_simulation import get_simple_noise_model
 from qmuvi.musical_processing import note_map_f_minor
 
 

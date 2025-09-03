@@ -1,4 +1,3 @@
-import qiskit
 from qiskit import QuantumCircuit
 
 # Add the qmuvi path so that we can import qmuvi (if you have installed qmuvi, you can skip this step)

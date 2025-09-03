@@ -1,4 +1,3 @@
-import qiskit
 from qiskit import QuantumCircuit
 from qiskit.circuit.library import MCMTGate, ZGate
 

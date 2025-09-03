@@ -474,7 +474,7 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeo
 
 
 def mix_wav_files(file_paths: List[str], output_manager: data_manager.DataManager) -> None:
-    """Mixe multiple WAV files into a single file.
+    """Mix multiple WAV files into a single file.
 
     This function takes a list of file paths for WAV files and a data manager object for handling the output file, and
     mixes the audio content of the input files into a single file. The resulting file is saved to the output file path
@@ -493,7 +493,7 @@ def mix_wav_files(file_paths: List[str], output_manager: data_manager.DataManage
     """
     import moviepy as mpy
     from moviepy.audio.AudioClip import AudioArrayClip, CompositeAudioClip
-
+    import wave
     audio_clips = []
     audio_file_clips = []
     for path in file_paths:
@@ -501,9 +501,7 @@ def mix_wav_files(file_paths: List[str], output_manager: data_manager.DataManage
         print("path_multiplatform:", path_multiplatform)
         audio_file_clip = mpy.AudioFileClip(path_multiplatform, nbytes=4, fps=44100)
         audio_file_clips.append(audio_file_clip)
-        # audio_array = audio_file_clip.to_soundarray(nbytes=4, fps=44100)
-        audio_samples = list(audio_file_clip.iter_frames())
-        audio_array = np.array(audio_samples)
+        audio_array = audio_file_clip.to_soundarray(nbytes=4)
         total_time = audio_file_clip.duration
         audio_array_clip = AudioArrayClip(audio_array[0 : int(44100 * total_time)], fps=44100)
         audio_clips.append(audio_array_clip)
