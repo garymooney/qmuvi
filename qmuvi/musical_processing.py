@@ -3,6 +3,7 @@
 import logging
 import os
 import platform
+import shutil
 import subprocess
 import sys
 import threading
@@ -434,8 +435,33 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeo
                 binary_path = os.path.join(package_path, "package_data", "binaries", "TiMidity-2.15.0", "windows", "timidity.exe")
                 command = " ".join([binary_path, options_string, f'-o "{filename}.wav"', f'"{filename}.mid"'])
             elif platform.system() == "Darwin":
-                binary_path = os.path.join(package_path, "package_data", "binaries", "TiMidity-2.15.0", "macos", "timidity")
-                command = [binary_path] + options + ["-o", f'"{filename}.wav"', f'"{filename}.mid"']
+                bundled_binary = os.path.join(package_path, "package_data", "binaries", "TiMidity-2.15.0", "macos", "timidity")
+                binary_path = bundled_binary
+
+                if log_to_file is True:
+                    log.info(f"timidity bundled_binary (OS: Darwin): {bundled_binary}")  # type: ignore
+
+                command = None
+                # Check if bundled binary exists and is executable
+                if os.path.exists(bundled_binary) and os.access(bundled_binary, os.X_OK):
+                    try:
+                        # Test the bundled binary with a simple command
+                        subprocess.run([bundled_binary, "--version"],
+                                    capture_output=True, check=True, timeout=0.5)
+                        # If successful, use bundled version
+                        command = [bundled_binary] + options + ["-o", f'"{filename}.wav"', f'"{filename}.mid"']
+                    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+                        pass # Bundled binary failed, will try system binary
+                if command is None:
+                    # Fallback to system timidity
+                    system_binary = shutil.which("timidity")
+                    binary_path = system_binary
+                    if system_binary:
+                        if log_to_file is True:
+                            log.info(f"timidity system_binary (OS: Darwin): {system_binary}")  # type: ignore
+                        command = [system_binary] + options + ["-o", f'"{filename}.wav"', f'"{filename}.mid"']
+                    else:
+                        raise RuntimeError("System timidity not found and bundled version is not working. Please install timidity via 'brew install timidity'")
             else:
                 # Assume the binary is in the PATH on other platforms (installable on Linux)
                 binary_path = "timidity"
@@ -462,8 +488,11 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeo
             if log_to_file is True:
                 log.exception("An error occurred:")  # type: ignore
         if log_to_file is True:
-            log.info(thread_results[thread_index].stdout.decode())  # type: ignore
-            log.info(thread_results[thread_index].stderr.decode())  # type: ignore
+            if thread_results[thread_index] is None:
+                log.error(f"No result from subprocess {thread_index}.")  # type: ignore
+            else:
+                log.info(thread_results[thread_index].stdout.decode())  # type: ignore
+                log.info(thread_results[thread_index].stderr.decode())  # type: ignore
 
     convert_files_mid_to_wav_timidity_threading(files, options_string, timidity_convert_subprocess, timeout=timeout)
 
