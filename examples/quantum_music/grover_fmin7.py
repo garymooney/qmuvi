@@ -1,5 +1,5 @@
 from qiskit import QuantumCircuit
-from qiskit.circuit.library import MCMT
+from qiskit.circuit.library import MCMTGate, ZGate
 
 # Add the qmuvi path so that we can import qmuvi (if you have installed qmuvi, you can skip this step)
 import sys
@@ -21,21 +21,21 @@ circ.barrier()
 circ.x(0)
 circ.x(1)
 circ.x(2)
-circ.compose(MCMT('z',3,1),inplace=True)
+circ.compose(MCMTGate(ZGate(),3,1),inplace=True)
 circ.barrier()
 circ.x(2)
 circ.barrier()
-circ.compose(MCMT('z',3,1),inplace=True)
+circ.compose(MCMTGate(ZGate(),3,1),inplace=True)
 circ.barrier()
 circ.x(0)
 circ.x(3)
 circ.barrier()
-circ.compose(MCMT('z',3,1),inplace=True)
+circ.compose(MCMTGate(ZGate(),3,1),inplace=True)
 circ.barrier()
 circ.x(1)
 circ.x(2)
 circ.barrier()
-circ.compose(MCMT('z',3,1),inplace=True)
+circ.compose(MCMTGate(ZGate(),3,1),inplace=True)
 circ.barrier()
 circ.x(2)
 circ.x(3)
@@ -52,7 +52,7 @@ circ.x(1)
 circ.x(2)
 circ.x(3)
 circ.barrier()
-circ.compose(MCMT('z',3,1),inplace=True)
+circ.compose(MCMTGate(ZGate(),3,1),inplace=True)
 circ.barrier()
 circ.x(0)
 circ.x(1)
@@ -65,7 +65,7 @@ circ.h(2)
 circ.h(3)
 circ.barrier()
 
-time_list = [[60,0]]*8+[[960,0]]+[[240,0]]*4+[[1920,0]]
+time_list = [(60,0)]*8+[(960,0)]+[(240,0)]*4+[(1920,0)]
 
 qmuvi.generate_qmuvi(circ,
                      "grover_Fmin_seven",

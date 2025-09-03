@@ -27,7 +27,7 @@ circ.barrier()
 circ.rz(pi/4, 0)
 circ.barrier()
 
-time_list = [[200,0]]*8 + [[400,0]]
+time_list = [(200,0)]*8 + [(400,0)]
 
 instruments = []
 instruments.append(qmuvi.get_instrument_collection("organ"))

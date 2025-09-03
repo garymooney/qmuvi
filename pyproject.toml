@@ -1,7 +1,7 @@
 [tool]
 [tool.poetry]
 name = "qMuVi"
-version = "0.2.0"
+version = "0.2.1"
 homepage = "https://garymooney.github.io/qmuvi/"
 repository = "https://github.com/garymooney/qmuvi"
 description = "qMuVi is a Python library that converts quantum circuits into music videos, enabling visualisation of quantum state evolution through sound and animation. It supports noise models to simulate physical quantum devices and displays animating probability and phase distributions of basis states."
@@ -47,13 +47,12 @@ sphinx-autodoc-typehints = {version = "^1.22", optional = true}
 myst-parser = {version = "^1.0.0", optional = true}
 livereload = {version = "^2.6.3", optional = true}
 numpy = "^1.24.0"
-qiskit = ">= 0.39.4"
-qiskit-aer = ">= 0.11.0"
-moviepy = "^1.0.3"
+qiskit_aer = ">= 0.17.0"
+moviepy = "^2.2.1"
 matplotlib = "^3.6.2"
 pylatexenc = "^2.10"
 mido = "^1.2.10"
-opencv-python = "^4.9.0.80"
+qiskit = "^2.1.2"
 
 
 [tool.poetry.extras]
@@ -109,3 +108,7 @@ exclude = '''
 [tool.isort]
 profile = "black"
 
+[tool.flake8]
+max-line-length = 999
+# or ignore the specific error code
+ignore = ["E501", "E203"]

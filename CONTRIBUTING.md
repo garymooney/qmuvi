@@ -76,6 +76,15 @@ Ready to contribute? Here's how to set up `qmuvi` for local development.
 
 You can now play around with the scripts in the Examples directory.
 
+8. Updating any package dependencies is done by modifying the pyproject.toml, then updating the poetry.lock file with the command
+```
+poetry lock --no-update
+```
+Then run the following to update the requirements.txt for use in docker testing
+```
+poetry export --without-hashes --format=requirements.txt > requirements.txt
+```
+
 7. When you're done making changes, you can locally check that your changes pass the
    test with Python 3.10 by using tox
 
@@ -83,9 +92,9 @@ You can now play around with the scripts in the Examples directory.
     $ tox -e py310
 ```
 
-or using docker by running the "docker-build-image.bat" and "docker-run-image-test.bat" batch scripts (or the macos/linux equivalent).
+or using docker by running the "docker-build-image.bat" and "docker-run-image-test.bat" batch scripts (or the macos/linux equivalent) if that's easier.
 
-8. Commit your changes and push your branch to GitHub:
+1.  Commit your changes and push your branch to GitHub:
 
 ```
     $ git add .
@@ -113,7 +122,7 @@ Before you submit a pull request, check that it meets these guidelines:
 
 A reminder for the maintainers on how to deploy.
 Make sure all of the changes have been committed and tests have passed successfully.
-Update the version number in the pyproject.toml file.
+Update the version number in the pyproject.toml file and the qmuvi \_\_init\_\_.py file.
 Then run:
 
 ```

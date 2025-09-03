@@ -114,15 +114,15 @@ for i in range(loop_repeats):
         c.x(0)
 
 
-time_list = [[80, 0], [40, 0], [120, 0], [120, 0], [120, 0], [240, 0],
-             [80, 0], [40, 0], [120, 0], [120, 0], [120, 0], [240, 0],
-             [80, 0], [40, 0], [120, 0], [120, 0], [120, 0], [120, 0], [120, 0],
-             [80, 0], [40, 0], [120, 0], [120, 0], [120, 0], [240, 0]] * loop_repeats
+time_list = [(80, 0), (40, 0), (120, 0), (120, 0), (120, 0), (240, 0),
+             (80, 0), (40, 0), (120, 0), (120, 0), (120, 0), (240, 0),
+             (80, 0), (40, 0), (120, 0), (120, 0), (120, 0), (120, 0), (120, 0),
+             (80, 0), (40, 0), (120, 0), (120, 0), (120, 0), (240, 0)] * loop_repeats
 
-time_list[len(time_list)-1] = [360, 0]
+time_list[len(time_list)-1] = (360, 0)
 # slow down by factor s
 s = 2
-time_list = [[s*t for t in tt] for tt in time_list]
+time_list = [(s*tt[0], s*tt[1]) for tt in time_list]
 
 qmuvi.generate_qmuvi(c,
                      "happy_bday_bassline",

@@ -28,7 +28,7 @@ circ.h(2)
 circ.barrier()
 circ.barrier()
 
-time_list = [[200,40]]*7+[[960,0]]
+time_list = [(200,40)]*7+[(960,0)]
 
 instruments = []
 instruments.append(qmuvi.get_instrument_collection("synth_lead"))

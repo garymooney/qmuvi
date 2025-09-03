@@ -4,15 +4,13 @@ from typing import Callable, List, Mapping, Optional, Tuple, Union
 import numpy as np
 import qiskit.quantum_info as qi
 from qiskit import QuantumCircuit
-
-# Import from Qiskit Aer noise module
 from qiskit_aer.noise import NoiseModel
 
 from . import data_manager as qmuvi_data_manager
 from . import musical_processing, quantum_simulation, video_generation
 from .musical_processing import note_map_c_major_arpeggio
 
-__version__ = "0.1.1"
+__version__ = "0.2.1"
 
 
 def get_instrument_collection(collection_name: str) -> List[int]:
@@ -82,7 +80,7 @@ def generate_qmuvi(
     smooth_transitions: bool = True,
     log_to_file: bool = False,
     show_measured_probabilities_only: bool = False,
-    output_dir: str = None
+    output_dir: Optional[str] = None,
 ) -> None:
     """Samples the quantum circuit at every barrier and uses the state properties to create a music video (.mp4).
 
@@ -128,14 +126,18 @@ def generate_qmuvi(
     """
     if vpr is None:
 
-        def vpr(n):
+        def vpr_func(n):
             return 1.0 / 3.0
+
+        vpr = vpr_func
 
     elif isinstance(vpr, float):
         vpr_temp = vpr
 
-        def vpr(n):
+        def vpr_func(n):
             return vpr_temp
+
+        vpr = vpr_func
 
     elif not callable(vpr):
         raise TypeError("vpr must be a float, None or a Callable[[int], float].")
@@ -144,7 +146,7 @@ def generate_qmuvi(
         if len(instruments) > 8:
             raise ValueError("The maximum number of instrument collections is 8.")
     elif isinstance(instruments, list) and isinstance(instruments[0], int):
-        instruments = [instruments]
+        instruments = [instruments]  # type: ignore
     else:
         raise TypeError("instruments must be a list of lists of ints or a list of ints.")
 
@@ -159,7 +161,7 @@ def generate_qmuvi(
         rhythm = [(240, 0)] * len(sounds_list)
 
     # generate midi files from data
-    musical_processing.generate_midi_from_data(output_manager, instruments=instruments, note_map=note_map, rhythm=rhythm)
+    musical_processing.generate_midi_from_data(output_manager, instruments=instruments, note_map=note_map, rhythm=rhythm)  # type: ignore
     # convert midi files to a wav file
     musical_processing.convert_midi_to_wav_timidity(output_manager, log_to_file=log_to_file)
     # generate video from data
@@ -176,7 +178,7 @@ def generate_qmuvi(
 
 
 def generate_qmuvi_data(
-    quantum_circuit: QuantumCircuit, output_manager: qmuvi_data_manager.DataManager, noise_model: NoiseModel = None
+    quantum_circuit: QuantumCircuit, output_manager: qmuvi_data_manager.DataManager, noise_model: Optional[NoiseModel] = None
 ) -> Tuple[List[List[Tuple[float, Mapping[int, Tuple[float, float]], List[float], List[float]]]], List[float], List[List[float]]]:
     """Samples the quantum circuit at every barrier and generates data from the state properties.
 
@@ -217,7 +219,7 @@ def generate_qmuvi_data(
     density_matrices_noisy = quantum_simulation.sample_circuit_barriers(quantum_circuit, noise_model)
 
     # calculate the fidelity of each of the sampled quantum states
-    fidelity_list = [qi.state_fidelity(dm_noisy, density_matrices_pure[i]) for i, dm_noisy in enumerate(density_matrices_noisy)]
+    fidelity_list = [qi.state_fidelity(dm_noisy, density_matrices_pure[i]) for i, dm_noisy in enumerate(density_matrices_noisy)]  # type: ignore
 
     # used to keep the phase of the pure states consistent among each of the sampled states
     global_phasors = np.ones(density_matrices_noisy[0].shape[0], dtype=complex)
@@ -234,7 +236,7 @@ def generate_qmuvi_data(
     # )
     sounds_list = []
     for rho in density_matrices_noisy:
-        sound_data = musical_processing.get_sound_data_from_density_matrix(rho, global_phasors)
+        sound_data = musical_processing.get_sound_data_from_density_matrix(rho, global_phasors)  # type: ignore
         sounds_list.append(sound_data)
 
     # gather the probabilities for each sampled state
@@ -262,7 +264,7 @@ def generate_qmuvi_data(
 def generate_qmuvi_music(
     quantum_circuit: QuantumCircuit,
     qmuvi_name: str,
-    noise_model: NoiseModel = None,
+    noise_model: Optional[NoiseModel] = None,
     rhythm: Optional[List[Tuple[int, int]]] = None,
     instruments: List[List[int]] = [list(range(81, 89))],
     note_map: Callable[[int], int] = note_map_c_major_arpeggio,
@@ -308,13 +310,12 @@ def generate_qmuvi_video(
     quantum_circuit: QuantumCircuit,
     output_manager: qmuvi_data_manager.DataManager,
     rhythm: Optional[List[Tuple[int, int]]] = None,
-    noise_model: NoiseModel = None,
+    noise_model: Optional[NoiseModel] = None,
     note_map: Callable[[int], int] = note_map_c_major_arpeggio,
     invert_colours: bool = False,
     fps: int = 60,
     vpr: Optional[Union[float, Callable[[int], float]]] = 1.0 / 3.0,
     smooth_transitions: bool = True,
-    phase_marker: bool = True,
     show_measured_probabilities_only: bool = False,
 ):
     """Samples the quantum circuit at every barrier and uses the state properties to create a silent video (.mp4). No music is generated using this method.
@@ -345,14 +346,18 @@ def generate_qmuvi_video(
     """
     if vpr is None:
 
-        def vpr(n):
+        def vpr_func(n):
             return 1.0 / 3.0
+
+        vpr = vpr_func
 
     elif isinstance(vpr, float):
         vpr_temp = vpr
 
-        def vpr(n):
+        def vpr_func(n):
             return vpr_temp
+
+        vpr = vpr_func
 
     elif not callable(vpr):
         raise TypeError("vpr must be a float, None or a Callable[[int], float].")
@@ -372,6 +377,5 @@ def generate_qmuvi_video(
         fps=fps,
         vpr=vpr,
         smooth_transitions=smooth_transitions,
-        phase_marker=phase_marker,
         show_measured_probabilities_only=show_measured_probabilities_only,
     )

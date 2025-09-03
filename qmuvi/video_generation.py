@@ -1,77 +1,71 @@
-# Methods relating to the generation of video from sampled density matrices
+"""This module contains functions relating to the generation of video from sampled density matrices."""
+
 import math
 import os
-from typing import (
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
-import matplotlib
 import matplotlib.pyplot as plt
-import moviepy.editor as mpy
+import moviepy as mpy
+import moviepy.video.fx as vfx
 import numpy as np
 import qiskit
+from matplotlib import axes, colors, figure
 from matplotlib.colors import ListedColormap
 from matplotlib.lines import Line2D
 from matplotlib.pyplot import cm
-from moviepy.audio.AudioClip import CompositeAudioClip
-from moviepy.editor import (
+from moviepy import (
     CompositeVideoClip,
     ImageClip,
     VideoClip,
     clips_array,
-    concatenate,
+    concatenate_videoclips,
 )
-from moviepy.video.fx import crop, invert_colors
-from moviepy.video.io.bindings import mplfig_to_npimage
+from moviepy.audio.AudioClip import CompositeAudioClip
+from moviepy.Clip import Clip
 from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag
 
 import qmuvi.data_manager as data_manager
 
-Colour = Iterable[Union[int, float]]
+tColour = Sequence[Union[int, float]]
+tImage = Sequence[List[tColour]]
 
 
-def convert_colour_to_uint8(colour: Colour) -> Colour:
+def convert_colour_to_uint8(colour: tColour) -> tColour:
     """Converts a colour to the uint8 format used by matplotlib.
 
     Parameters
     ----------
         colour
-            The colour to convert. This can be an iterable of ints or floats.
+            The colour to convert. This can be a sequence of ints or floats.
 
     Returns
     -------
-        The converted colour, represented as an iterable of uint8s.
+        The converted colour, represented as a sequence of uint8s.
     """
     if isinstance(colour[0], int):
         return colour
     return [int(c * 255) for c in colour]
 
 
-def convert_colour_to_float(colour: Colour) -> Colour:
+def convert_colour_to_float(colour: tColour) -> tColour:
     """Converts a colour to the float range [0, 1] used by matplotlib.
 
     Parameters
     ----------
         colour
-            The colour to convert. This can be an iterable of ints or floats.
+            The colour to convert. This can be a sequence of ints or floats.
 
     Returns
     -------
-        The converted colour, represented as an iterable of floats.
+        The converted colour, represented as a sequence of floats.
     """
     if isinstance(colour[0], float):
         return colour
     return [c / 255.0 for c in colour]
 
 
-def filter_blend_colours(image: Iterable[Iterable[Colour]], colour: Colour, alpha: float) -> Iterable[Iterable[Colour]]:
+def filter_blend_colours(image: tImage, colour: tColour, alpha: float) -> tImage:
     """Applies alpha blending to each pixel in an image using a specified colour and alpha value.
 
     This function takes an image represented as a 2D array of colours, and applies alpha blending to
@@ -102,7 +96,7 @@ def filter_blend_colours(image: Iterable[Iterable[Colour]], colour: Colour, alph
     return image
 
 
-def blend_colours(colour1: Colour, colour2: Colour, alpha: float) -> Colour:
+def blend_colours(colour1: tColour, colour2: tColour, alpha: float) -> tColour:
     """Blends two colours together using the specified alpha value as a weighted average.
 
     The blended colour will have the minimum number of channels of the two input colours. For example, blending an RGB colour
@@ -129,7 +123,7 @@ def blend_colours(colour1: Colour, colour2: Colour, alpha: float) -> Colour:
         return [((1 - alpha) * colour1[i] + (alpha) * colour2[i]) for i in range(min(len(colour2), len(colour1)))]
 
 
-def filter_colour_multiply(image: Iterable[Iterable[Colour]], colour: Colour) -> Iterable[Iterable[Colour]]:
+def filter_colour_multiply(image: tImage, colour: tColour) -> tImage:
     """Multiplies each pixel in an image with a specified colour.
 
     This function takes an image represented as a 2D array of colours and multiplies each individual pixel in the
@@ -147,7 +141,7 @@ def filter_colour_multiply(image: Iterable[Iterable[Colour]], colour: Colour) ->
 
     Returns
     -------
-        The filtered image, represented as a 2D Iterable of colours. The blended pixel colours will have the lesser number of channels of the two input colours.
+        The filtered image, represented as a 2D Sequence of colours. The blended pixel colours will have the lesser number of channels of the two input colours.
     """
     if isinstance(colour[0], int):
         for i in range(len(image)):
@@ -162,18 +156,18 @@ def filter_colour_multiply(image: Iterable[Iterable[Colour]], colour: Colour) ->
 
 
 def lerp(start_values: Iterable[float], end_values: Iterable[float], t: float) -> List[float]:
-    """Interpolates between two iterable sequences of values using linear interpolation.
+    """Interpolates between two iterables of values using linear interpolation.
 
     This function takes two iterables of start and end values and a float representing a time t in the range [0, 1],
     and performs linear interpolation between the two values based on the value of t. The result of the linear
-    interpolation is an iterable of floats that is the same length as the input iterables.
+    interpolation is a list of floats that is the same length as the input iterables.
 
     Parameters
     ----------
         start_values
-            The start values for the linear interpolation. An iterable of floats.
+            The start values for the linear interpolation. an iterable of floats.
         end_values
-            The end values for the linear interpolation. An iterable of floats.
+            The end values for the linear interpolation. an iterable of floats.
         t
             A float in the range [0, 1] that represents the time between the start and end values. If t=0, the result
             will be equal to the start values, if t=1, the result will be equal to the end values. If t is outside the
@@ -194,15 +188,15 @@ def ease_in(start_values: Iterable[float], end_values: Iterable[float], t: float
 
     This function takes two iterables of start and end values and a float representing a time t in the range [0, 1],
     and performs interpolation between the two values using an ease-in curve based on the value of t. The ease-in curve
-    starts slowly and speeds up as it approaches the end value. The result of the interpolation is an iterable of floats
+    starts slowly and speeds up as it approaches the end value. The result of the interpolation is a list of floats
     that is the same length as the input iterables.
 
     Parameters
     ----------
         start_values
-            The start values for the interpolation. An iterable of floats.
+            The start values for the interpolation. an iterable of floats.
         end_values
-            The end values for the interpolation. An iterable of floats.
+            The end values for the interpolation. an iterable of floats.
         t
             A float in the range [0, 1] that represents the time between the start and end values. If t=0, the result
             will be equal to the start values, if t=1, the result will be equal to the end values. If t is outside the
@@ -225,15 +219,15 @@ def ease_out(start_values: Iterable[float], end_values: Iterable[float], t: floa
 
     This function takes two iterables of start and end values and a float representing a time t in the range [0, 1],
     and performs interpolation between the two values using an ease-out curve based on the value of t. The ease-out curve
-    starts quickly and slows down as it approaches the end value. The result of the interpolation is an iterable of
+    starts quickly and slows down as it approaches the end value. The result of the interpolation is a list of
     floats that is the same length as the input iterables.
 
     Parameters
     ----------
         start_values
-            The start values for the interpolation. An iterable of floats.
+            The start values for the interpolation. an iterable of floats.
         end_values
-            The end values for the interpolation. An iterable of floats.
+            The end values for the interpolation. an iterable of floats.
         t
             A float in the range [0, 1] that represents the time between the start and end values. If t=0, the result
             will be equal to the start values, if t=1, the result will be equal to the end values. If t is outside the
@@ -251,7 +245,7 @@ def ease_out(start_values: Iterable[float], end_values: Iterable[float], t: floa
     return [((1 - scaled_t) * a) + (scaled_t * b) for a, b in zip(start_values, end_values)]
 
 
-def invert_cmap(cmap: matplotlib.colors.Colormap) -> matplotlib.colors.ListedColormap:
+def invert_cmap(cmap: colors.Colormap) -> colors.ListedColormap:
     """
     Inverts the colors of a Matplotlib colormap.
 
@@ -274,7 +268,7 @@ def invert_cmap(cmap: matplotlib.colors.Colormap) -> matplotlib.colors.ListedCol
     return ListedColormap(newcolors)
 
 
-def reverse_cmap(cmap: matplotlib.colors.Colormap) -> matplotlib.colors.ListedColormap:
+def reverse_cmap(cmap: colors.Colormap) -> colors.ListedColormap:
     """
     Reverses the order of a Matplotlib colormap.
 
@@ -321,6 +315,31 @@ def convert_fig_pixels_to_inches(pixels: float) -> float:
     return pixels / dpi
 
 
+# def invert_colors(get_frame, t):
+#    frame: np.ndarray = get_frame(t)
+#    result = 255 - frame
+#    return result
+
+# Copied from MoviePy 1, because it has been removed in version 2.
+# https://github.com/Zulko/moviepy/blob/db19920764b5cb1d8aa6863019544fd8ae0d3cce/moviepy/video/io/bindings.py#L18C1-L32C32
+# With some updates to Matplotlib 3.8.
+def mplfig_to_npimage(fig):
+    """Converts a matplotlib figure to a RGB frame after updating the canvas"""
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+    canvas = FigureCanvasAgg(fig)
+    canvas.draw()  # update/draw the elements
+
+    # get the width and the height to resize the matrix
+    l, b, w, h = canvas.figure.bbox.bounds
+    w, h = int(w), int(h)
+
+    #  exports the canvas to a memory view and then to a numpy nd.array
+    mem_view = canvas.buffer_rgba()  # Update to Matplotlib 3.8
+    image = np.asarray(mem_view)
+    return image[:, :, :3]  # Return only RGB, not alpha.
+
+
 def generate_video_from_data(
     quantum_circuit: qiskit.QuantumCircuit,
     output_manager: data_manager.DataManager,
@@ -356,14 +375,18 @@ def generate_video_from_data(
 
     if vpr is None:
 
-        def vpr(n):
+        def vpr_func(n):
             return 1.0 / 3.0
+
+        vpr = vpr_func
 
     elif isinstance(vpr, float):
         vpr_temp = vpr
 
-        def vpr(n):
+        def vpr_func(n):
             return vpr_temp
+
+        vpr = vpr_func
 
     elif not callable(vpr):
         raise TypeError("vpr must be a float, None or a Callable[[int], float]")
@@ -434,7 +457,7 @@ def generate_video_from_data(
     barrier_circuit.draw(filename=output_manager.get_path("partial_circ_barrier.png"), output="mpl", fold=-1)
 
     # Fidelity colour bar
-    cmap_fidelity = matplotlib.colors.LinearSegmentedColormap.from_list("", ["red", "violet", "blue"])
+    cmap_fidelity = colors.LinearSegmentedColormap.from_list("", ["red", "violet", "blue"])
     # Musical needle
     cmap_needle = reverse_cmap(cmap_fidelity)
     # Phase for bar plot bars
@@ -576,7 +599,8 @@ def generate_video_from_data(
             )
 
             frame_image = mplfig_to_npimage(anim_fig)
-            plot_clips.append(ImageClip(frame_image).set_duration((rhythm[sound_index][0] + rhythm[sound_index][1]) / 480))
+            plot_clips.append(ImageClip(frame_image, duration=(rhythm[sound_index][0] + rhythm[sound_index][1]) / 480))
+        plt.close(anim_fig)
 
     # calculate the accumulated time for each sampled state in the animation from the rhythm
     accumulated_times = []
@@ -589,63 +613,63 @@ def generate_video_from_data(
 
     paths = output_manager.glob("info_panel_*")
 
-    # sort in ascending order of frame number in filename, e.g. info_panel_0, info_panel_1, ...
-    paths.sort(key=lambda x: data_manager.extract_natural_number_from_string_end(os.path.splitext(x)[0]))
+    paths = data_manager.sorted_paths_by_ending_number(paths)  # type: ignore
 
     # create info panel clips and stack them to the right of the plot clips
+    info_panel_width = 0
     for file_index, file in enumerate(paths):
         frame_time = (rhythm[file_index][0] + rhythm[file_index][1]) / 480.0
-        info_panel_clip = ImageClip(file).set_duration(frame_time).resize(height=plot_clips[file_index].size[1])
+        info_panel_clip: ImageClip = ImageClip(file, duration=frame_time).resized(height=plot_clips[file_index].size[1])  # type: ignore
         info_panel_width = info_panel_clip.size[0]
 
         plot_clips[file_index] = clips_array([[plot_clips[file_index], info_panel_clip]], bg_color=bg_color)
 
-    plot_info_clip = concatenate(plot_clips, method="compose")
+    plot_info_clip = concatenate_videoclips(plot_clips, method="compose")
 
     # for target height 1080 pixels, the plot_info_clip should now be 1920 x 720 pixels
     if invert_colours is True:
-        plot_info_clip = invert_colors.invert_colors(plot_info_clip)
+        plot_info_clip = plot_info_clip.with_effects([vfx.InvertColors()])
 
     video_duration = plot_info_clip.duration
-    plot_info_clip_height = plot_info_clip.size[1]
+    plot_info_clip_height = plot_info_clip.size[1]  # type: ignore
     circuit_anim_height = 1080 - plot_info_clip_height
 
-    image_barrier_clip_base = ImageClip(output_manager.get_path("partial_circ_barrier.png")).set_duration(video_duration)
+    image_barrier_clip_base = ImageClip(output_manager.get_path("partial_circ_barrier.png"), duration=video_duration)
 
     # crop the horizontal white space from the sides of the barrier image
     if image_barrier_clip_base.size[0] > 156:
-        image_barrier_clip_base = crop.crop(image_barrier_clip_base, x1=133, x2=image_barrier_clip_base.size[0] - 23)
-    image_barrier_clip_base = image_barrier_clip_base.resize(height=circuit_anim_height)
+        image_barrier_clip_base = image_barrier_clip_base.cropped(x1=133, x2=image_barrier_clip_base.size[0] - 23)
+    image_barrier_clip_base = image_barrier_clip_base.resized(height=circuit_anim_height)  # type: ignore
 
-    barrier_image_width = image_barrier_clip_base.size[0]
-    barrier_image_height = image_barrier_clip_base.size[1]
+    barrier_image_width = image_barrier_clip_base.size[0]  # type: ignore
+    barrier_image_height = image_barrier_clip_base.size[1]  # type: ignore
     barrier_start_y = int(43.0 * barrier_image_height / 454.0)
     barrier_end_y = int(25.0 * barrier_image_height / 454.0)
 
-    image_empty_clip = ImageClip(output_manager.get_path("partial_circ_empty.png")).set_duration(video_duration)
+    image_empty_clip = ImageClip(output_manager.get_path("partial_circ_empty.png"), duration=video_duration)
 
     # crop the horizontal white space from the sides of the empty circuit image
     if image_empty_clip.size[0] > 156:
-        image_empty_clip = crop.crop(image_empty_clip, x1=133, x2=image_empty_clip.size[0] - 23)
-    image_empty_clip = image_empty_clip.resize(height=circuit_anim_height)
+        image_empty_clip = image_empty_clip.cropped(x1=133, x2=image_empty_clip.size[0] - 23)
+    image_empty_clip = image_empty_clip.resized(height=circuit_anim_height)  # type: ignore
 
-    duplicate_count = math.ceil(float(barrier_image_width) / image_empty_clip.size[0])
+    duplicate_count = math.ceil(float(barrier_image_width) / image_empty_clip.size[0])  # type: ignore
     image_empty_clip_array = clips_array([[image_empty_clip] * duplicate_count], bg_color=bg_color)
-    image_empty_clip_array = crop.crop(image_empty_clip_array, x1=0, x2=barrier_image_width)
+    image_empty_clip_array = image_empty_clip_array.cropped(x1=0, x2=barrier_image_width)
 
     partial_circuit_clip_list = []
     positions_x = []
     accumulated_width = 0
     for i, partial_circ in enumerate(partial_circuit_list):
-        partial_circuit_clip = ImageClip(output_manager.get_path(f"partial_circ_{i}.png")).set_duration(video_duration)
+        partial_circuit_clip = ImageClip(output_manager.get_path(f"partial_circ_{i}.png"), duration=video_duration)
         if partial_circuit_clip.size[0] > 156:
-            partial_circuit_clip = crop.crop(partial_circuit_clip, x1=133, x2=partial_circuit_clip.size[0] - 23)
-        partial_circuit_clip = partial_circuit_clip.resize(height=circuit_anim_height)
+            partial_circuit_clip = partial_circuit_clip.cropped(x1=133, x2=partial_circuit_clip.size[0] - 23)
+        partial_circuit_clip = partial_circuit_clip.resized(height=circuit_anim_height)  # type: ignore
 
         if i != len(partial_circuit_list) - 1:
-            accumulated_width += partial_circuit_clip.size[0] + barrier_image_width
+            accumulated_width += partial_circuit_clip.size[0] + barrier_image_width  # type: ignore
         else:
-            accumulated_width += partial_circuit_clip.size[0]
+            accumulated_width += partial_circuit_clip.size[0]  # type: ignore
 
         positions_x.append(accumulated_width)
         partial_circuit_clip_list.append(partial_circuit_clip)
@@ -668,9 +692,9 @@ def generate_video_from_data(
         note_length = rhythm[sound_index][0] / 480.0
         note_rest = rhythm[sound_index][1] / 480.0
         barrier_clip = (
-            image_barrier_clip_base.set_start(0)
-            .set_end(min(accumulated_time, video_duration))
-            .set_position((int(positions_x[sound_index] - barrier_image_width), 0))
+            image_barrier_clip_base.with_start(0)
+            .with_end(min(accumulated_time, video_duration))  # type: ignore
+            .with_position((int(positions_x[sound_index] - barrier_image_width), 0))
         )
         accumulated_time_info.append((accumulated_time, note_length, note_rest))
         accumulated_time += note_length + note_rest
@@ -680,8 +704,10 @@ def generate_video_from_data(
 
     output_width = 1920
 
+    # TODO: update margin to new version API.
     # add margins so that the circuit can slide over the rendered output (I don't think it's necessary)
-    full_circuit_with_barriers_clip = full_circuit_with_barriers_clip.margin(left=output_width, right=output_width, color=bg_color)
+    # full_circuit_with_barriers_clip = full_circuit_with_barriers_clip.margin(left=output_width, right=output_width, color=bg_color)
+    full_circuit_with_barriers_clip = full_circuit_with_barriers_clip.with_effects([vfx.Margin(left=output_width, right=output_width, color=bg_color)])  # type: ignore
 
     # TODO: change pan effect so that position is changed similar to
     # clip.set_position(lambda t: ('center', 50+t) ) https://zulko.github.io/moviepy/getting_started/compositing.html
@@ -721,14 +747,14 @@ def generate_video_from_data(
         y = 0
         return gf(t)[y : y + circuit_anim_height, x : x + output_width]
 
-    full_circuit_animated_clip = full_circuit_with_barriers_clip.fl(circuit_clip_animate_pan_effect, apply_to="mask")
+    full_circuit_animated_clip: Clip = full_circuit_with_barriers_clip.transform(circuit_clip_animate_pan_effect, apply_to="mask")
     if invert_colours is True:
-        full_circuit_animated_clip = invert_colors.invert_colors(full_circuit_animated_clip)
+        full_circuit_animated_clip = full_circuit_animated_clip.with_effects([vfx.InvertColors()])
 
     complete_clip = clips_array([[full_circuit_animated_clip], [plot_info_clip]], bg_color=bg_color)
 
-    video_final_silent = crop.crop(
-        complete_clip, x1=int(complete_clip.size[0] / 2 - output_width / 2), x2=int(complete_clip.size[0] / 2 + output_width / 2)
+    video_final_silent = complete_clip.cropped(
+        x1=int(complete_clip.size[0] / 2 - output_width / 2), x2=int(complete_clip.size[0] / 2 + output_width / 2)
     )
 
     # add audio
@@ -740,9 +766,9 @@ def generate_video_from_data(
         audio_file_clips.append(audio_file_clip)
     composed_audio_clip = CompositeAudioClip(audio_file_clips)
 
-    video_final = video_final_silent.set_audio(composed_audio_clip)
+    video_final: CompositeVideoClip = video_final_silent.with_audio(composed_audio_clip)  # type: ignore
 
-    video_final_width = video_final.size[0]
+    video_final_width = video_final.size[0]  # type: ignore
 
     def draw_needle_effect(get_frame, t) -> np.ndarray:
         """Draw a rectangle in the frame on top of the circuit animated clip.
@@ -761,7 +787,7 @@ def generate_video_from_data(
         # change (top, bottom, left, right) to the coordinates
         top = 1
         # make the gap between the bottom and the barrier the same as the gap between the top and the barrier.
-        bottom = int(full_circuit_animated_clip.size[1] - 1 + (barrier_start_y - barrier_end_y))
+        bottom = int(full_circuit_animated_clip.size[1] - 1 + (barrier_start_y - barrier_end_y))  # type: ignore
         left = int(video_final_width / 2 - 9)
         right = int(video_final_width / 2 + 9)
         # get accumulated time, sound times and fidelity for the current frame
@@ -792,7 +818,7 @@ def generate_video_from_data(
 
         return frame
 
-    video_final = video_final.fl(draw_needle_effect)
+    video_final = video_final.transform(draw_needle_effect)
 
     script_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -807,13 +833,21 @@ def generate_video_from_data(
     generated_title_width = int(info_panel_width * 0.87)
     generated_title_hor_padding = int(2 * (info_panel_width - generated_title_width) / 3) + 2
 
+    # full_circuit_with_barriers_clip = full_circuit_with_barriers_clip.with_effects([vfx.Margin(left=output_width, right=output_width, color=bg_color)])
     generated_title = (
-        ImageClip(os.path.join(asset_path, generated_title_img))
-        .set_duration(video_final.duration)
-        .set_pos(("right", "bottom"))
-        .resize(width=generated_title_width)
-        .margin(right=generated_title_hor_padding, bottom=10, opacity=0)
+        ImageClip(os.path.join(asset_path, generated_title_img), duration=video_final.duration)
+        .with_position(("right", "bottom"))
+        .resized(width=generated_title_width)
+        .with_effects([vfx.Margin(right=generated_title_hor_padding, bottom=10, opacity=0)])
     )
+
+    # generated_title = (
+    #    ImageClip(os.path.join(asset_path, generated_title_img))
+    #    .with_duration(video_final.duration)
+    #    .with_position(("right", "bottom"))
+    #    .resized(width=generated_title_width)
+    #    .margin(right=generated_title_hor_padding, bottom=10, opacity=0)
+    # )
 
     video_final = CompositeVideoClip([video_final, generated_title])
 
@@ -835,13 +869,13 @@ def generate_video_from_data(
 
 
 def _plot_phase_wheel(
-    fig: matplotlib.figure.Figure,
+    fig: figure.Figure,
     probabilities: List[float],
     phase_angles: List[float],
-    cmap_phase: matplotlib.colors.Colormap,
-    tick_colour: Colour,
+    cmap_phase: colors.Colormap,
+    tick_colour: tColour,
     invert_colours: bool,
-) -> Dict[str, matplotlib.axes.Axes]:
+) -> Dict[str, axes.Axes]:
     """Plots a phase wheel with line indicators on it for the given phase_angles and returns a dictionary of the axes.
 
     This method plots a phase wheel with line indicators on it for the given phase_angles. The phase wheel is a polar
@@ -914,8 +948,7 @@ def _plot_phase_wheel(
             plot_mosaic_phase_wheel_dict["phase_wheel"].plot([phase_angle] * 40, length * np.arange(0, 40, 1), color=cmap_phase(colour_value), lw=2)
 
     if invert_colours is True:
-        plot_mosaic_phase_wheel_dict["phase_wheel"].spines["polar"].set_color(tick_colour)
-
+        plot_mosaic_phase_wheel_dict["phase_wheel"].spines["polar"].set_color(tuple(tick_colour))  # type: ignore
     plot_mosaic_phase_wheel_dict["phase_wheel"].set_yticks([])
     plot_mosaic_phase_wheel_dict["phase_wheel"].tick_params(axis="x", colors=tick_colour)
     plot_mosaic_phase_wheel_dict["phase_wheel"].tick_params(axis="y", colors=tick_colour)
@@ -930,13 +963,13 @@ def _plot_phase_wheel(
 
 
 def _plot_stat_bars(
-    fig: matplotlib.figure.Figure,
+    fig: figure.Figure,
     fidelity: float,
-    cmap_fidelity: matplotlib.colors.Colormap,
-    c_gray: Colour,
-    tick_colour: Colour,
+    cmap_fidelity: colors.Colormap,
+    c_gray: tColour,
+    tick_colour: tColour,
     invert_colours: bool,
-) -> Dict[str, matplotlib.axes.Axes]:
+) -> Dict[str, axes.Axes]:
     """Plots a fidelity bar and returns a dictionary of the axes.
 
     Parameters
@@ -984,20 +1017,20 @@ def _plot_stat_bars(
 
     line_y = fig_gridspec_stat_bars["bottom"] + (fig_gridspec_stat_bars["top"] - fig_gridspec_stat_bars["bottom"]) * fidelity
     line_middle_x = fig_gridspec_stat_bars["left"] + (fig_gridspec_stat_bars["right"] - fig_gridspec_stat_bars["left"]) / 2
-    line = Line2D([line_middle_x - 0.035, line_middle_x + 0.035], [line_y, line_y], lw=4, color=c_gray, alpha=1)
+    line = Line2D([line_middle_x - 0.035, line_middle_x + 0.035], [line_y, line_y], lw=4, color=tuple(c_gray), alpha=1)  # type: ignore
     line.set_clip_on(False)
     fig.add_artist(line)
     plot_mosaic_stat_bars_dict["fidelity"].tick_params(axis="x", colors=tick_colour)
     plot_mosaic_stat_bars_dict["fidelity"].tick_params(axis="y", colors=tick_colour)
     if invert_colours is True:
-        plot_mosaic_stat_bars_dict["fidelity"].spines["bottom"].set_color(tick_colour)
-        plot_mosaic_stat_bars_dict["fidelity"].spines["top"].set_color(tick_colour)
-        plot_mosaic_stat_bars_dict["fidelity"].spines["left"].set_color(tick_colour)
-        plot_mosaic_stat_bars_dict["fidelity"].spines["right"].set_color(tick_colour)
+        plot_mosaic_stat_bars_dict["fidelity"].spines["bottom"].set_color(tuple(tick_colour))  # type: ignore
+        plot_mosaic_stat_bars_dict["fidelity"].spines["top"].set_color(tuple(tick_colour))  # type: ignore
+        plot_mosaic_stat_bars_dict["fidelity"].spines["left"].set_color(tuple(tick_colour))  # type: ignore
+        plot_mosaic_stat_bars_dict["fidelity"].spines["right"].set_color(tuple(tick_colour))  # type: ignore
         for t in plot_mosaic_stat_bars_dict["fidelity"].xaxis.get_ticklines():
-            t.set_color(tick_colour)
+            t.set_color(tuple(tick_colour))  # type: ignore
         for t in plot_mosaic_stat_bars_dict["fidelity"].yaxis.get_ticklines():
-            t.set_color(tick_colour)
+            t.set_color(tuple(tick_colour))  # type: ignore
 
     fig.text(0.82, 0.945, "Fidelity", ha="right", va="center", fontsize=20)
     fig.text(0.82, 0.905, format(fidelity, ".2f"), ha="right", va="center", fontsize=20)
@@ -1005,7 +1038,7 @@ def _plot_stat_bars(
     plot_mosaic_stat_bars_dict["fidelity"].xaxis.set_visible(False)
     plot_mosaic_stat_bars_dict["fidelity"].set_ylim((0, 99))
     y_tick_positions = [0, 50, 99]
-    y_tick_labels = [0.0, 0.5, 1.0]
+    y_tick_labels = ["0.1", "0.5", "1.0"]
     plot_mosaic_stat_bars_dict["fidelity"].set_yticks(y_tick_positions)
     plot_mosaic_stat_bars_dict["fidelity"].set_yticklabels(y_tick_labels)
 
@@ -1013,19 +1046,19 @@ def _plot_stat_bars(
 
 
 def _plot_quantum_state(
-    fig: Optional[matplotlib.figure.Figure],
+    fig: Optional[figure.Figure],
     pure_probabilities_list: List[np.ndarray],
     pure_phase_angles_list: List[np.ndarray],
     measured_probabilities_list: List[np.ndarray],
     sampled_state_number: Union[int, float],
     qubit_count: int,
     interpolate: bool,
-    cmap_phase: matplotlib.colors.Colormap,
-    tick_colour: Colour,
+    cmap_phase: colors.Colormap,
+    tick_colour: tColour,
     vpr: Optional[Union[float, Callable[[int], float]]],
     zero_noise: bool,
     show_measured_probabilities_only: bool,
-) -> matplotlib.figure.Figure:
+) -> figure.Figure:
     """Plots the quantum state for given probability and phase distributions.
 
     Parameters
@@ -1061,14 +1094,18 @@ def _plot_quantum_state(
     """
     if vpr is None:
 
-        def vpr(n):
+        def vpr_func(n):
             return 1.0 / 3.0
+
+        vpr = vpr_func
 
     elif isinstance(vpr, float):
         vpr_temp = vpr
 
-        def vpr(n):
+        def vpr_func(n):
             return vpr_temp
+
+        vpr = vpr_func
 
     elif not callable(vpr):
         raise TypeError("vpr must be a float, None or a Callable[[int], float].")
@@ -1111,10 +1148,13 @@ def _plot_quantum_state(
                 if pure_probabilities_start[i, j] > 0 and pure_probabilities_end[i, j] <= 0.0001:
                     pure_phase_angles[i, j] = pure_phase_angles_start[i, j]
     else:
-        pure_probabilities = pure_probabilities_list[sampled_state_number]
-        pure_phase_angles = pure_phase_angles_list[sampled_state_number]
-        measured_probabilities = measured_probabilities_list[sampled_state_number]
-        base_state_count = pure_probabilities.shape[1]
+        if isinstance(sampled_state_number, int):
+            pure_probabilities = pure_probabilities_list[sampled_state_number]
+            pure_phase_angles = pure_phase_angles_list[sampled_state_number]
+            measured_probabilities = measured_probabilities_list[sampled_state_number]
+            base_state_count = pure_probabilities.shape[1]
+        else:
+            raise TypeError("sampled_state_number must be an int when interpolate is False.")
 
     # A dictionary of plot names where the key is the plot name and the value is a matplotlib Axes object with a set position and size within the figure
     plot_mosaic_dict = None
@@ -1180,16 +1220,16 @@ def _plot_quantum_state(
         if plot_name.split(":")[0] == "pure_state":
             pure_state_index = int(plot_name.split(":")[1])
 
+        y_values: List[float] = []
         if plot_name == "meas_probs":
-            y_values = measured_probabilities
+            y_values = measured_probabilities  # type: ignore
         elif pure_state_index is not None:
             if pure_state_index < pure_probabilities.shape[0]:
-                y_values = pure_probabilities[pure_state_index, :]
+                y_values = pure_probabilities[pure_state_index, :].tolist()
             else:
-                y_values = np.zeros(base_state_count)
+                y_values = np.zeros(base_state_count).tolist()
         else:
-            print("ERROR: plot_name not recognised: " + plot_name)
-            exit(1)
+            raise ValueError("plot_name must be 'meas_probs' or 'pure_state:<index>'.")
 
         bar_list = plot_mosaic_dict[plot_name].bar(x_values, y_values, width=0.5)
 
@@ -1202,18 +1242,22 @@ def _plot_quantum_state(
                     bar_list[i].set_color(cmap_phase(colour_value))
 
         plot_mosaic_dict[plot_name].set_xlim((-0.5, base_state_count - 1 + 0.5))
-        plot_mosaic_dict[plot_name].set_ylim([0, np.max(y_values)])
+        plot_mosaic_dict[plot_name].set_ylim((0, np.max(y_values)))
         plot_mosaic_dict[plot_name].tick_params(axis="x", colors=tick_colour)
         plot_mosaic_dict[plot_name].tick_params(axis="y", colors=tick_colour)
         plot_mosaic_dict[plot_name].tick_params(axis="y", labelsize=20)
-        plot_mosaic_dict[plot_name].axes.xaxis.set_visible(False)
-        plot_mosaic_dict[plot_name].axes.yaxis.set_visible(False)
+        plot_axes = plot_mosaic_dict[plot_name].axes
+        if plot_axes is not None:
+            plot_axes.xaxis.set_visible(False)
+            plot_axes.yaxis.set_visible(False)
 
-        if (zero_noise and pure_state_index == 0) or plot_name == "meas_probs":
-            plot_mosaic_dict[plot_name].axes.yaxis.set_visible(True)
+            if (zero_noise and pure_state_index == 0) or plot_name == "meas_probs":
+                plot_axes.yaxis.set_visible(True)
 
-        if pure_state_index == 1 or pure_state_index == 3:
-            plot_mosaic_dict[plot_name].axes.yaxis.set_visible(True)
+            if pure_state_index == 1 or pure_state_index == 3:
+                plot_axes.yaxis.set_visible(True)
+        else:
+            print(f"Warning: Axes for plot '{plot_name}' is None. This may indicate an issue with the plot layout.")
 
         # Set the x ticks and tick labels for important subplots
         if pure_state_index == 0 or plot_name == "meas_probs":
@@ -1230,7 +1274,9 @@ def _plot_quantum_state(
             # basis states are labelled in binary
             x_tick_labels = [bin(x)[2:].zfill(num_qubits)[::-1] for x in x_ticks]
 
-            plot_mosaic_dict[plot_name].axes.xaxis.set_visible(True)
+            if plot_axes is not None:
+                plot_axes.xaxis.set_visible(True)
+
             plot_mosaic_dict[plot_name].set_xticks(x_ticks)
             plot_mosaic_dict[plot_name].set_xticklabels(x_tick_labels)
             plot_mosaic_dict[plot_name].tick_params(axis="x", labelsize=14)
@@ -1250,20 +1296,20 @@ def _plot_quantum_state(
 
 def _plot_info_panel(
     output_manager: data_manager.DataManager,
-    fig: Optional[matplotlib.figure.Figure],
+    fig: Optional[figure.Figure],
     pure_probabilities: np.ndarray,
     pure_phase_angles: np.ndarray,
     fidelity: float,
     sampled_state_number: int,
     qubit_count: int,
-    cmap_phase: matplotlib.colors.Colormap,
-    cmap_fidelity: matplotlib.colors.Colormap,
-    tick_colour: Colour,
-    fidelity_line_colour: Colour,
+    cmap_phase: colors.Colormap,
+    cmap_fidelity: colors.Colormap,
+    tick_colour: tColour,
+    fidelity_line_colour: tColour,
     invert_colours: bool,
     vpr: Optional[Union[float, Callable[[int], float]]],
     draw_phase_wheel: bool,
-) -> matplotlib.figure.Figure:
+) -> figure.Figure:
     """Plot the information panel corresponding to the given sampled state number and save it as a .png.
 
     Parameters
@@ -1303,14 +1349,18 @@ def _plot_info_panel(
     """
     if vpr is None:
 
-        def vpr(n):
+        def vpr_func(n):
             return 1.0 / 3.0
+
+        vpr = vpr_func
 
     elif isinstance(vpr, float):
         vpr_temp = vpr
 
-        def vpr(n):
+        def vpr_func(n):
             return vpr_temp
+
+        vpr = vpr_func
 
     elif not callable(vpr):
         raise TypeError("vpr must be a float, None or a Callable[[int], float].")
