@@ -4,7 +4,6 @@ from typing import List, Optional
 
 import numpy as np
 from qiskit import QuantumCircuit, transpile
-from qiskit import QuantumCircuit, transpile
 from qiskit.converters import circuit_to_dag
 from qiskit_aer import AerSimulator
 

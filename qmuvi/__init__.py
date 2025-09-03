@@ -10,7 +10,7 @@ from . import data_manager as qmuvi_data_manager
 from . import musical_processing, quantum_simulation, video_generation
 from .musical_processing import note_map_c_major_arpeggio
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 
 def get_instrument_collection(collection_name: str) -> List[int]:
@@ -80,7 +80,7 @@ def generate_qmuvi(
     smooth_transitions: bool = True,
     log_to_file: bool = False,
     show_measured_probabilities_only: bool = False,
-    output_dir: Optional[str] = None
+    output_dir: Optional[str] = None,
 ) -> None:
     """Samples the quantum circuit at every barrier and uses the state properties to create a music video (.mp4).
 

@@ -1,4 +1,4 @@
-import qiskit.quantum_info
+from qiskit.quantum_info import DensityMatrix
 from qiskit import QuantumCircuit
 import math
 from typing import List
@@ -21,7 +21,7 @@ def test_sample_circuit_barriers():
     circ.cx(0, 1)
     circ.barrier()
 
-    density_matrices_pure: List[qiskit.quantum_info.DensityMatrix] = sample_circuit_barriers(circ)  # type: ignore
+    density_matrices_pure: List[DensityMatrix] = sample_circuit_barriers(circ)  # type: ignore
     assert len(density_matrices_pure) == 3
     assert density_matrices_pure[0].data.shape == (4, 4)
     assert math.isclose(density_matrices_pure[0].data[0][0].real, 1)
