@@ -455,11 +455,12 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeo
                 if command is None:
                     # Fallback to system timidity
                     system_binary = shutil.which("timidity")
+                    if log_to_file is True:
+                        log.info(f"Using system (OS: Darwin) timitidy: {system_binary}")  # type: ignore
+
                     binary_path = system_binary
                     if system_binary:
-                        if log_to_file is True:
-                            log.info(f"timidity system_binary (OS: Darwin): {system_binary}")  # type: ignore
-                        command = [system_binary] + options + ["-o", f'"{filename}.wav"', f'"{filename}.mid"']
+                        command = [system_binary] + options + ["-o", f'{filename}.wav', f'{filename}.mid']
                     else:
                         raise RuntimeError("System timidity not found and bundled version is not working. Please install timidity via 'brew install timidity'")
             else:
