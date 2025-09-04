@@ -393,7 +393,12 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeo
 
     package_path = os.path.dirname(os.path.realpath(__file__))
     config_filepath = os.path.join(package_path, "package_data", "resources", "timidity", "timidity.cfg")
-    options.append(f'--config-file={config_filepath}')
+
+    if platform.system() == "Windows":
+        # add quotes to allow for spaces in Windows directories
+        options.append(f'--config-file="{config_filepath}"')
+    else:
+        options.append(f'--config-file={config_filepath}')
 
     options_string = " ".join(options)
 
@@ -412,7 +417,6 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeo
 
                 # add file handler
                 log_filepath = os.path.join(os.getcwd(), f"log-timidity-{thread_index}.log")
-                # os.remove(log_filepath)
                 file_handler = logging.FileHandler(log_filepath, mode="w")
                 formatter = logging.Formatter("%(asctime)s - %(levelname)s: %(message)s")
                 file_handler.setFormatter(formatter)
