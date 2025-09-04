@@ -10,7 +10,7 @@ from . import data_manager as qmuvi_data_manager
 from . import musical_processing, quantum_simulation, video_generation
 from .musical_processing import note_map_c_major_arpeggio
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 
 
 def get_instrument_collection(collection_name: str) -> List[int]:
