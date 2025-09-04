@@ -123,10 +123,14 @@ Before you submit a pull request, check that it meets these guidelines:
 A reminder for the maintainers on how to deploy.
 Make sure all of the changes have been committed and tests have passed successfully.
 Update the version number in the pyproject.toml file and the qmuvi \_\_init\_\_.py file.
-Then run:
-
+Then build the packages:
 ```
-$ poetry publish --username PYPI_USERNAME --password PYPI_PASSWORD
+$ poetry build
+```
+
+and deploy using
+```
+$ poetry publish --username __token__ --password PYPI_PROJECT_TOKEN
 ```
 
 Github Actions will then deploy to PyPI if tests pass.
