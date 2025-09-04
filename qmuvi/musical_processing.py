@@ -393,7 +393,7 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeo
 
     package_path = os.path.dirname(os.path.realpath(__file__))
     config_filepath = os.path.join(package_path, "package_data", "resources", "timidity", "timidity.cfg")
-    options.append(f'--config-file="{config_filepath}"')
+    options.append(f'--config-file={config_filepath}')
 
     options_string = " ".join(options)
 
