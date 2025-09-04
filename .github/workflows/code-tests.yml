@@ -67,7 +67,7 @@ jobs:
       - name: Install Timidity on macOS
         if: runner.os == 'macOS'
         run: |
-          sudo brew install timidity
+          brew install timidity
 
       # declare package_version, repo_owner, repo_name, package_name so you may use it in web hooks.
       - name: Declare variables for convenient use on Linux
