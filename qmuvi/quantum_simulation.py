@@ -77,30 +77,4 @@ def sample_circuit_barriers(quantum_circuit: QuantumCircuit, noise_model: Option
     for i in range(barrier_count):
         density_matrices.append(result.data(0)[f"rho{i}"])
 
-    # dag = circuit_to_dag(quantum_circuit)
-    # qubit_count = len(dag.qubits)
-    # new_quantum_circuit = QuantumCircuit(qubit_count)
-    # quantum_circuits = []
-
-    # barrier_iter = 0
-    # for node in dag.topological_op_nodes():
-    #     if node.name == "barrier":
-    #         quantum_circuits.append(new_quantum_circuit.copy())
-    #         #new_quantum_circuit.save_density_matrix(label=f"rho{barrier_iter}")
-    #         barrier_iter += 1
-    #     if node.name != "measure":
-    #         new_quantum_circuit.append(node.op, node.qargs, node.cargs)
-    # barrier_count = barrier_iter
-
-    # density_matrices = []
-    # for qc in quantum_circuits:
-    #     transpiled_quantum_circuit = transpile(qc, simulator)
-
-    #     result : qiskit.Result = simulator.run(transpiled_quantum_circuit).result()
-    #     density_matrices.append(result.data(0)["density_matrix"])
-
-    # density_matrices = []
-    # for i in range(barrier_count):
-    #     density_matrices.append(result.data(0)[f"rho{i}"])
-
     return density_matrices

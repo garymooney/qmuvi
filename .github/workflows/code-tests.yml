@@ -21,10 +21,7 @@ jobs:
     strategy:
       matrix:
         python_versions: ['3.9', '3.10', '3.11']
-        # github action doesn't goes well with windows due to docker support
-        # github action doesn't goes well with macos due to `no docker command`
-        #os: [ubuntu-20.04, windows-latest, macos-latest]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
     runs-on: ${{ matrix.os }}
     # map step outputs to job outputs so they can be share among jobs
     outputs:
@@ -34,21 +31,8 @@ jobs:
       repo_owner: ${{ steps.variables_step.outputs.repo_owner }}
       build_number: ${{ steps.variables_step.outputs.build_number }}
 
-    # uncomment the following to pickup services
-    # services:
-    #   redis:
-    #     image: redis
-    #     options: >-
-    #       --health-cmd "redis-cli ping"
-    #       --health-interval 10s
-    #       --health-timeout 5s
-    #       --health-retries 5
-    #     ports:
-    #       - 6379:6379
-
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
         with:
@@ -59,13 +43,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox tox-gh-actions poetry
 
-      - name: Install Timidity
+      - name: Install Timidity on Linux
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update && sudo apt-get install -y timidity
 
+      - name: Install Timidity on macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install timidity
+
       # declare package_version, repo_owner, repo_name, package_name so you may use it in web hooks.
-      - name: Declare variables for convenient use
+      - name: Declare variables for convenient use on Linux
         id: variables_step
+        if: runner.os == 'Linux'
         run: |
           echo "::set-output name=repo_owner::${GITHUB_REPOSITORY%/*}"
           echo "::set-output name=repo_name::${GITHUB_REPOSITORY#*/}"
@@ -98,72 +89,3 @@ jobs:
           poetry version $(poetry version --short)-dev.$GITHUB_RUN_NUMBER
           poetry lock
           poetry build
-
-  #notification:
-  #  needs: [test,publish_dev_build]
-  #  if: always()
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - uses: martialonline/workflow-status@v2
-  #      id: check
-#
-  #    - name: build success notification via email
-  #      if: ${{ steps.check.outputs.status == 'success' }}
-  #      uses: dawidd6/action-send-mail@v3
-  #      with:
-  #        server_address: ${{ secrets.BUILD_NOTIFY_MAIL_SERVER }}
-  #        server_port: ${{ secrets.BUILD_NOTIFY_MAIL_PORT }}
-  #        username: ${{ secrets.BUILD_NOTIFY_MAIL_FROM }}
-  #        password: ${{ secrets.BUILD_NOTIFY_MAIL_PASSWORD }}
-  #        from: build-bot
-  #        to: ${{ secrets.BUILD_NOTIFY_MAIL_RCPT }}
-  #        subject: ${{ needs.test.outputs.package_name }}.${{ needs.test.outputs.package_version}}.dev.${{ github.run_number }} build successfully
-  #        convert_markdown: true
-  #        html_body: |
-  #          ## Build Success
-  #          ${{ needs.test.outputs.package_name }}.${{ needs.test.outputs.package_version }}.dev.${{ github.run_number }} is built and published to test pypi
-#
-  #          ## Change Details
-  #          ${{ github.event.head_commit.message }}
-#
-  #          For more information, please check change history at https://${{ needs.test.outputs.repo_owner }}.github.io/${{ needs.test.outputs.repo_name }}/${{ needs.test.outputs.package_version }}.dev/history
-#
-  #          ## Package Download
-  #          The pacakge is available at: https://test.pypi.org/project/${{ needs.test.outputs.package_name }}/
-#
-  #    - name: build failure notification via email
-  #      if: ${{ steps.check.outputs.status == 'failure' }}
-  #      uses: dawidd6/action-send-mail@v3
-  #      with:
-  #        server_address: ${{ secrets.BUILD_NOTIFY_MAIL_SERVER }}
-  #        server_port: ${{ secrets.BUILD_NOTIFY_MAIL_PORT }}
-  #        username: ${{ secrets.BUILD_NOTIFY_MAIL_FROM }}
-  #        password: ${{ secrets.BUILD_NOTIFY_MAIL_PASSWORD }}
-  #        from: build-bot
-  #        to: ${{ secrets.BUILD_NOTIFY_MAIL_RCPT }}
-  #        subject: ${{ needs.test.outputs.package_name }}.${{ needs.test.outputs.package_version}}.dev.${{ github.run_number }} build failure
-  #        convert_markdown: true
-  #        html_body: |
-  #          ## Change Details
-  #          ${{ github.event.head_commit.message }}
-#
-  #          ## View Log
-  #          https://github.com/${{ needs.test.outputs.repo_owner }}/${{ needs.test.outputs.repo_name }}/actions
-
-
-      # - name: Dingtalk Robot Notify
-      #   if: always()
-      #   uses: leafney/dingtalk-action@v1.0.0
-      #   env:
-      #     DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN }}
-      #     DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
-      #   with:
-      #     msgtype: markdown
-      #     title: CI Notification | Success
-      #     text: |
-      #       ### Build Success
-      #       ${{ needs.test.outputs.package_version }}.dev.${{ github.run_number }}published to TEST pypi
-      #       ### Change History
-      #       Please check change history at https://${{ needs.test.outputs.repo_owner }}.github.io/${{ needs.test.outputs.repo_name }}/${{ needs.test.outputs.package_version }}.dev/history
-      #       ### Package Download
-      #       The pacakge is availabled at: https://test.pypi.org/project/${{ needs.test.outputs.repo_name }}/

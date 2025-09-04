@@ -29,6 +29,12 @@ To install qMuVi, you can use `pip`:
 pip install qmuvi
 ```
 
+## macOS (Apple Silicon/ARM64)
+For macOS systems with 64-bit ARM processors (M1, M2, M3 chips), TiMidity++ must be installed manually:
+```bash
+brew install timidity
+```
+
 ## Linux
 For Linux, qMuVi requires timidity to be installed separately. Instructions for common distributions:
 ```bash
