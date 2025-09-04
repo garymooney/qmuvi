@@ -24,7 +24,7 @@ jobs:
         # github action doesn't goes well with windows due to docker support
         # github action doesn't goes well with macos due to `no docker command`
         #os: [ubuntu-20.04, windows-latest, macos-latest]
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
     runs-on: ${{ matrix.os }}
     # map step outputs to job outputs so they can be share among jobs
     outputs:
