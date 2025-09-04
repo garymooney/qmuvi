@@ -59,13 +59,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox tox-gh-actions poetry
 
-      - name: Install Timidity
+      - name: Install Timidity on Linux
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update && sudo apt-get install -y timidity
 
+      - name: Install Timidity on macOS
+        if: runner.os == 'macOS'
+        run: |
+          sudo brew install timidity
+
       # declare package_version, repo_owner, repo_name, package_name so you may use it in web hooks.
-      - name: Declare variables for convenient use
+      - name: Declare variables for convenient use on Linux
         id: variables_step
+        if: runner.os == 'Linux'
         run: |
           echo "::set-output name=repo_owner::${GITHUB_REPOSITORY%/*}"
           echo "::set-output name=repo_name::${GITHUB_REPOSITORY#*/}"
