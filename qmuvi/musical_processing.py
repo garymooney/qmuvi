@@ -449,7 +449,7 @@ def convert_midi_to_wav_timidity(output_manager: data_manager.DataManager, timeo
                         subprocess.run([bundled_binary, "--version"],
                                     capture_output=True, check=True, timeout=0.5)
                         # If successful, use bundled version
-                        command = [bundled_binary] + options + ["-o", f'"{filename}.wav"', f'"{filename}.mid"']
+                        command = [bundled_binary] + options + ["-o", f'{filename}.wav', f'{filename}.mid']
                     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
                         pass # Bundled binary failed, will try system binary
                 if command is None:
