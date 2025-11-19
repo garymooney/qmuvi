@@ -43,6 +43,7 @@ dnf install timidity++ # Fedora
 apt-get install timidity # Debian and Ubuntu
 zypper install timidity # OpenSUSE
 ```
+Note. The TiMidity++ 2.14 version provided by Debian and Ubuntu has a bug with `--preserve-silence` where the first note is skipped in some cases. This is fixed in TiMidity++ 2.15, which you should be able to get by building from source.
 
 ## Install From Source
 For the latest version from source, you can install using poetry:
